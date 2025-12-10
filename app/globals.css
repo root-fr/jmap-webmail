@@ -1,0 +1,380 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #94a3b8;
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f8fafc;
+  --color-secondary-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #dbeafe;
+  --color-accent-foreground: #1e40af;
+
+  /* Settings variables */
+  --font-size-base: 16px;
+  --list-item-height: 48px;
+  --transition-duration: 0.2s;
+}
+
+.dark {
+  --color-border: #262626;
+  --color-input: #262626;
+  --color-ring: #d4d4d4;
+  --color-background: #0a0a0a;
+  --color-foreground: #fafafa;
+  --color-primary: #fafafa;
+  --color-primary-foreground: #171717;
+  --color-secondary: #262626;
+  --color-secondary-foreground: #fafafa;
+  --color-muted: #262626;
+  --color-muted-foreground: #a3a3a3;
+  --color-accent: #1e3a8a;
+  --color-accent-foreground: #dbeafe;
+}
+
+@theme inline {
+  --color-border: var(--color-border);
+  --color-input: var(--color-input);
+  --color-ring: var(--color-ring);
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--color-primary-foreground);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-foreground: var(--color-secondary-foreground);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted-foreground);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: var(--font-size-base);
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Minimalist scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-muted-foreground);
+}
+
+/* Enhanced Email Content Styling */
+.email-content {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--color-foreground);
+  max-width: none;
+}
+
+.email-content p {
+  margin: 0.75rem 0;
+}
+
+.email-content a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.email-content a:hover {
+  text-decoration: underline;
+  color: var(--color-accent-foreground);
+}
+
+.email-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+  margin: 1rem 0;
+  display: block;
+}
+
+.email-content blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.dark .email-content blockquote {
+  border-left-color: #4b5563;
+  color: #9ca3af;
+}
+
+.email-content pre {
+  background-color: #f5f5f7;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  font-family: 'SF Mono', Monaco, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.dark .email-content pre {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+.email-content code {
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: 'SF Mono', Monaco, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  color: #dc2626;
+}
+
+.dark .email-content code {
+  background-color: #374151;
+  color: #f87171;
+}
+
+.email-content h1,
+.email-content h2,
+.email-content h3,
+.email-content h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-foreground);
+}
+
+.email-content h1 { font-size: 1.5rem; }
+.email-content h2 { font-size: 1.25rem; }
+.email-content h3 { font-size: 1.125rem; }
+.email-content h4 { font-size: 1rem; }
+
+.email-content ul,
+.email-content ol {
+  margin: 1rem 0;
+  padding-left: 1.75rem;
+}
+
+.email-content li {
+  margin: 0.375rem 0;
+  line-height: 1.6;
+}
+
+.email-content ul li {
+  list-style-type: disc;
+}
+
+.email-content ol li {
+  list-style-type: decimal;
+}
+
+/* Only style tables that are actual data tables, not layout tables */
+.email-content table.data-table,
+.email-content table[border="1"] {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+}
+
+.email-content table.data-table th,
+.email-content table.data-table td,
+.email-content table[border="1"] th,
+.email-content table[border="1"] td {
+  padding: 0.625rem;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.email-content table.data-table th,
+.email-content table[border="1"] th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: #374151;
+}
+
+.dark .email-content table.data-table th,
+.dark .email-content table[border="1"] th {
+  background-color: #1f2937;
+  color: #d1d5db;
+}
+
+.dark .email-content table.data-table td,
+.dark .email-content table[border="1"] td {
+  border-color: #374151;
+}
+
+/* Reset styles for layout tables (commonly used in HTML emails) */
+.email-content table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* Let HTML email's own styles take precedence */
+.email-content table:not(.data-table):not([border="1"]) {
+  border: initial;
+}
+
+.email-content table:not(.data-table):not([border="1"]) td,
+.email-content table:not(.data-table):not([border="1"]) th {
+  border: initial;
+  padding: initial;
+}
+
+.email-content hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.5rem 0;
+}
+
+.dark .email-content hr {
+  border-top-color: #374151;
+}
+
+/* Email thread quoted text */
+.email-content .quoted-text {
+  border-left: 3px solid #d1d5db;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: #6b7280;
+  opacity: 0.8;
+}
+
+.dark .email-content .quoted-text {
+  border-left-color: #4b5563;
+  color: #9ca3af;
+}
+
+/* Toast animations */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+/* Mobile Responsive Utilities */
+
+/* Safe area insets for notched devices (iPhone X+, etc.) */
+.safe-area-inset-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-inset-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-inset-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Minimum touch targets (44x44px recommended by Apple HIG) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Prevent text selection on mobile for UI elements */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Smooth transitions for view switching */
+.view-transition {
+  transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+/* Hide scrollbar on mobile while keeping functionality */
+@media (max-width: 767px) {
+  .mobile-scroll-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-scroll-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Mobile backdrop blur support */
+@supports (backdrop-filter: blur(8px)) {
+  .mobile-backdrop {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* Prevent overscroll bounce on iOS */
+.no-overscroll {
+  overscroll-behavior: none;
+}
+
+/* Slide in from right animation (for mobile views) */
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-from-right {
+  animation: slide-in-from-right 0.3s ease-out;
+}
+
+/* Slide in from left animation (for sidebar) */
+@keyframes slide-in-from-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-from-left {
+  animation: slide-in-from-left 0.3s ease-out;
+}

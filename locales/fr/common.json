@@ -1,0 +1,494 @@
+{
+  "login": {
+    "title": "Webmail",
+    "username_label": "Email",
+    "username_placeholder": "utilisateur@exemple.com",
+    "password_label": "Mot de passe",
+    "password_placeholder": "Entrez votre mot de passe",
+    "sign_in": "Se connecter",
+    "signing_in": "Connexion en cours...",
+    "error": {
+      "invalid_credentials": "Email ou mot de passe invalide",
+      "connection_failed": "Échec de la connexion au serveur",
+      "generic": "Une erreur s'est produite. Veuillez réessayer."
+    }
+  },
+  "sidebar": {
+    "compose": "Composer",
+    "search_placeholder": "Rechercher un email...",
+    "storage": "Stockage",
+    "sign_out": "Se déconnecter",
+    "settings": "Paramètres",
+    "loading_mailboxes": "Chargement des boîtes mail...",
+    "push_connected": "Mises à jour en temps réel actives",
+    "push_disconnected": "Mises à jour en temps réel inactives",
+    "theme": {
+      "light": "Mode clair",
+      "dark": "Mode sombre",
+      "system": "Thème système"
+    },
+    "mailboxes": {
+      "inbox": "Boîte de réception",
+      "sent": "Envoyés",
+      "drafts": "Brouillons",
+      "trash": "Corbeille",
+      "archive": "Archives",
+      "starred": "Favoris",
+      "all_mail": "Tous les messages",
+      "spam": "Spam",
+      "important": "Important"
+    },
+    "expand": "Développer",
+    "collapse": "Réduire"
+  },
+  "email_list": {
+    "no_emails": "Aucun email",
+    "no_emails_description": "Commencez par composer un nouvel email",
+    "loading": "Chargement des emails...",
+    "unread": "non lu",
+    "to_me": "À moi",
+    "to_recipients": "À {{count}} destinataires",
+    "and_others": "et {{count}} autres",
+    "draft": "Brouillon",
+    "starred": "Favori"
+  },
+  "email_viewer": {
+    "no_email_selected": "Aucun email sélectionné",
+    "no_email_description": "Sélectionnez un email dans la liste pour le voir ici",
+    "no_subject": "(Sans objet)",
+    "reply": "Répondre",
+    "reply_all": "Répondre à tous",
+    "forward": "Transférer",
+    "delete": "Supprimer",
+    "archive": "Archiver",
+    "star": "Marquer comme favori",
+    "unstar": "Retirer des favoris",
+    "mark_unread": "Marquer comme non lu",
+    "mark_read": "Marquer comme lu",
+    "print": "Imprimer",
+    "view_source": "Voir la source",
+    "email_source": "Source de l'email",
+    "copy_source": "Copier dans le presse-papiers",
+    "source_copied": "Source copiée dans le presse-papiers",
+    "attachments": "Pièces jointes",
+    "download": "Télécharger",
+    "from": "De",
+    "to": "À",
+    "cc": "CC",
+    "bcc": "CCI",
+    "date": "Date",
+    "subject": "Objet",
+    "show_details": "Afficher les détails",
+    "hide_details": "Masquer les détails",
+    "external_content_warning": "Les images et le contenu externe ont été bloqués",
+    "load_external_content": "Charger les images",
+    "message_details": "Détails du message",
+    "authentication": {
+      "title": "Authentification",
+      "status": {
+        "verified": "Vérifié",
+        "warning": "Attention",
+        "none": "Non authentifié"
+      },
+      "spf": {
+        "pass": "SPF Validé",
+        "fail": "SPF Échoué",
+        "none": "Pas de SPF"
+      },
+      "dkim": {
+        "pass": "DKIM Valide",
+        "fail": "DKIM Invalide",
+        "none": "Pas de DKIM"
+      },
+      "dmarc": {
+        "pass": "DMARC Validé",
+        "fail": "DMARC Échoué",
+        "none": "Pas de DMARC"
+      },
+      "spam_score": "Score de spam"
+    },
+    "headers": {
+      "routing": "Routage",
+      "received": "Reçu",
+      "message_id": "ID du message",
+      "list_info": "Information de liste"
+    },
+    "color_tag": {
+      "title": "Étiquette de couleur",
+      "red": "Rouge",
+      "orange": "Orange",
+      "yellow": "Jaune",
+      "green": "Vert",
+      "blue": "Bleu",
+      "purple": "Violet",
+      "none": "Aucune"
+    }
+  },
+  "email_composer": {
+    "new_message": "Nouveau message",
+    "reply": "Répondre",
+    "reply_all": "Répondre à tous",
+    "forward": "Transférer",
+    "reply_to": "Répondre",
+    "reply_all_to": "Répondre à tous",
+    "forward_message": "Transférer",
+    "to": "À",
+    "cc": "CC",
+    "bcc": "CCI",
+    "subject": "Objet",
+    "body_placeholder": "Écrivez votre message...",
+    "send": "Envoyer",
+    "cancel": "Annuler",
+    "attach": "Joindre des fichiers",
+    "discard_draft_confirm": "Vous avez des modifications non enregistrées. Voulez-vous supprimer ce brouillon ?",
+    "quote": {
+      "reply_header": "Le {{date}}, {{sender}} a écrit :",
+      "forward_header": "---------- Message transféré ----------",
+      "from": "De : {{sender}}",
+      "date": "Date : {{date}}",
+      "subject": "Objet : {{subject}}",
+      "to": "À : {{recipients}}"
+    }
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "search": "Rechercher",
+    "refresh": "Actualiser",
+    "settings": "Paramètres",
+    "help": "Aide",
+    "logout": "Déconnexion",
+    "yes": "Oui",
+    "no": "Non",
+    "unknown": "Inconnu"
+  },
+  "notifications": {
+    "email_sent": "Email envoyé avec succès",
+    "email_deleted": "Email supprimé",
+    "email_archived": "Email archivé",
+    "email_starred": "Email ajouté aux favoris",
+    "email_unstarred": "Email retiré des favoris",
+    "email_marked_read": "Email marqué comme lu",
+    "email_marked_unread": "Email marqué comme non lu",
+    "copied_to_clipboard": "Copié dans le presse-papiers",
+    "source_copied": "Source copiée dans le presse-papiers",
+    "error_sending": "Échec de l'envoi de l'email",
+    "error_deleting": "Échec de la suppression de l'email",
+    "error_loading": "Échec du chargement des emails",
+    "new_email": "Nouvel email",
+    "new_email_from": "De {sender}",
+    "click_to_view": "Cliquer pour voir"
+  },
+  "date": {
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "this_week": "Cette semaine",
+    "last_week": "La semaine dernière",
+    "this_month": "Ce mois-ci",
+    "older": "Plus ancien",
+    "just_now": "À l'instant",
+    "minutes_ago": "Il y a {{count}} minute",
+    "minutes_ago_plural": "Il y a {{count}} minutes",
+    "hours_ago": "Il y a {{count}} heure",
+    "hours_ago_plural": "Il y a {{count}} heures",
+    "days_ago": "Il y a {{count}} jour",
+    "days_ago_plural": "Il y a {{count}} jours"
+  },
+  "language": {
+    "title": "Langue",
+    "english": "English",
+    "french": "Français"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "back_to_mail": "Retour aux emails",
+    "save_success": "Paramètres enregistrés avec succès",
+    "import_success": "Paramètres importés avec succès",
+    "import_error": "Échec de l'importation des paramètres",
+    "reset_confirm": "Êtes-vous sûr de vouloir réinitialiser tous les paramètres ?",
+    "tabs": {
+      "appearance": "Apparence",
+      "language": "Langue et région",
+      "email": "Comportement email",
+      "composer": "Compositeur",
+      "privacy": "Confidentialité et sécurité",
+      "account": "Compte",
+      "advanced": "Avancé"
+    },
+    "appearance": {
+      "title": "Apparence",
+      "description": "Personnalisez l'apparence de votre webmail",
+      "theme": {
+        "label": "Thème",
+        "description": "Choisissez votre schéma de couleurs préféré",
+        "light": "Clair",
+        "dark": "Sombre",
+        "system": "Système"
+      },
+      "font_size": {
+        "label": "Taille de police",
+        "description": "Ajustez la taille du texte pour une meilleure lisibilité",
+        "small": "Petite",
+        "medium": "Moyenne",
+        "large": "Grande"
+      },
+      "list_density": {
+        "label": "Densité de la liste",
+        "description": "Contrôlez l'espacement dans les listes d'emails",
+        "compact": "Compacte",
+        "regular": "Normale",
+        "comfortable": "Confortable"
+      },
+      "animations": {
+        "label": "Activer les animations",
+        "description": "Afficher les transitions et effets fluides"
+      }
+    },
+    "language_region": {
+      "title": "Langue et région",
+      "description": "Configurez vos préférences linguistiques et régionales",
+      "language": {
+        "label": "Langue",
+        "description": "Choisissez votre langue préférée",
+        "english": "English",
+        "french": "Français"
+      },
+      "date_format": {
+        "label": "Format de date",
+        "description": "Comment les dates doivent être affichées",
+        "regional": "Régional",
+        "iso": "ISO 8601",
+        "custom": "Personnalisé"
+      },
+      "time_format": {
+        "label": "Format d'heure",
+        "description": "Choisissez entre 12 heures ou 24 heures",
+        "12h": "12 heures",
+        "24h": "24 heures"
+      },
+      "first_day": {
+        "label": "Premier jour de la semaine",
+        "description": "Commencer la semaine le dimanche ou le lundi",
+        "sunday": "Dimanche",
+        "monday": "Lundi"
+      }
+    },
+    "email_behavior": {
+      "title": "Comportement email",
+      "description": "Configurez la gestion des emails",
+      "mark_read": {
+        "label": "Marquer comme lu",
+        "description": "Quand marquer les emails comme lus à l'ouverture",
+        "instant": "Instantanément",
+        "delay_3s": "Après 3 secondes",
+        "delay_5s": "Après 5 secondes",
+        "never": "Jamais"
+      },
+      "delete_action": {
+        "label": "Action de suppression",
+        "description": "Que se passe-t-il quand vous supprimez un email",
+        "trash": "Déplacer vers la corbeille",
+        "permanent": "Supprimer définitivement"
+      },
+      "show_preview": {
+        "label": "Afficher l'aperçu",
+        "description": "Afficher l'aperçu de l'email dans la liste"
+      },
+      "emails_per_page": {
+        "label": "Emails par page",
+        "description": "Nombre d'emails à charger à la fois",
+        "25": "25 emails",
+        "50": "50 emails",
+        "100": "100 emails"
+      },
+      "external_content": {
+        "label": "Contenu externe",
+        "description": "Comment gérer les images et le contenu externe",
+        "ask": "Toujours demander",
+        "block": "Toujours bloquer",
+        "allow": "Toujours autoriser"
+      }
+    },
+    "composer": {
+      "title": "Compositeur",
+      "description": "Configurez les paramètres de composition d'email",
+      "autosave": {
+        "label": "Intervalle de sauvegarde automatique",
+        "description": "Fréquence de sauvegarde automatique des brouillons",
+        "30s": "Toutes les 30 secondes",
+        "1m": "Toutes les minutes",
+        "2m": "Toutes les 2 minutes",
+        "5m": "Toutes les 5 minutes"
+      },
+      "send_confirmation": {
+        "label": "Confirmation d'envoi",
+        "description": "Demander une confirmation avant d'envoyer les emails"
+      },
+      "default_reply": {
+        "label": "Mode de réponse par défaut",
+        "description": "Action par défaut lors du clic sur répondre",
+        "reply": "Répondre",
+        "reply_all": "Répondre à tous"
+      }
+    },
+    "privacy": {
+      "title": "Confidentialité et sécurité",
+      "description": "Gérez vos paramètres de confidentialité et sécurité",
+      "external_images": {
+        "label": "Bloquer les images externes",
+        "description": "Empêcher le suivi par les images externes"
+      },
+      "session_timeout": {
+        "label": "Délai d'expiration de session",
+        "description": "Déconnexion automatique après inactivité",
+        "never": "Jamais",
+        "30m": "30 minutes",
+        "1h": "1 heure",
+        "4h": "4 heures"
+      },
+      "clear_cache": {
+        "label": "Vider le cache",
+        "description": "Supprimer les données en cache et fichiers temporaires",
+        "button": "Vider le cache",
+        "confirm": "Êtes-vous sûr de vouloir vider le cache ?",
+        "success": "Cache vidé avec succès"
+      }
+    },
+    "account": {
+      "title": "Compte",
+      "description": "Consultez les informations de votre compte",
+      "email": {
+        "label": "Adresse email",
+        "value": "{{email}}"
+      },
+      "server": {
+        "label": "Serveur JMAP",
+        "value": "{{server}}"
+      },
+      "storage": {
+        "label": "Utilisation du stockage",
+        "used": "{{used}} sur {{total}} utilisés",
+        "percentage": "{{percent}}% utilisé"
+      },
+      "last_sync": {
+        "label": "Dernière synchronisation",
+        "value": "{{time}}"
+      }
+    },
+    "advanced": {
+      "title": "Avancé",
+      "description": "Options avancées et paramètres développeur",
+      "debug_mode": {
+        "label": "Mode débogage",
+        "description": "Activer la journalisation détaillée pour le dépannage"
+      },
+      "keyboard_shortcuts": {
+        "label": "Raccourcis clavier",
+        "description": "Voir les raccourcis clavier disponibles",
+        "button": "Voir les raccourcis"
+      },
+      "reset_settings": {
+        "label": "Réinitialiser les paramètres",
+        "description": "Restaurer tous les paramètres par défaut",
+        "button": "Réinitialiser"
+      },
+      "export_settings": {
+        "label": "Exporter les paramètres",
+        "description": "Télécharger vos paramètres au format JSON",
+        "button": "Exporter"
+      },
+      "import_settings": {
+        "label": "Importer les paramètres",
+        "description": "Charger les paramètres depuis un fichier JSON",
+        "button": "Importer"
+      }
+    }
+  },
+  "errors": {
+    "page_error_title": "Une erreur s'est produite",
+    "page_error_description": "Nous avons rencontré une erreur inattendue. Veuillez réessayer ou retourner à la page d'accueil.",
+    "sidebar_error": "Impossible de charger les boîtes mail",
+    "email_list_error": "Impossible de charger les emails",
+    "viewer_error_title": "Impossible d'afficher l'email",
+    "viewer_error_description": "Un problème est survenu lors de l'affichage de cet email. Il peut contenir du contenu non pris en charge.",
+    "composer_error": "Impossible de charger le compositeur",
+    "settings_error_title": "Paramètres indisponibles",
+    "settings_error_description": "Impossible de charger les paramètres. Vos préférences peuvent ne pas être sauvegardées.",
+    "try_again": "Réessayer",
+    "reload": "Recharger",
+    "reload_emails": "Recharger les emails",
+    "reload_settings": "Recharger les paramètres",
+    "retry": "Réessayer",
+    "go_home": "Aller à la boîte de réception"
+  },
+  "context_menu": {
+    "reply": "Répondre",
+    "reply_all": "Répondre à tous",
+    "forward": "Transférer",
+    "mark_read": "Marquer comme lu",
+    "mark_unread": "Marquer comme non lu",
+    "star": "Marquer comme favori",
+    "unstar": "Retirer des favoris",
+    "move_to": "Déplacer vers...",
+    "archive": "Archiver",
+    "delete": "Supprimer",
+    "color_tag": "Étiquette de couleur",
+    "remove_color": "Supprimer la couleur",
+    "items_selected": "{{count}} emails sélectionnés"
+  },
+  "shortcuts": {
+    "title": "Raccourcis clavier",
+    "tip": "Appuyez sur ? à tout moment pour afficher cette aide",
+    "sections": {
+      "navigation": "Navigation",
+      "actions": "Actions email",
+      "global": "Global",
+      "threads": "Conversations"
+    },
+    "navigation": {
+      "next_email": "Email suivant",
+      "previous_email": "Email précédent",
+      "open_email": "Ouvrir l'email",
+      "close_email": "Fermer / Désélectionner"
+    },
+    "actions": {
+      "reply": "Répondre",
+      "reply_all": "Répondre à tous",
+      "forward": "Transférer",
+      "star": "Basculer favori",
+      "archive": "Archiver",
+      "delete": "Supprimer",
+      "mark_unread": "Marquer comme non lu",
+      "mark_read": "Marquer comme lu"
+    },
+    "global": {
+      "compose": "Composer un email",
+      "search": "Rechercher",
+      "help": "Afficher les raccourcis",
+      "refresh": "Actualiser les emails",
+      "select_all": "Tout sélectionner"
+    },
+    "threads": {
+      "expand_collapse": "Développer/réduire la conversation"
+    }
+  },
+  "threads": {
+    "messages_one": "{count} message",
+    "messages_other": "{count} messages",
+    "expand": "Développer la conversation",
+    "collapse": "Réduire la conversation",
+    "loading": "Chargement de la conversation...",
+    "mark_read": "Marquer la conversation comme lue",
+    "mark_unread": "Marquer la conversation comme non lue",
+    "archive": "Archiver la conversation",
+    "delete": "Supprimer la conversation",
+    "star": "Marquer la conversation comme favorite",
+    "unstar": "Retirer des favoris"
+  }
+}

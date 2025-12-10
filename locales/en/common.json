@@ -1,0 +1,494 @@
+{
+  "login": {
+    "title": "Webmail",
+    "username_label": "Email",
+    "username_placeholder": "user@example.com",
+    "password_label": "Password",
+    "password_placeholder": "Enter your password",
+    "sign_in": "Sign in",
+    "signing_in": "Signing in...",
+    "error": {
+      "invalid_credentials": "Invalid email or password",
+      "connection_failed": "Failed to connect to the server",
+      "generic": "An error occurred. Please try again."
+    }
+  },
+  "sidebar": {
+    "compose": "Compose",
+    "search_placeholder": "Search mail...",
+    "storage": "Storage",
+    "sign_out": "Sign out",
+    "settings": "Settings",
+    "loading_mailboxes": "Loading mailboxes...",
+    "push_connected": "Real-time updates active",
+    "push_disconnected": "Real-time updates inactive",
+    "theme": {
+      "light": "Light mode",
+      "dark": "Dark mode",
+      "system": "System theme"
+    },
+    "mailboxes": {
+      "inbox": "Inbox",
+      "sent": "Sent",
+      "drafts": "Drafts",
+      "trash": "Trash",
+      "archive": "Archive",
+      "starred": "Starred",
+      "all_mail": "All Mail",
+      "spam": "Spam",
+      "important": "Important"
+    },
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "email_list": {
+    "no_emails": "No emails",
+    "no_emails_description": "Start by composing a new email",
+    "loading": "Loading emails...",
+    "unread": "unread",
+    "to_me": "To me",
+    "to_recipients": "To {{count}} recipients",
+    "and_others": "and {{count}} others",
+    "draft": "Draft",
+    "starred": "Starred"
+  },
+  "email_viewer": {
+    "no_email_selected": "No email selected",
+    "no_email_description": "Select an email from the list to view it here",
+    "no_subject": "(No Subject)",
+    "reply": "Reply",
+    "reply_all": "Reply All",
+    "forward": "Forward",
+    "delete": "Delete",
+    "archive": "Archive",
+    "star": "Star",
+    "unstar": "Unstar",
+    "mark_unread": "Mark as unread",
+    "mark_read": "Mark as read",
+    "print": "Print",
+    "view_source": "View source",
+    "email_source": "Email Source",
+    "copy_source": "Copy to clipboard",
+    "source_copied": "Source copied to clipboard",
+    "attachments": "Attachments",
+    "download": "Download",
+    "from": "From",
+    "to": "To",
+    "cc": "CC",
+    "bcc": "BCC",
+    "date": "Date",
+    "subject": "Subject",
+    "show_details": "Show details",
+    "hide_details": "Hide details",
+    "external_content_warning": "Images and external content have been blocked",
+    "load_external_content": "Load images",
+    "message_details": "Message Details",
+    "authentication": {
+      "title": "Authentication",
+      "status": {
+        "verified": "Verified",
+        "warning": "Warning",
+        "none": "Not authenticated"
+      },
+      "spf": {
+        "pass": "SPF Pass",
+        "fail": "SPF Fail",
+        "none": "No SPF"
+      },
+      "dkim": {
+        "pass": "DKIM Valid",
+        "fail": "DKIM Invalid",
+        "none": "No DKIM"
+      },
+      "dmarc": {
+        "pass": "DMARC Pass",
+        "fail": "DMARC Fail",
+        "none": "No DMARC"
+      },
+      "spam_score": "Spam Score"
+    },
+    "headers": {
+      "routing": "Routing",
+      "received": "Received",
+      "message_id": "Message ID",
+      "list_info": "List Information"
+    },
+    "color_tag": {
+      "title": "Color Tag",
+      "red": "Red",
+      "orange": "Orange",
+      "yellow": "Yellow",
+      "green": "Green",
+      "blue": "Blue",
+      "purple": "Purple",
+      "none": "None"
+    }
+  },
+  "email_composer": {
+    "new_message": "New Message",
+    "reply": "Reply",
+    "reply_all": "Reply All",
+    "forward": "Forward",
+    "reply_to": "Reply",
+    "reply_all_to": "Reply All",
+    "forward_message": "Forward",
+    "to": "To",
+    "cc": "CC",
+    "bcc": "BCC",
+    "subject": "Subject",
+    "body_placeholder": "Write your message...",
+    "send": "Send",
+    "cancel": "Cancel",
+    "attach": "Attach files",
+    "discard_draft_confirm": "You have unsaved changes. Do you want to discard this draft?",
+    "quote": {
+      "reply_header": "On {{date}}, {{sender}} wrote:",
+      "forward_header": "---------- Forwarded message ----------",
+      "from": "From: {{sender}}",
+      "date": "Date: {{date}}",
+      "subject": "Subject: {{subject}}",
+      "to": "To: {{recipients}}"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "search": "Search",
+    "refresh": "Refresh",
+    "settings": "Settings",
+    "help": "Help",
+    "logout": "Logout",
+    "yes": "Yes",
+    "no": "No",
+    "unknown": "Unknown"
+  },
+  "notifications": {
+    "email_sent": "Email sent successfully",
+    "email_deleted": "Email deleted",
+    "email_archived": "Email archived",
+    "email_starred": "Email starred",
+    "email_unstarred": "Email unstarred",
+    "email_marked_read": "Email marked as read",
+    "email_marked_unread": "Email marked as unread",
+    "copied_to_clipboard": "Copied to clipboard",
+    "source_copied": "Source copied to clipboard",
+    "error_sending": "Failed to send email",
+    "error_deleting": "Failed to delete email",
+    "error_loading": "Failed to load emails",
+    "new_email": "New email",
+    "new_email_from": "From {sender}",
+    "click_to_view": "Click to view"
+  },
+  "date": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "this_week": "This week",
+    "last_week": "Last week",
+    "this_month": "This month",
+    "older": "Older",
+    "just_now": "Just now",
+    "minutes_ago": "{{count}} minute ago",
+    "minutes_ago_plural": "{{count}} minutes ago",
+    "hours_ago": "{{count}} hour ago",
+    "hours_ago_plural": "{{count}} hours ago",
+    "days_ago": "{{count}} day ago",
+    "days_ago_plural": "{{count}} days ago"
+  },
+  "language": {
+    "title": "Language",
+    "english": "English",
+    "french": "Français"
+  },
+  "settings": {
+    "title": "Settings",
+    "back_to_mail": "Back to Mail",
+    "save_success": "Settings saved successfully",
+    "import_success": "Settings imported successfully",
+    "import_error": "Failed to import settings",
+    "reset_confirm": "Are you sure you want to reset all settings to defaults?",
+    "tabs": {
+      "appearance": "Appearance",
+      "language": "Language & Region",
+      "email": "Email Behavior",
+      "composer": "Composer",
+      "privacy": "Privacy & Security",
+      "account": "Account",
+      "advanced": "Advanced"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the look and feel of your webmail",
+      "theme": {
+        "label": "Theme",
+        "description": "Choose your preferred color scheme",
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      },
+      "font_size": {
+        "label": "Font Size",
+        "description": "Adjust text size for better readability",
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large"
+      },
+      "list_density": {
+        "label": "List Density",
+        "description": "Control spacing in email lists",
+        "compact": "Compact",
+        "regular": "Regular",
+        "comfortable": "Comfortable"
+      },
+      "animations": {
+        "label": "Enable Animations",
+        "description": "Show smooth transitions and effects"
+      }
+    },
+    "language_region": {
+      "title": "Language & Region",
+      "description": "Configure language and regional preferences",
+      "language": {
+        "label": "Language",
+        "description": "Choose your preferred language",
+        "english": "English",
+        "french": "Français"
+      },
+      "date_format": {
+        "label": "Date Format",
+        "description": "How dates should be displayed",
+        "regional": "Regional",
+        "iso": "ISO 8601",
+        "custom": "Custom"
+      },
+      "time_format": {
+        "label": "Time Format",
+        "description": "Choose between 12-hour or 24-hour clock",
+        "12h": "12-hour",
+        "24h": "24-hour"
+      },
+      "first_day": {
+        "label": "First Day of Week",
+        "description": "Start week on Sunday or Monday",
+        "sunday": "Sunday",
+        "monday": "Monday"
+      }
+    },
+    "email_behavior": {
+      "title": "Email Behavior",
+      "description": "Configure how emails are handled",
+      "mark_read": {
+        "label": "Mark as Read",
+        "description": "When to mark emails as read when opened",
+        "instant": "Instantly",
+        "delay_3s": "After 3 seconds",
+        "delay_5s": "After 5 seconds",
+        "never": "Never"
+      },
+      "delete_action": {
+        "label": "Delete Action",
+        "description": "What happens when you delete an email",
+        "trash": "Move to Trash",
+        "permanent": "Delete Permanently"
+      },
+      "show_preview": {
+        "label": "Show Preview Text",
+        "description": "Display email preview in the list"
+      },
+      "emails_per_page": {
+        "label": "Emails Per Page",
+        "description": "Number of emails to load at once",
+        "25": "25 emails",
+        "50": "50 emails",
+        "100": "100 emails"
+      },
+      "external_content": {
+        "label": "External Content",
+        "description": "How to handle images and external content",
+        "ask": "Always ask",
+        "block": "Always block",
+        "allow": "Always allow"
+      }
+    },
+    "composer": {
+      "title": "Composer",
+      "description": "Configure email composition settings",
+      "autosave": {
+        "label": "Auto-save Interval",
+        "description": "How often to save drafts automatically",
+        "30s": "Every 30 seconds",
+        "1m": "Every minute",
+        "2m": "Every 2 minutes",
+        "5m": "Every 5 minutes"
+      },
+      "send_confirmation": {
+        "label": "Send Confirmation",
+        "description": "Ask for confirmation before sending emails"
+      },
+      "default_reply": {
+        "label": "Default Reply Mode",
+        "description": "Default action when clicking reply",
+        "reply": "Reply",
+        "reply_all": "Reply All"
+      }
+    },
+    "privacy": {
+      "title": "Privacy & Security",
+      "description": "Manage your privacy and security settings",
+      "external_images": {
+        "label": "Block External Images",
+        "description": "Prevent tracking through external images"
+      },
+      "session_timeout": {
+        "label": "Session Timeout",
+        "description": "Automatically log out after inactivity",
+        "never": "Never",
+        "30m": "30 minutes",
+        "1h": "1 hour",
+        "4h": "4 hours"
+      },
+      "clear_cache": {
+        "label": "Clear Cache",
+        "description": "Remove cached data and temporary files",
+        "button": "Clear Cache",
+        "confirm": "Are you sure you want to clear the cache?",
+        "success": "Cache cleared successfully"
+      }
+    },
+    "account": {
+      "title": "Account",
+      "description": "View your account information",
+      "email": {
+        "label": "Email Address",
+        "value": "{{email}}"
+      },
+      "server": {
+        "label": "JMAP Server",
+        "value": "{{server}}"
+      },
+      "storage": {
+        "label": "Storage Usage",
+        "used": "{{used}} of {{total}} used",
+        "percentage": "{{percent}}% used"
+      },
+      "last_sync": {
+        "label": "Last Sync",
+        "value": "{{time}}"
+      }
+    },
+    "advanced": {
+      "title": "Advanced",
+      "description": "Advanced options and developer settings",
+      "debug_mode": {
+        "label": "Debug Mode",
+        "description": "Enable detailed logging for troubleshooting"
+      },
+      "keyboard_shortcuts": {
+        "label": "Keyboard Shortcuts",
+        "description": "View available keyboard shortcuts",
+        "button": "View Shortcuts"
+      },
+      "reset_settings": {
+        "label": "Reset Settings",
+        "description": "Restore all settings to default values",
+        "button": "Reset to Defaults"
+      },
+      "export_settings": {
+        "label": "Export Settings",
+        "description": "Download your settings as JSON",
+        "button": "Export"
+      },
+      "import_settings": {
+        "label": "Import Settings",
+        "description": "Upload settings from JSON file",
+        "button": "Import"
+      }
+    }
+  },
+  "errors": {
+    "page_error_title": "Something went wrong",
+    "page_error_description": "We encountered an unexpected error. Please try again or return to the home page.",
+    "sidebar_error": "Unable to load mailboxes",
+    "email_list_error": "Unable to load emails",
+    "viewer_error_title": "Unable to display email",
+    "viewer_error_description": "There was a problem rendering this email. It may contain unsupported content.",
+    "composer_error": "Unable to load composer",
+    "settings_error_title": "Settings unavailable",
+    "settings_error_description": "Unable to load settings. Your preferences may not be saved.",
+    "try_again": "Try again",
+    "reload": "Reload",
+    "reload_emails": "Reload emails",
+    "reload_settings": "Reload settings",
+    "retry": "Retry",
+    "go_home": "Go to inbox"
+  },
+  "context_menu": {
+    "reply": "Reply",
+    "reply_all": "Reply All",
+    "forward": "Forward",
+    "mark_read": "Mark as Read",
+    "mark_unread": "Mark as Unread",
+    "star": "Star",
+    "unstar": "Unstar",
+    "move_to": "Move to...",
+    "archive": "Archive",
+    "delete": "Delete",
+    "color_tag": "Color Tag",
+    "remove_color": "Remove Color",
+    "items_selected": "{{count}} emails selected"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "tip": "Press ? anytime to show this help",
+    "sections": {
+      "navigation": "Navigation",
+      "actions": "Email Actions",
+      "global": "Global",
+      "threads": "Threads"
+    },
+    "navigation": {
+      "next_email": "Next email",
+      "previous_email": "Previous email",
+      "open_email": "Open email",
+      "close_email": "Close / Deselect"
+    },
+    "actions": {
+      "reply": "Reply",
+      "reply_all": "Reply all",
+      "forward": "Forward",
+      "star": "Toggle star",
+      "archive": "Archive",
+      "delete": "Delete",
+      "mark_unread": "Mark as unread",
+      "mark_read": "Mark as read"
+    },
+    "global": {
+      "compose": "Compose new email",
+      "search": "Focus search",
+      "help": "Show shortcuts",
+      "refresh": "Refresh emails",
+      "select_all": "Select all"
+    },
+    "threads": {
+      "expand_collapse": "Expand/collapse thread"
+    }
+  },
+  "threads": {
+    "messages_one": "{count} message",
+    "messages_other": "{count} messages",
+    "expand": "Expand conversation",
+    "collapse": "Collapse conversation",
+    "loading": "Loading conversation...",
+    "mark_read": "Mark conversation as read",
+    "mark_unread": "Mark conversation as unread",
+    "archive": "Archive conversation",
+    "delete": "Delete conversation",
+    "star": "Star conversation",
+    "unstar": "Unstar conversation"
+  }
+}
