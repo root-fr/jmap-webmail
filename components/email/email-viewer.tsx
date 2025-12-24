@@ -1195,7 +1195,7 @@ export function EmailViewer({
           )}
 
           {/* Email Body */}
-          <div className="bg-background rounded-lg shadow-sm border border-border overflow-hidden">
+          <div className="bg-background rounded-lg shadow-sm border border-border overflow-x-auto">
             <div className="email-content-wrapper p-6">
               {emailContent.isHtml ? (
                 <div
