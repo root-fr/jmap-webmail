@@ -38,7 +38,7 @@ export function MobileHeader({
     <header
       className={cn(
         "flex items-center justify-between px-4 h-14 border-b border-border bg-background shrink-0",
-        "md:hidden", // Only visible on mobile
+        "lg:hidden", // Only visible on mobile/tablet
         className
       )}
     >
@@ -115,7 +115,7 @@ export function MobileViewerHeader({
     <header
       className={cn(
         "flex items-center justify-between px-2 h-14 border-b border-border bg-background shrink-0",
-        "md:hidden",
+        "lg:hidden", // Only visible on mobile/tablet
         className
       )}
     >

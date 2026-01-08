@@ -21,6 +21,7 @@
     "remove_from_history": "Remove from history"
   },
   "sidebar": {
+    "close": "Close",
     "compose": "Compose",
     "search_placeholder": "Search mail...",
     "storage": "Storage",
@@ -34,6 +35,9 @@
       "dark": "Dark mode",
       "system": "System theme"
     },
+    "language": {
+      "title": "Language"
+    },
     "mailboxes": {
       "inbox": "Inbox",
       "sent": "Sent",
@@ -46,7 +50,9 @@
       "important": "Important"
     },
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "expand_tooltip": "Expand",
+    "collapse_tooltip": "Collapse"
   },
   "email_list": {
     "no_emails": "No emails",
@@ -62,7 +68,11 @@
   "email_viewer": {
     "no_email_selected": "No email selected",
     "no_email_description": "Select an email from the list to view it here",
+    "no_conversation_selected": "No conversation selected",
+    "no_conversation_description": "Choose a conversation from the list to read it here",
     "no_subject": "(No Subject)",
+    "loading_email": "Loading email...",
+    "loading": "Loading...",
     "reply": "Reply",
     "reply_all": "Reply All",
     "forward": "Forward",
@@ -78,6 +88,7 @@
     "copy_source": "Copy to clipboard",
     "source_copied": "Source copied to clipboard",
     "attachments": "Attachments",
+    "important": "Important",
     "download": "Download",
     "from": "From",
     "to": "To",
@@ -90,7 +101,34 @@
     "external_content_warning": "Images and external content have been blocked",
     "load_external_content": "Load images",
     "trust_sender": "Always trust this sender",
+    "back_to_list": "Back to list",
     "message_details": "Message Details",
+    "more_reply_options": "More reply options",
+    "set_color": "Set color",
+    "more_actions": "More actions",
+    "remove_color": "Remove color",
+    "more_count": "+{count} more",
+    "characters_count": "{count} characters",
+    "quick_reply_placeholder": "Write a quick reply...",
+    "more_options": "More options",
+    "sending": "Sending...",
+    "security_authentication": "Security & Authentication",
+    "technical_details": "Technical Details",
+    "message_id_label": "Message-ID:",
+    "reply_to_label": "Reply-To:",
+    "delivery_time_label": "Delivery time:",
+    "conversation_part_label": "Part of conversation:",
+    "previous_messages": "{count} previous message",
+    "previous_messages_plural": "{count} previous messages",
+    "time": {
+      "day": "day",
+      "days": "days",
+      "hour": "hour",
+      "hours": "hours",
+      "minute": "minute",
+      "minutes": "minutes"
+    },
+    "unknown_sender": "Unknown",
     "authentication": {
       "title": "Authentication",
       "status": {
@@ -151,6 +189,17 @@
     "attach": "Attach",
     "discard": "Discard",
     "discard_draft_confirm": "You have unsaved changes. Do you want to discard this draft?",
+    "saving": "Saving...",
+    "draft_saved": "Draft saved",
+    "save_failed": "Failed to save",
+    "to_placeholder": "Recipient email addresses (comma separated)",
+    "cc_placeholder": "Cc recipients (comma separated)",
+    "bcc_placeholder": "Bcc recipients (comma separated)",
+    "subject_placeholder": "Subject",
+    "cc_label": "Cc:",
+    "bcc_label": "Bcc:",
+    "subject_label": "Subject:",
+    "file_size_kb": "KB",
     "quote": {
       "reply_header": "On {{date}}, {{sender}} wrote:",
       "forward_header": "---------- Forwarded message ----------",
@@ -176,7 +225,8 @@
     "logout": "Logout",
     "yes": "Yes",
     "no": "No",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "app_title": "Webmail"
   },
   "notifications": {
     "email_sent": "Email sent successfully",
@@ -213,7 +263,11 @@
   "language": {
     "title": "Language",
     "english": "English",
-    "french": "Français"
+    "french": "Français",
+    "select_language": "Select language",
+    "switch_to_english": "Switch to English",
+    "switch_to_french": "Switch to French",
+    "switching": "Changing language..."
   },
   "settings": {
     "title": "Settings",
@@ -240,6 +294,10 @@
         "light": "Light",
         "dark": "Dark",
         "system": "System"
+      },
+      "language": {
+        "label": "Language",
+        "description": "Choose your preferred language"
       },
       "font_size": {
         "label": "Font Size",

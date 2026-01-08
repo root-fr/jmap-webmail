@@ -9,6 +9,9 @@ interface UIState {
   activeView: ActiveView;
   sidebarOpen: boolean;
 
+  // Tablet list visibility (auto-hide when email selected)
+  tabletListVisible: boolean;
+
   // Device detection (hydrated client-side)
   isMobile: boolean;
   isTablet: boolean;
@@ -18,6 +21,7 @@ interface UIState {
   setActiveView: (view: ActiveView) => void;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
+  setTabletListVisible: (visible: boolean) => void;
   setDeviceType: (isMobile: boolean, isTablet: boolean, isDesktop: boolean) => void;
 
   // Navigation helpers
@@ -30,6 +34,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   // Initial state (SSR-safe defaults)
   activeView: "list",
   sidebarOpen: false,
+  tabletListVisible: true,
   isMobile: false,
   isTablet: false,
   isDesktop: true,
@@ -40,6 +45,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
 
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+
+  setTabletListVisible: (visible) => set({ tabletListVisible: visible }),
 
   setDeviceType: (isMobile, isTablet, isDesktop) =>
     set({ isMobile, isTablet, isDesktop }),

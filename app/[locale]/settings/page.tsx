@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ type Tab = 'appearance' | 'email' | 'account' | 'advanced';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const params = useParams();
   const t = useTranslations('settings');
   const [activeTab, setActiveTab] = useState<Tab>('appearance');
 
@@ -35,7 +34,7 @@ export default function SettingsPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push(`/${params.locale}`)}
+            onClick={() => router.push('/')}
             className="w-full justify-start"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />

@@ -1,12 +1,7 @@
-import createMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from './i18n/request';
+import createIntlMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 
-export default createMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'always', // Always show locale in URL for consistency
-  localeDetection: true // Enable browser language detection
-});
+export default createIntlMiddleware(routing);
 
 export const config = {
   // Skip all paths that should not be internationalized

@@ -21,6 +21,7 @@
     "remove_from_history": "Supprimer de l'historique"
   },
   "sidebar": {
+    "close": "Fermer",
     "compose": "Composer",
     "search_placeholder": "Rechercher un email...",
     "storage": "Stockage",
@@ -34,6 +35,9 @@
       "dark": "Mode sombre",
       "system": "Thème système"
     },
+    "language": {
+      "title": "Langue"
+    },
     "mailboxes": {
       "inbox": "Boîte de réception",
       "sent": "Envoyés",
@@ -46,7 +50,9 @@
       "important": "Important"
     },
     "expand": "Développer",
-    "collapse": "Réduire"
+    "collapse": "Réduire",
+    "expand_tooltip": "Développer",
+    "collapse_tooltip": "Réduire"
   },
   "email_list": {
     "no_emails": "Aucun email",
@@ -62,7 +68,11 @@
   "email_viewer": {
     "no_email_selected": "Aucun email sélectionné",
     "no_email_description": "Sélectionnez un email dans la liste pour le voir ici",
+    "no_conversation_selected": "Aucune conversation sélectionnée",
+    "no_conversation_description": "Choisissez une conversation dans la liste pour la lire ici",
     "no_subject": "(Sans objet)",
+    "loading_email": "Chargement de l'email...",
+    "loading": "Chargement...",
     "reply": "Répondre",
     "reply_all": "Répondre à tous",
     "forward": "Transférer",
@@ -78,6 +88,7 @@
     "copy_source": "Copier dans le presse-papiers",
     "source_copied": "Source copiée dans le presse-papiers",
     "attachments": "Pièces jointes",
+    "important": "Important",
     "download": "Télécharger",
     "from": "De",
     "to": "À",
@@ -90,7 +101,34 @@
     "external_content_warning": "Les images et le contenu externe ont été bloqués",
     "load_external_content": "Charger les images",
     "trust_sender": "Toujours faire confiance à cet expéditeur",
+    "back_to_list": "Retour à la liste",
     "message_details": "Détails du message",
+    "more_reply_options": "Plus d'options de réponse",
+    "set_color": "Définir la couleur",
+    "more_actions": "Plus d'actions",
+    "remove_color": "Retirer la couleur",
+    "more_count": "+{count} de plus",
+    "characters_count": "{count} caractères",
+    "quick_reply_placeholder": "Écrivez une réponse rapide...",
+    "more_options": "Plus d'options",
+    "sending": "Envoi en cours...",
+    "security_authentication": "Sécurité et authentification",
+    "technical_details": "Détails techniques",
+    "message_id_label": "ID du message :",
+    "reply_to_label": "Répondre à :",
+    "delivery_time_label": "Temps de livraison :",
+    "conversation_part_label": "Partie de la conversation :",
+    "previous_messages": "{count} message précédent",
+    "previous_messages_plural": "{count} messages précédents",
+    "time": {
+      "day": "jour",
+      "days": "jours",
+      "hour": "heure",
+      "hours": "heures",
+      "minute": "minute",
+      "minutes": "minutes"
+    },
+    "unknown_sender": "Inconnu",
     "authentication": {
       "title": "Authentification",
       "status": {
@@ -151,6 +189,17 @@
     "attach": "Joindre",
     "discard": "Supprimer",
     "discard_draft_confirm": "Vous avez des modifications non enregistrées. Voulez-vous supprimer ce brouillon ?",
+    "saving": "Enregistrement...",
+    "draft_saved": "Brouillon enregistré",
+    "save_failed": "Échec de l'enregistrement",
+    "to_placeholder": "Adresses email des destinataires (séparées par des virgules)",
+    "cc_placeholder": "Destinataires en copie (séparés par des virgules)",
+    "bcc_placeholder": "Destinataires en copie cachée (séparés par des virgules)",
+    "subject_placeholder": "Objet",
+    "cc_label": "Cc :",
+    "bcc_label": "Cci :",
+    "subject_label": "Objet :",
+    "file_size_kb": "Ko",
     "quote": {
       "reply_header": "Le {{date}}, {{sender}} a écrit :",
       "forward_header": "---------- Message transféré ----------",
@@ -176,7 +225,8 @@
     "logout": "Déconnexion",
     "yes": "Oui",
     "no": "Non",
-    "unknown": "Inconnu"
+    "unknown": "Inconnu",
+    "app_title": "Webmail"
   },
   "notifications": {
     "email_sent": "Email envoyé avec succès",
@@ -213,7 +263,11 @@
   "language": {
     "title": "Langue",
     "english": "English",
-    "french": "Français"
+    "french": "Français",
+    "select_language": "Sélectionner la langue",
+    "switch_to_english": "Passer à l'anglais",
+    "switch_to_french": "Passer au français",
+    "switching": "Changement de langue..."
   },
   "settings": {
     "title": "Paramètres",
@@ -240,6 +294,10 @@
         "light": "Clair",
         "dark": "Sombre",
         "system": "Système"
+      },
+      "language": {
+        "label": "Langue",
+        "description": "Choisissez votre langue préférée"
       },
       "font_size": {
         "label": "Taille de police",

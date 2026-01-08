@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useMemo } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Sidebar } from "@/components/layout/sidebar";
 import { EmailList } from "@/components/email/email-list";
@@ -30,8 +30,8 @@ import { DragDropProvider } from "@/contexts/drag-drop-context";
 
 export default function Home() {
   const router = useRouter();
-  const params = useParams();
   const t = useTranslations();
+  const tCommon = useTranslations('common');
   const [showComposer, setShowComposer] = useState(false);
   const [composerMode, setComposerMode] = useState<'compose' | 'reply' | 'replyAll' | 'forward'>('compose');
   const [initialCheckDone, setInitialCheckDone] = useState(false);
@@ -43,9 +43,9 @@ export default function Home() {
   const markAsReadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { isAuthenticated, client, logout, checkAuth, isLoading: authLoading } = useAuthStore();
 
-  // Mobile responsive hooks
-  const { isMobile } = useDeviceDetection();
-  const { activeView, sidebarOpen, setSidebarOpen, setActiveView } = useUIStore();
+  // Mobile/tablet responsive hooks
+  const { isMobile, isTablet } = useDeviceDetection();
+  const { activeView, sidebarOpen, setSidebarOpen, setActiveView, tabletListVisible, setTabletListVisible } = useUIStore();
   const {
     emails,
     mailboxes,
@@ -125,6 +125,9 @@ export default function Home() {
       if (isMobile) {
         setActiveView("list");
       }
+      if (isTablet) {
+        setTabletListVisible(true);
+      }
     },
     onReply: () => {
       if (selectedEmail) handleReply();
@@ -180,7 +183,7 @@ export default function Home() {
       clearSelection();
     },
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [emails, selectedEmail, client, selectedMailbox, isMobile]);
+  }), [emails, selectedEmail, client, selectedMailbox, isMobile, isTablet]);
 
   // Initialize keyboard shortcuts
   useKeyboardShortcuts({
@@ -192,7 +195,7 @@ export default function Home() {
 
   // Update page title based on context
   useEffect(() => {
-    let title = "Webmail";
+    let title = tCommon('app_title');
 
     if (showComposer) {
       // Composing email
@@ -202,11 +205,11 @@ export default function Home() {
         replyAll: t('email_composer.reply_all'),
         forward: t('email_composer.forward'),
       }[composerMode] || t('email_composer.new_message');
-      title = `${modeText} - Webmail`;
+      title = `${modeText} - ${tCommon('app_title')}`;
     } else if (selectedEmail) {
       // Reading email
       const subject = selectedEmail.subject || t('email_viewer.no_subject');
-      title = `${subject} - Webmail`;
+      title = `${subject} - ${tCommon('app_title')}`;
     } else if (selectedMailbox && mailboxes.length > 0) {
       // Mailbox view
       const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
@@ -214,13 +217,13 @@ export default function Home() {
         const mailboxName = mailbox.name;
         const unreadCount = mailbox.unreadEmails || 0;
         title = unreadCount > 0
-          ? `${mailboxName} (${unreadCount}) - Webmail`
-          : `${mailboxName} - Webmail`;
+          ? `${mailboxName} (${unreadCount}) - ${tCommon('app_title')}`
+          : `${mailboxName} - ${tCommon('app_title')}`;
       }
     }
 
     document.title = title;
-  }, [showComposer, composerMode, selectedEmail, selectedMailbox, mailboxes, t]);
+  }, [showComposer, composerMode, selectedEmail, selectedMailbox, mailboxes, t, tCommon]);
 
   // Check auth on mount
   useEffect(() => {
@@ -232,9 +235,9 @@ export default function Home() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (initialCheckDone && !isAuthenticated && !authLoading) {
-      router.push(`/${params.locale}/login`);
+      router.push('/login');
     }
-  }, [initialCheckDone, isAuthenticated, authLoading, router, params.locale]);
+  }, [initialCheckDone, isAuthenticated, authLoading, router]);
 
   // Load mailboxes and emails when authenticated (only if not already loaded)
   useEffect(() => {
@@ -345,6 +348,18 @@ export default function Home() {
       clearNewEmailNotification();
     }
   }, [newEmailNotification, clearNewEmailNotification]);
+
+  // Lock body scroll when sidebar is open on mobile/tablet
+  useEffect(() => {
+    if ((isMobile || isTablet) && sidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobile, isTablet, sidebarOpen]);
 
   const handleEmailSend = async (data: {
     to: string[];
@@ -472,6 +487,11 @@ export default function Home() {
       setActiveView("list");
     }
 
+    // On tablet, show the list again
+    if (isTablet) {
+      setTabletListVisible(true);
+    }
+
     if (client) {
       // If there's an active search, re-run it in the new mailbox
       if (searchQuery) {
@@ -484,7 +504,7 @@ export default function Home() {
 
   const handleLogout = () => {
     logout();
-    router.push(`/${params.locale}/login`);
+    router.push('/login');
   };
 
   const handleSearch = async (query: string) => {
@@ -554,6 +574,11 @@ export default function Home() {
     // On mobile, switch to viewer
     if (isMobile) {
       setActiveView("viewer");
+    }
+
+    // On tablet, hide the list to maximize viewer space
+    if (isTablet) {
+      setTabletListVisible(false);
     }
 
     // Fetch the full content
@@ -629,24 +654,24 @@ export default function Home() {
   return (
     <DragDropProvider>
       <div className="flex h-screen bg-background overflow-hidden">
-        {/* Mobile Sidebar Overlay Backdrop */}
-        {isMobile && sidebarOpen && (
+        {/* Mobile/Tablet Sidebar Overlay Backdrop */}
+        {(isMobile || isTablet) && sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
-        {/* Sidebar - overlay on mobile, fixed on desktop */}
+        {/* Sidebar - overlay on mobile/tablet, fixed on desktop */}
         <div
           className={cn(
             "flex-shrink-0 h-full z-50",
-            // Mobile: fixed overlay
-            "max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:w-72",
-            "max-md:transform max-md:transition-transform max-md:duration-300 max-md:ease-in-out",
-            isMobile && !sidebarOpen && "max-md:-translate-x-full",
+            // Mobile/Tablet: fixed overlay
+            "max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:w-72",
+            "max-lg:transform max-lg:transition-transform max-lg:duration-300 max-lg:ease-in-out",
+            !sidebarOpen && "max-lg:-translate-x-full",
             // Desktop: normal flow
-            "md:relative md:translate-x-0"
+            "lg:relative lg:translate-x-0"
           )}
         >
           <ErrorBoundary fallback={SidebarErrorFallback}>
@@ -660,6 +685,7 @@ export default function Home() {
                 if (isMobile) setSidebarOpen(false);
               }}
               onLogout={handleLogout}
+              onSidebarClose={() => setSidebarOpen(false)}
               onSearch={handleSearch}
               onClearSearch={handleClearSearch}
               activeSearchQuery={searchQuery}
@@ -671,15 +697,18 @@ export default function Home() {
 
         {/* Main Content Area */}
         <div className="flex flex-1 min-w-0 h-full">
-          {/* Email List - full width on mobile, fixed width on desktop */}
+          {/* Email List - full width on mobile, fixed width on tablet/desktop */}
           <div
             className={cn(
               "flex flex-col h-full bg-background border-r border-border",
               // Mobile: full width, hidden when viewing email
               "max-md:flex-1 max-md:border-r-0",
               isMobile && activeView !== "list" && "max-md:hidden",
-              // Desktop: fixed width
-              "md:w-80 lg:w-96 md:flex-shrink-0 md:shadow-sm"
+              // Tablet/Desktop: fixed width with collapse animation
+              "md:w-80 lg:w-96 md:flex-shrink-0 md:shadow-sm",
+              "transition-all duration-200 ease-out",
+              // Tablet: collapse when email selected
+              isTablet && !tabletListVisible && "md:w-0 md:opacity-0 md:overflow-hidden md:border-r-0"
             )}
           >
             {/* Mobile Header for List View */}
@@ -742,14 +771,14 @@ export default function Home() {
             </ErrorBoundary>
           </div>
 
-          {/* Email Viewer - full screen on mobile, flex on desktop */}
+          {/* Email Viewer - full screen on mobile, flex on tablet/desktop */}
           <div
             className={cn(
               "flex flex-col h-full bg-background",
               // Mobile: full screen overlay when active
               "max-md:fixed max-md:inset-0 max-md:z-30",
               isMobile && activeView !== "viewer" && "max-md:hidden",
-              // Desktop: flex grow
+              // Tablet/Desktop: flex grow
               "md:flex-1 md:relative"
             )}
           >
@@ -798,6 +827,10 @@ export default function Home() {
                     }}
                     onDownloadAttachment={handleDownloadAttachment}
                     onQuickReply={handleQuickReply}
+                    onBack={() => {
+                      setTabletListVisible(true);
+                      selectEmail(null);
+                    }}
                     currentUserEmail={client?.["username"]}
                     currentUserName={client?.["username"]?.split("@")[0]}
                     className={isMobile ? "flex-1" : undefined}
@@ -810,10 +843,10 @@ export default function Home() {
 
         {/* Email Composer Modal */}
         {showComposer && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 md:p-0">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 lg:p-0">
             <div className={cn(
-              "w-full h-full md:h-[600px] md:max-w-3xl",
-              "max-md:flex max-md:flex-col"
+              "w-full h-full lg:h-[600px] lg:max-w-3xl",
+              "max-lg:flex max-lg:flex-col"
             )}>
               <ErrorBoundary
                 fallback={ComposerErrorFallback}

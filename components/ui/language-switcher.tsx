@@ -1,44 +1,50 @@
 "use client";
 
-import { useParams, usePathname, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import { locales } from '@/i18n/request';
+import { useLocaleStore } from '@/stores/locale-store';
 
 export function LanguageSwitcher({ className }: { className?: string }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
+  const currentLocale = useLocale();
   const t = useTranslations('language');
-  const currentLocale = params.locale as string;
+  const setLocale = useLocaleStore((state) => state.setLocale);
 
   const handleLanguageChange = (newLocale: string) => {
-    // Get the path without the locale prefix
-    const pathWithoutLocale = pathname.replace(`/${currentLocale}`, '');
+    if (newLocale === currentLocale) return;
 
-    // Navigate to the same page with the new locale
-    router.push(`/${newLocale}${pathWithoutLocale}`);
+    // Update locale in store (persisted to localStorage via Zustand)
+    // IntlProvider handles the translation switch
+    setLocale(newLocale);
   };
 
+  const languages = [
+    { value: 'en', label: 'English' },
+    { value: 'fr', label: 'Français' }
+  ];
+
   return (
-    <div className={cn("flex items-center gap-1 p-1 bg-muted rounded-lg", className)}>
-      {locales.map((locale) => (
+    <div
+      className={cn("flex gap-2", className)}
+      role="radiogroup"
+      aria-label={t('select_language')}
+    >
+      {languages.map((lang) => (
         <button
-          key={locale}
-          onClick={() => handleLanguageChange(locale)}
+          key={lang.value}
+          type="button"
+          role="radio"
+          aria-checked={currentLocale === lang.value}
+          aria-label={t(lang.value === 'en' ? 'switch_to_english' : 'switch_to_french')}
+          onClick={() => handleLanguageChange(lang.value)}
           className={cn(
-            "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded transition-all text-xs",
-            "text-foreground",
-            currentLocale === locale
-              ? "bg-background shadow-sm font-medium"
-              : "hover:bg-accent/50"
+            "px-3 py-1.5 text-xs rounded transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            currentLocale === lang.value
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted hover:bg-accent text-foreground"
           )}
-          title={t(locale === 'en' ? 'english' : 'french')}
         >
-          {locale === 'en' ? '🇬🇧' : '🇫🇷'}
-          <span className="hidden sm:inline">
-            {locale.toUpperCase()}
-          </span>
+          {lang.label}
         </button>
       ))}
     </div>

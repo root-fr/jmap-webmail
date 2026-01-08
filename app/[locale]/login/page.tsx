@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import { Mail, AlertCircle, Loader2, X } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
-  const params = useParams();
   const t = useTranslations("login");
   const { login, isLoading, error, clearError, isAuthenticated } = useAuthStore();
   const { appName, jmapServerUrl: serverUrl, isLoading: configLoading, error: configError } = useConfig();
@@ -53,9 +52,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push(`/${params.locale}`);
+      router.push('/');
     }
-  }, [isAuthenticated, router, params.locale]);
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     clearError();
@@ -229,7 +228,7 @@ export default function LoginPage() {
 
     if (success) {
       saveUsername(formData.username);
-      router.push(`/${params.locale}`);
+      router.push('/');
     }
   };
 

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useThemeStore } from '@/stores/theme-store';
 import { useSettingsStore } from '@/stores/settings-store';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
 import { SettingsSection, SettingItem, RadioGroup, ToggleSwitch } from './settings-section';
 
 export function AppearanceSettings() {
@@ -23,6 +24,11 @@ export function AppearanceSettings() {
             { value: 'system', label: t('theme.system') },
           ]}
         />
+      </SettingItem>
+
+      {/* Language */}
+      <SettingItem label={t('language.label')} description={t('language.description')}>
+        <LanguageSwitcher />
       </SettingItem>
 
       {/* Font Size */}

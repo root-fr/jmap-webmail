@@ -315,19 +315,19 @@ export function EmailComposer({
           {saveStatus === 'saving' && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Save className="w-3 h-3 animate-pulse" />
-              <span>Saving...</span>
+              <span>{t('saving')}</span>
             </div>
           )}
           {saveStatus === 'saved' && (
             <div className="flex items-center gap-1 text-xs text-green-600">
               <Check className="w-3 h-3" />
-              <span>Draft saved</span>
+              <span>{t('draft_saved')}</span>
             </div>
           )}
           {saveStatus === 'error' && (
             <div className="flex items-center gap-1 text-xs text-red-600">
               <X className="w-3 h-3" />
-              <span>Failed to save</span>
+              <span>{t('save_failed')}</span>
             </div>
           )}
         </div>
@@ -366,7 +366,7 @@ export function EmailComposer({
             <span className="text-sm text-muted-foreground w-16">{t('to')}:</span>
             <Input
               type="email"
-              placeholder="Recipient email addresses (comma separated)"
+              placeholder={t('to_placeholder')}
               value={to}
               onChange={(e) => setTo(e.target.value)}
               className="flex-1 border-0 focus-visible:ring-0"
@@ -393,10 +393,10 @@ export function EmailComposer({
 
           {showCc && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground w-16">Cc:</span>
+              <span className="text-sm text-muted-foreground w-16">{t('cc_label')}</span>
               <Input
                 type="email"
-                placeholder="Cc recipients (comma separated)"
+                placeholder={t('cc_placeholder')}
                 value={cc}
                 onChange={(e) => setCc(e.target.value)}
                 className="flex-1 border-0 focus-visible:ring-0"
@@ -406,10 +406,10 @@ export function EmailComposer({
 
           {showBcc && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground w-16">Bcc:</span>
+              <span className="text-sm text-muted-foreground w-16">{t('bcc_label')}</span>
               <Input
                 type="email"
-                placeholder="Bcc recipients (comma separated)"
+                placeholder={t('bcc_placeholder')}
                 value={bcc}
                 onChange={(e) => setBcc(e.target.value)}
                 className="flex-1 border-0 focus-visible:ring-0"
@@ -418,10 +418,10 @@ export function EmailComposer({
           )}
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground w-16">Subject:</span>
+            <span className="text-sm text-muted-foreground w-16">{t('subject_label')}</span>
             <Input
               type="text"
-              placeholder="Subject"
+              placeholder={t('subject_placeholder')}
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="flex-1 border-0 focus-visible:ring-0"
@@ -432,7 +432,7 @@ export function EmailComposer({
         <div className="flex-1 px-4 py-3 min-h-0">
           <textarea
             className="w-full h-full resize-none outline-none text-sm bg-transparent text-foreground placeholder:text-muted-foreground"
-            placeholder="Compose email..."
+            placeholder={t('body_placeholder')}
             value={body}
             onChange={(e) => setBody(e.target.value)}
           />
@@ -459,7 +459,7 @@ export function EmailComposer({
                   )}
                   <span className="max-w-[200px] truncate">{att.file.name}</span>
                   <span className="text-xs text-muted-foreground">
-                    ({(att.file.size / 1024).toFixed(1)} KB)
+                    ({(att.file.size / 1024).toFixed(1)} {t('file_size_kb')})
                   </span>
                   <button
                     onClick={() => removeAttachment(index)}

@@ -17,6 +17,7 @@ import {
   MoreVertical,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
   Download,
   Paperclip,
   Mail,
@@ -48,6 +49,8 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSettingsStore } from "@/stores/settings-store";
+import { useUIStore } from "@/stores/ui-store";
+import { useDeviceDetection } from "@/hooks/use-media-query";
 
 interface EmailViewerProps {
   email: Email | null;
@@ -62,6 +65,7 @@ interface EmailViewerProps {
   onSetColorTag?: (emailId: string, color: string | null) => void;
   onDownloadAttachment?: (blobId: string, name: string, type?: string) => void;
   onQuickReply?: (body: string) => Promise<void>;
+  onBack?: () => void;
   currentUserEmail?: string;
   currentUserName?: string;
   className?: string;
@@ -127,15 +131,21 @@ export function EmailViewer({
   onSetColorTag,
   onDownloadAttachment,
   onQuickReply,
+  onBack,
   currentUserEmail,
   currentUserName,
   className,
 }: EmailViewerProps) {
   const t = useTranslations('email_viewer');
   const tNotifications = useTranslations('notifications');
+  const tCommon = useTranslations('common');
   const externalContentPolicy = useSettingsStore((state) => state.externalContentPolicy);
   const addTrustedSender = useSettingsStore((state) => state.addTrustedSender);
   const isSenderTrusted = useSettingsStore((state) => state.isSenderTrusted);
+
+  // Tablet list visibility
+  const { isTablet } = useDeviceDetection();
+  const { tabletListVisible } = useUIStore();
   const [showFullHeaders, setShowFullHeaders] = useState(false);
   const [allowExternalContent, setAllowExternalContent] = useState(false);
   const [hasBlockedContent, setHasBlockedContent] = useState(false);
@@ -467,26 +477,26 @@ export function EmailViewer({
       <div className={cn("flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-200", className)}>
         {/* Loading Header Skeleton - gentler animation */}
         <div className="bg-background border-b border-border">
-          <div className="px-4 md:px-6 py-3 md:py-4">
-            <div className="flex items-start justify-between gap-2 md:gap-4">
-              <div className="flex-1 min-w-0 space-y-2 md:space-y-3">
-                <div className="h-6 md:h-8 bg-muted/60 rounded-md w-3/4"></div>
-                <div className="flex items-center gap-2 md:gap-3">
-                  <div className="h-3 md:h-4 bg-muted/60 rounded w-24 md:w-32"></div>
-                  <div className="h-3 md:h-4 bg-muted/60 rounded w-16 md:w-24"></div>
+          <div className="px-4 lg:px-6 py-3 lg:py-4">
+            <div className="flex items-start justify-between gap-2 lg:gap-4">
+              <div className="flex-1 min-w-0 space-y-2 lg:space-y-3">
+                <div className="h-6 lg:h-8 bg-muted/60 rounded-md w-3/4"></div>
+                <div className="flex items-center gap-2 lg:gap-3">
+                  <div className="h-3 lg:h-4 bg-muted/60 rounded w-24 lg:w-32"></div>
+                  <div className="h-3 lg:h-4 bg-muted/60 rounded w-16 lg:w-24"></div>
                 </div>
               </div>
-              <div className="flex items-center gap-1 md:gap-2">
-                <div className="h-8 w-8 md:w-20 bg-muted/60 rounded"></div>
-                <div className="h-8 w-8 bg-muted/60 rounded hidden md:block"></div>
+              <div className="flex items-center gap-1 lg:gap-2">
+                <div className="h-8 w-8 lg:w-20 bg-muted/60 rounded"></div>
+                <div className="h-8 w-8 bg-muted/60 rounded hidden lg:block"></div>
               </div>
             </div>
           </div>
 
           {/* Loading Sender Info Skeleton */}
-          <div className="px-4 md:px-6 pb-3 md:pb-4">
-            <div className="flex items-start gap-3 md:gap-4">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-muted/60 rounded-full"></div>
+          <div className="px-4 lg:px-6 pb-3 lg:pb-4">
+            <div className="flex items-start gap-3 lg:gap-4">
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-muted/60 rounded-full"></div>
               <div className="flex-1 space-y-2">
                 <div className="h-4 bg-muted/60 rounded w-48"></div>
                 <div className="h-3 bg-muted/60 rounded w-64"></div>
@@ -518,8 +528,8 @@ export function EmailViewer({
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-background shadow-lg flex items-center justify-center">
             <Mail className="w-10 h-10 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">No conversation selected</h3>
-          <p className="text-muted-foreground">Choose a conversation from the list to read it here</p>
+          <h3 className="text-xl font-semibold text-foreground mb-2">{t('no_conversation_selected')}</h3>
+          <p className="text-muted-foreground">{t('no_conversation_description')}</p>
         </div>
       </div>
     );
@@ -539,22 +549,36 @@ export function EmailViewer({
         <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-50 flex items-center justify-center animate-in fade-in duration-200">
           <div className="bg-background rounded-lg shadow-lg border border-border p-4 flex items-center gap-3">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span className="text-sm font-medium text-foreground">Loading email...</span>
+            <span className="text-sm font-medium text-foreground">{t('loading_email')}</span>
           </div>
         </div>
       )}
-      {/* Modern Header Section */}
-      <div className="bg-background border-b border-border">
-        {/* Subject Bar */}
-        <div className="px-4 md:px-6 py-3 md:py-4">
-          <div className="flex items-start justify-between gap-2 md:gap-4">
+      {/* Subject Bar - sticky on mobile/tablet for quick actions */}
+      <div className={cn(
+        "bg-background border-b border-border",
+        "max-lg:sticky max-lg:top-0 max-lg:z-10"
+      )}>
+        <div className="px-4 lg:px-6 py-3 lg:py-4">
+          <div className="flex items-start justify-between gap-2 lg:gap-4">
+            {/* Tablet Back Button - show when list is hidden */}
+            {isTablet && !tabletListVisible && onBack && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onBack}
+                className="h-10 w-10 flex-shrink-0 -ml-2"
+                aria-label={t('back_to_list')}
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+            )}
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg md:text-2xl font-bold text-foreground tracking-tight truncate pr-2">
+              <h1 className="text-lg lg:text-2xl font-bold text-foreground tracking-tight truncate pr-2">
                 {email.subject || "(no subject)"}
               </h1>
-              <div className="flex items-center gap-2 md:gap-3 mt-1.5 md:mt-2 text-xs md:text-sm text-muted-foreground flex-wrap md:flex-nowrap">
-                <span className="flex items-center gap-1 md:gap-1.5 whitespace-nowrap">
-                  <Clock className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <div className="flex items-center gap-2 lg:gap-3 mt-1.5 lg:mt-2 text-xs lg:text-sm text-muted-foreground flex-wrap lg:flex-nowrap">
+                <span className="flex items-center gap-1 lg:gap-1.5 whitespace-nowrap">
+                  <Clock className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                   {new Date(email.receivedAt).toLocaleString('en-US', {
                     weekday: 'short',
                     year: 'numeric',
@@ -565,14 +589,14 @@ export function EmailViewer({
                   })}
                 </span>
                 {email.hasAttachment && (
-                  <span className="flex items-center gap-1 md:gap-1.5 whitespace-nowrap">
-                    <Paperclip className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                    <span className="hidden md:inline">Attachments</span>
+                  <span className="flex items-center gap-1 lg:gap-1.5 whitespace-nowrap">
+                    <Paperclip className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
+                    <span className="hidden lg:inline">{t('attachments')}</span>
                   </span>
                 )}
                 {isImportant && (
-                  <span className="px-1.5 md:px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium whitespace-nowrap">
-                    Important
+                  <span className="px-1.5 lg:px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium whitespace-nowrap">
+                    {t('important')}
                   </span>
                 )}
               </div>
@@ -582,29 +606,29 @@ export function EmailViewer({
             <div className="flex items-center gap-0.5 flex-shrink-0">
               {/* Loading indicator */}
               {isLoading && (
-                <div className="mr-2 flex items-center gap-1.5 text-muted-foreground hidden md:flex">
+                <div className="mr-2 flex items-center gap-1.5 text-muted-foreground hidden lg:flex">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-xs">Loading...</span>
+                  <span className="text-xs">{t('loading')}</span>
                 </div>
               )}
               {/* Primary Reply Button */}
               <Button
                 onClick={onReply}
                 size="sm"
-                className="mr-1 h-8 md:h-9"
+                className="mr-1 h-8 lg:h-9"
                 title="Reply"
               >
                 <Reply className="w-4 h-4" />
-                <span className="ml-1.5 hidden md:inline">Reply</span>
+                <span className="ml-1.5 hidden lg:inline">Reply</span>
               </Button>
 
-              {/* Reply Options Dropdown - hidden on mobile */}
-              <div className="relative group mr-3 hidden md:block">
+              {/* Reply Options Dropdown - hidden on mobile/tablet */}
+              <div className="relative group mr-3 hidden lg:block">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 hover:bg-muted"
-                  title="More reply options"
+                  title={t('more_reply_options')}
                 >
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </Button>
@@ -626,13 +650,13 @@ export function EmailViewer({
                 </div>
               </div>
 
-              <div className="w-px h-5 bg-border hidden md:block" />
+              <div className="w-px h-5 bg-border hidden lg:block" />
 
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={onArchive}
-                className="h-8 w-8 hover:bg-muted hidden md:flex"
+                className="h-8 w-8 hover:bg-muted hidden lg:flex"
                 title="Archive"
               >
                 <Archive className="w-4 h-4 text-muted-foreground" />
@@ -650,7 +674,7 @@ export function EmailViewer({
                 variant="ghost"
                 size="icon"
                 onClick={onToggleStar}
-                className="h-8 w-8 hover:bg-muted hidden md:flex"
+                className="h-8 w-8 hover:bg-muted hidden lg:flex"
                 title={isStarred ? "Unstar" : "Star"}
               >
                 <Star className={cn(
@@ -659,13 +683,13 @@ export function EmailViewer({
                 )} />
               </Button>
 
-              <div className="w-px h-5 bg-border mx-1 hidden md:block" />
+              <div className="w-px h-5 bg-border mx-1 hidden lg:block" />
 
-              {/* Compact Dynamic Color Picker - hidden on mobile */}
-              <div className="relative group hidden md:block">
+              {/* Compact Dynamic Color Picker - hidden on mobile/tablet */}
+              <div className="relative group hidden lg:block">
                 <button
                   className="h-8 w-8 rounded hover:bg-muted flex items-center justify-center"
-                  title="Set color"
+                  title={t('set_color')}
                 >
                   <Circle className={cn(
                     "w-4 h-4",
@@ -710,7 +734,7 @@ export function EmailViewer({
                           }
                         }}
                         className="w-6 h-6 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 hover:bg-muted flex items-center justify-center"
-                        title="Remove color"
+                        title={t('remove_color')}
                       >
                         <X className="w-3 h-3 text-muted-foreground" />
                       </button>
@@ -725,7 +749,7 @@ export function EmailViewer({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 hover:bg-muted"
-                  title="More actions"
+                  title={t('more_actions')}
                 >
                   <MoreVertical className="w-4 h-4 text-muted-foreground" />
                 </Button>
@@ -749,21 +773,22 @@ export function EmailViewer({
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Sender Info */}
-        <div className="px-4 md:px-6 pb-3 md:pb-4">
-          <div className="flex items-start gap-3 md:gap-4">
+      {/* Sender Info - Desktop only (hidden on mobile/tablet, they see it in scrollable content) */}
+      <div className="hidden lg:block bg-background border-b border-border px-6 py-4">
+          <div className="flex items-start gap-4">
             <Avatar
               name={sender?.name}
               email={sender?.email}
               size="lg"
-              className="shadow-sm w-10 h-10 md:w-12 md:h-12"
+              className="shadow-sm w-12 h-12"
             />
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-semibold text-foreground">
-                  {sender?.name || sender?.email || "Unknown"}
+                  {sender?.name || sender?.email || t('unknown_sender')}
                 </span>
                 {sender?.email && sender?.name && (
                   <span className="text-sm text-muted-foreground">
@@ -783,7 +808,7 @@ export function EmailViewer({
                           onClick={() => setShowFullHeaders(!showFullHeaders)}
                           className="ml-1 text-blue-600 dark:text-blue-400 hover:underline"
                         >
-                          +{email.to.length - 2} more
+                          {t('more_count', { count: email.to.length - 2 })}
                         </button>
                       )}
                     </span>
@@ -809,13 +834,13 @@ export function EmailViewer({
                       <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                         <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
                           <ShieldCheck className="w-3.5 h-3.5" />
-                          Security & Authentication
+                          {t('security_authentication')}
                         </h3>
                       </div>
                       <div className="bg-background p-4 space-y-3">
                         {/* Authentication Results */}
                         {email.authenticationResults && (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                             {/* SPF Check */}
                             {email.authenticationResults.spf && (
                               <div className={cn(
@@ -1000,7 +1025,7 @@ export function EmailViewer({
                       <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                         <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
                           <Network className="w-3.5 h-3.5" />
-                          Technical Details
+                          {t('technical_details')}
                         </h3>
                       </div>
                       <div className="bg-background p-4">
@@ -1010,7 +1035,7 @@ export function EmailViewer({
                             <div className="flex items-start gap-2">
                               <Hash className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1 min-w-0">
-                                <span className="font-medium text-muted-foreground">Message-ID:</span>
+                                <span className="font-medium text-muted-foreground">{t('message_id_label')}</span>
                                 <div className="text-foreground break-all font-mono text-xs mt-0.5">
                                   {email.messageId}
                                 </div>
@@ -1024,7 +1049,7 @@ export function EmailViewer({
                             <div className="flex items-start gap-2">
                               <Mail className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1">
-                                <span className="font-medium text-muted-foreground">Reply-To:</span>
+                                <span className="font-medium text-muted-foreground">{t('reply_to_label')}</span>
                                 <div className="flex flex-wrap gap-2 mt-1">
                                   {email.replyTo.map((recipient, i) => (
                                     <span key={i} className="inline-flex items-center px-2 py-1 bg-accent/50 border border-accent rounded text-xs">
@@ -1043,16 +1068,20 @@ export function EmailViewer({
                             <div className="flex items-start gap-2">
                               <Clock className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1">
-                                <span className="font-medium text-muted-foreground">Delivery time:</span>
+                                <span className="font-medium text-muted-foreground">{t('delivery_time_label')}</span>
                                 <div className="text-foreground">
                                   {(() => {
                                     const diff = Math.abs(new Date(email.receivedAt).getTime() - new Date(email.sentAt).getTime());
                                     const minutes = Math.floor(diff / 60000);
                                     const hours = Math.floor(minutes / 60);
                                     const days = Math.floor(hours / 24);
-                                    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ${hours % 24} hour${hours % 24 !== 1 ? 's' : ''}`;
-                                    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ${minutes % 60} minute${minutes % 60 !== 1 ? 's' : ''}`;
-                                    return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+                                    const dayUnit = days > 1 ? t('time.days') : t('time.day');
+                                    const hourUnit = (hours % 24) > 1 ? t('time.hours') : t('time.hour');
+                                    const minuteUnit = (minutes % 60) > 1 ? t('time.minutes') : t('time.minute');
+                                    const minuteUnitSingle = minutes > 1 ? t('time.minutes') : t('time.minute');
+                                    if (days > 0) return `${days} ${dayUnit} ${hours % 24} ${hourUnit}`;
+                                    if (hours > 0) return `${hours} ${hours > 1 ? t('time.hours') : t('time.hour')} ${minutes % 60} ${minuteUnit}`;
+                                    return `${minutes} ${minuteUnitSingle}`;
                                   })()}
                                 </div>
                               </div>
@@ -1064,9 +1093,9 @@ export function EmailViewer({
                             <div className="flex items-start gap-2">
                               <List className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1 min-w-0">
-                                <span className="font-medium text-muted-foreground">Part of conversation:</span>
+                                <span className="font-medium text-muted-foreground">{t('conversation_part_label')}</span>
                                 <div className="text-foreground text-xs mt-0.5">
-                                  {email.references.length} previous message{email.references.length > 1 ? 's' : ''} in this thread
+                                  {t(email.references.length === 1 ? 'previous_messages' : 'previous_messages_plural', { count: email.references.length })}
                                 </div>
                               </div>
                             </div>
@@ -1096,12 +1125,54 @@ export function EmailViewer({
               </button>
             </div>
           </div>
-
-        </div>
       </div>
 
       {/* Email Content Area */}
       <div className="flex-1 overflow-auto bg-muted/30">
+        {/* Mobile/Tablet Sender Info - scrolls with content */}
+        <div className="lg:hidden bg-background border-b border-border px-4 py-3">
+          <div className="flex items-start gap-3">
+            <Avatar
+              name={sender?.name}
+              email={sender?.email}
+              size="lg"
+              className="shadow-sm w-10 h-10"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-foreground">
+                  {sender?.name || sender?.email || t('unknown_sender')}
+                </span>
+                {sender?.email && sender?.name && (
+                  <span className="text-sm text-muted-foreground">
+                    &lt;{sender.email}&gt;
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 space-y-0.5">
+                {email.to && email.to.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1 text-sm">
+                    <span className="text-muted-foreground">To:</span>
+                    <span className="text-foreground truncate">
+                      {email.to.slice(0, 2).map(r => r.name || r.email).join(", ")}
+                      {email.to.length > 2 && ` +${email.to.length - 2}`}
+                    </span>
+                  </div>
+                )}
+                {email.cc && email.cc.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1 text-sm">
+                    <span className="text-muted-foreground">CC:</span>
+                    <span className="text-foreground truncate">
+                      {email.cc.slice(0, 2).map(r => r.name || r.email).join(", ")}
+                      {email.cc.length > 2 && ` +${email.cc.length - 2}`}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* External Content Banner - show in 'ask' or 'block' mode */}
         {hasBlockedContent && !allowExternalContent && externalContentPolicy !== 'allow' && (
           <div className="border-b border-border">
@@ -1268,7 +1339,7 @@ export function EmailViewer({
                     value={quickReplyText}
                     onChange={(e) => setQuickReplyText(e.target.value)}
                     onFocus={() => setIsQuickReplyFocused(true)}
-                    placeholder="Write a quick reply..."
+                    placeholder={t('quick_reply_placeholder')}
                     className={cn(
                       "w-full px-3 py-2 text-sm border border-border bg-background text-foreground rounded-lg",
                       "hover:border-accent focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all",
@@ -1282,7 +1353,7 @@ export function EmailViewer({
                   {(isQuickReplyFocused || quickReplyText) && (
                     <div className="flex items-center justify-between gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
                       <div className="text-xs text-muted-foreground">
-                        {quickReplyText.length > 0 && `${quickReplyText.length} characters`}
+                        {quickReplyText.length > 0 && t('characters_count', { count: quickReplyText.length })}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -1294,7 +1365,7 @@ export function EmailViewer({
                           }}
                           disabled={isSendingQuickReply}
                         >
-                          Cancel
+                          {tCommon('cancel')}
                         </Button>
                         <Button
                           variant="ghost"
@@ -1304,7 +1375,7 @@ export function EmailViewer({
                           className="text-muted-foreground"
                         >
                           <MoreVertical className="w-4 h-4 mr-1" />
-                          More options
+                          {t('more_options')}
                         </Button>
                         <Button
                           size="sm"
@@ -1327,12 +1398,12 @@ export function EmailViewer({
                           {isSendingQuickReply ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                              Sending...
+                              {t('sending')}
                             </>
                           ) : (
                             <>
                               <Reply className="w-4 h-4 mr-1" />
-                              Send
+                              {t('send')}
                             </>
                           )}
                         </Button>

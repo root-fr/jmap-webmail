@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { AlertCircle, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 
 /**
  * Route-level error boundary for locale pages.
@@ -18,7 +18,6 @@ export default function LocaleError({
   reset: () => void;
 }) {
   const t = useTranslations("errors");
-  const params = useParams();
   const router = useRouter();
 
   useEffect(() => {
@@ -38,7 +37,7 @@ export default function LocaleError({
           {t("page_error_description")}
         </p>
         <div className="flex gap-3 justify-center">
-          <Button variant="outline" onClick={() => router.push(`/${params.locale}`)}>
+          <Button variant="outline" onClick={() => router.push('/')}>
             <Home className="w-4 h-4 mr-2" />
             {t("go_home")}
           </Button>
