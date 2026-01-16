@@ -57,13 +57,12 @@ jobs:
           images: |
             ghcr.io/${{ github.repository }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
+            type=ref,event=pr,prefix=pr-,suffix=
             type=semver,pattern={{version}},value=${{ steps.meta.outputs.version }},enable=${{ steps.meta.outputs.is_release }}
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.meta.outputs.version }},enable=${{ steps.meta.outputs.is_release }}
             type=semver,pattern={{major}},value=${{ steps.meta.outputs.version }},enable=${{ steps.meta.outputs.is_release }}
+            type=raw,value=latest,enable=${{ steps.meta.outputs.is_release }}
             type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
