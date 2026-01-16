@@ -47,6 +47,11 @@ services:
       # Node environment (production/development)
       - NODE_ENV=production
       
+      # Node.js memory allocation (in MB)
+      # Allocate sufficient heap space for Next.js production
+      # Default heap is too small, causing "degraded" health status
+      - NODE_OPTIONS=--max-old-space-size=512
+      
       # Next.js port (default: 3000, should match container port)
       - PORT=3000
       
