@@ -1,0 +1,77 @@
+services:
+  webmail:
+    build: .
+    image: jmap-webmail:latest
+    container_name: jmap-webmail
+    ports:
+      - "3002:3000"
+    environment:
+      # ============================================================
+      # REQUIRED CONFIGURATION
+      # ============================================================
+      
+      # JMAP server URL (required for email functionality)
+      - JMAP_SERVER_URL=https://mail.example.com
+      
+      # ============================================================
+      # APPLICATION SETTINGS
+      # ============================================================
+      
+      # Application name displayed in UI (default: Webmail)
+      - APP_NAME=JMAP Webmail
+      
+      # ============================================================
+      # INTERNATIONALIZATION
+      # ============================================================
+      
+      # Timezone for server-side rendering (default: UTC)
+      # Examples: UTC, America/New_York, Europe/Paris, Asia/Tokyo
+      - TZ=UTC
+      # Alternative env var name
+      # - TIMEZONE=UTC
+      
+      # ============================================================
+      # HEALTH CHECK CONFIGURATION
+      # ============================================================
+      
+      # Memory warning threshold (0.0-1.0, default: 0.85 = 85%)
+      - HEALTH_MEMORY_WARNING_THRESHOLD=0.85
+      
+      # Memory critical threshold (0.0-1.0, default: 0.95 = 95%)
+      - HEALTH_MEMORY_CRITICAL_THRESHOLD=0.95
+      
+      # ============================================================
+      # NODE.JS & NEXT.JS CONFIGURATION
+      # ============================================================
+      
+      # Node environment (production/development)
+      - NODE_ENV=production
+      
+      # Next.js port (default: 3000, should match container port)
+      - PORT=3000
+      
+      # Next.js hostname binding (default: 0.0.0.0 for containers)
+      - HOSTNAME=0.0.0.0
+      
+      # ============================================================
+      # LOGGING CONFIGURATION
+      # ============================================================
+      
+      # Log level (error, warn, info, debug)
+      # Default: info
+      - LOG_LEVEL=info
+      
+      # Log format (text or json)
+      # Use 'json' for log aggregation tools (Fluentd, Loki, CloudWatch)
+      # Use 'text' for human-readable logs
+      # Default: text
+      - LOG_FORMAT=text
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    # Security: Runs as non-root user (UID 1001)
+    user: "1001:1001"

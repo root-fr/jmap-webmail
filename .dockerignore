@@ -1,0 +1,15 @@
+Dockerfile
+.dockerignore
+.git
+.gitignore
+README.md
+ROADMAP.md
+CONTRIBUTING.md
+.env*.local
+.next
+.vercel
+*.md
+.github
+.vscode
+screenshots
+node_modules

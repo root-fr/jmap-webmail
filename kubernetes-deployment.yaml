@@ -1,0 +1,205 @@
+---
+# Kubernetes Secret for sensitive configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jmap-webmail-secrets
+  namespace: default
+type: Opaque
+stringData:
+  jmap-server-url: "https://mail.example.com"
+
+---
+# Kubernetes ConfigMap for non-sensitive configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jmap-webmail-config
+  namespace: default
+data:
+  APP_NAME: "JMAP Webmail"
+  TZ: "UTC"
+  HEALTH_MEMORY_WARNING_THRESHOLD: "0.85"
+  HEALTH_MEMORY_CRITICAL_THRESHOLD: "0.95"
+  NODE_ENV: "production"
+  PORT: "3000"
+  HOSTNAME: "0.0.0.0"
+
+---
+# Kubernetes Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jmap-webmail
+  namespace: default
+  labels:
+    app: jmap-webmail
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: jmap-webmail
+  template:
+    metadata:
+      labels:
+        app: jmap-webmail
+    spec:
+      # Security context for non-root execution
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      
+      containers:
+      - name: webmail
+        image: jmap-webmail:latest
+        imagePullPolicy: IfNotPresent
+        
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+        
+        # Environment variables from Secret
+        env:
+        - name: JMAP_SERVER_URL
+          valueFrom:
+            secretKeyRef:
+              name: jmap-webmail-secrets
+              key: jmap-server-url
+        
+        # Environment variables from ConfigMap
+        envFrom:
+        - configMapRef:
+            name: jmap-webmail-config
+        
+        # Resource limits
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        
+        # Liveness probe - checks if container is alive
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        # Readiness probe - checks if container is ready to serve traffic
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        
+        # Startup probe - gives app time to start
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 12
+        
+        # Security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+
+---
+# Kubernetes Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: jmap-webmail
+  namespace: default
+  labels:
+    app: jmap-webmail
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: jmap-webmail
+
+---
+# Kubernetes Ingress (optional, for external access)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jmap-webmail
+  namespace: default
+  annotations:
+    # Configure according to your ingress controller
+    # Example for nginx-ingress:
+    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: webmail.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: jmap-webmail
+            port:
+              name: http
+  # TLS configuration (optional, requires cert-manager or manual certificate)
+  # tls:
+  # - hosts:
+  #   - webmail.example.com
+  #   secretName: jmap-webmail-tls
+
+---
+# Horizontal Pod Autoscaler (optional, for auto-scaling)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: jmap-webmail
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: jmap-webmail
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

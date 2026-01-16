@@ -70,7 +70,7 @@ This webmail client is designed to work seamlessly with [**Stalwart Mail Server*
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22+
 - A JMAP-compatible mail server (we recommend [Stalwart](https://stalw.art/))
 
 ### Installation
