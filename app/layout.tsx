@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import '@/lib/server-init'; // Initialize logging on server startup
 
 type Props = {
   children: ReactNode;

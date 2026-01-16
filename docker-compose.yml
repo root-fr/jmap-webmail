@@ -61,6 +61,10 @@ services:
       # Default: info
       - LOG_LEVEL=info
       
+      # Log level (error, warn, info, debug)
+      # Default: info
+      - LOG_LEVEL=info
+      
       # Log format (text or json)
       # Use 'json' for log aggregation tools (Fluentd, Loki, CloudWatch)
       # Use 'text' for human-readable logs

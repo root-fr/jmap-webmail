@@ -16,7 +16,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
   return {
     locale,
     messages,
-    timeZone: 'Europe/Paris',
+    timeZone: process.env.TZ || process.env.TIMEZONE || 'UTC',
     now: new Date()
   };
 });

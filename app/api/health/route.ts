@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
+import { logger } from '@/lib/logger';
 
-// Health check thresholds
-const MEMORY_WARNING_THRESHOLD = 0.85; // 85% heap usage
-const MEMORY_CRITICAL_THRESHOLD = 0.95; // 95% heap usage
+// Health check thresholds (configurable via environment variables)
+const MEMORY_WARNING_THRESHOLD = parseFloat(process.env.HEALTH_MEMORY_WARNING_THRESHOLD || '0.85');
+const MEMORY_CRITICAL_THRESHOLD = parseFloat(process.env.HEALTH_MEMORY_CRITICAL_THRESHOLD || '0.95');
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -52,9 +53,17 @@ export async function GET(request: NextRequest) {
     if (heapUsagePercent >= MEMORY_CRITICAL_THRESHOLD * 100) {
       status = 'unhealthy';
       httpStatus = 503;
+      logger.error('Health check failed: Memory critical', {
+        heapUsagePercent: heapUsagePercent.toFixed(1),
+        threshold: MEMORY_CRITICAL_THRESHOLD,
+      });
     } else if (heapUsagePercent >= MEMORY_WARNING_THRESHOLD * 100) {
       status = 'degraded';
       warnings.push(`Memory usage high: ${heapUsagePercent.toFixed(1)}%`);
+      logger.warn('Health check degraded: Memory high', {
+        heapUsagePercent: heapUsagePercent.toFixed(1),
+        threshold: MEMORY_WARNING_THRESHOLD,
+      });
     }
 
     // Build response
