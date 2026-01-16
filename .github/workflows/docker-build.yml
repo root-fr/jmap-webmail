@@ -67,6 +67,8 @@ jobs:
             org.opencontainers.image.description=A modern, privacy-focused webmail client built with Next.js and the JMAP protocol.
             org.opencontainers.image.source=https://github.com/root-fr/jmap-webmail
             org.opencontainers.image.licenses=MIT
+
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
