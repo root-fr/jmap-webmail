@@ -11,7 +11,7 @@ services:
       # ============================================================
       
       # JMAP server URL (required for email functionality)
-      - JMAP_SERVER_URL=https://mail.example.com
+      - JMAP_SERVER_URL=https://mailadmin.peekoff.com
       
       # ============================================================
       # APPLICATION SETTINGS
@@ -64,11 +64,11 @@ services:
       
       # Log level (error, warn, info, debug)
       # Default: info
-      - LOG_LEVEL=info
+      - LOG_LEVEL=debug
       
       # Log level (error, warn, info, debug)
       # Default: info
-      - LOG_LEVEL=info
+      - LOG_LEVEL=debug
       
       # Log format (text or json)
       # Use 'json' for log aggregation tools (Fluentd, Loki, CloudWatch)

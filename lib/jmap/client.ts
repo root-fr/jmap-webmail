@@ -82,7 +82,7 @@ export class JMAPClient {
 
   async connect(): Promise<void> {
     // Get the session first
-    const sessionUrl = `${this.serverUrl}/.well-known/jmap`;
+    const sessionUrl = '/api/jmap/session';
 
     try {
       const sessionResponse = await fetch(sessionUrl, {
