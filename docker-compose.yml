@@ -13,6 +13,9 @@ services:
       # JMAP server URL (required for email functionality)
       - JMAP_SERVER_URL=https://mailadmin.peekoff.com
       
+      # Session timeout in milliseconds (default: 86400000 = 24 hours)
+      - SESSION_TIMEOUT_MS=86400000
+      
       # ============================================================
       # APPLICATION SETTINGS
       # ============================================================

@@ -80,6 +80,10 @@ export class JMAPClient {
     this.authHeader = `Basic ${btoa(`${username}:${password}`)}`;
   }
 
+  getAuthHeader(): string {
+    return this.authHeader;
+  }
+
   async connect(): Promise<void> {
     // Get the session first
     const sessionUrl = '/api/jmap/session';

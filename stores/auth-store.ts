@@ -151,7 +151,6 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        // Only persist non-sensitive data
         serverUrl: state.serverUrl,
         username: state.username,
         // Don't persist isAuthenticated since we can't restore the session without a password
