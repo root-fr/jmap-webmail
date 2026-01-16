@@ -1,0 +1,121 @@
+name: Docker Build & Push
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - 'components/**'
+      - 'lib/**'
+      - 'public/**'
+      - 'Dockerfile'
+      - 'next.config.ts'
+      - 'tsconfig.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.dockerignore'
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          # Get version from package.json
+          VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*"version": "\([^"]*\)".*/\1/')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          
+          # Determine if this is a release
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "is_release=true" >> $GITHUB_OUTPUT
+            echo "release_tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "Metadata: version=${VERSION}, is_release=${{ github.event_name == 'release' }}"
+
+      - name: Docker meta
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}},value=${{ steps.meta.outputs.version }},enable=${{ steps.meta.outputs.is_release }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ steps.meta.outputs.version }},enable=${{ steps.meta.outputs.is_release }}
+            type=semver,pattern={{major}},value=${{ steps.meta.outputs.version }},enable=${{ steps.meta.outputs.is_release }}
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push (pull request)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: false
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          sbom: true
+          provenance: true
+
+      - name: Build and push (release)
+        if: github.event_name == 'release'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.docker_meta.outputs.tags }}
+          labels: ${{ steps.docker_meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          sbom: true
+          provenance: true
+
+  notify:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Release notification
+        run: |
+          echo "✅ Docker image built and pushed to GHCR"
+          echo "📦 Repository: ghcr.io/${{ github.repository }}"
+          echo "🏷️  Tags:"
+          echo "  - ${{ github.event.release.tag_name }}"
+          echo "  - latest"
