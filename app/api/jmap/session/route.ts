@@ -90,16 +90,28 @@ export async function GET(request: NextRequest) {
 
     // Fix mixed content issues - rewrite HTTP URLs to HTTPS
     // This is necessary when the JMAP server returns HTTP URLs but the webmail uses HTTPS
-    // Security: Only rewrite URLs from the configured JMAP server to prevent URL injection
-    const serverHostname = new URL(JMAP_SERVER_URL).hostname;
+    // Security: Only rewrite URLs from the configured JMAP server domain to prevent URL injection
+    const serverUrl = new URL(JMAP_SERVER_URL);
+    const serverHostname = serverUrl.hostname;
+    // Extract base domain (e.g., peekoff.com from mailadmin.peekoff.com)
+    const domainParts = serverHostname.split('.');
+    const baseDomain = domainParts.length >= 2
+      ? domainParts.slice(-2).join('.')
+      : serverHostname;
 
     const rewriteUrl = (url: string): string => {
       if (!url || !url.startsWith('http://')) return url;
 
       try {
         const urlObj = new URL(url);
-        // Only rewrite if the hostname matches our configured JMAP server
-        if (urlObj.hostname === serverHostname || urlObj.hostname.endsWith(`.${serverHostname}`)) {
+        const urlHostname = urlObj.hostname;
+
+        // Check if the URL is from the same domain or subdomain
+        const isAllowed = urlHostname === serverHostname ||
+                         urlHostname.endsWith(`.${baseDomain}`) ||
+                         urlHostname === baseDomain;
+
+        if (isAllowed) {
           urlObj.protocol = 'https:';
           // Remove non-standard ports when switching to HTTPS
           if (urlObj.port === '8080' || urlObj.port === '80') {
@@ -107,10 +119,13 @@ export async function GET(request: NextRequest) {
           }
           return urlObj.toString();
         }
-        logger.warn('Refusing to rewrite URL from different hostname', {
+
+        logger.warn('Refusing to rewrite URL from different domain', {
           url,
           serverHostname,
-          urlHostname: urlObj.hostname
+          baseDomain,
+          urlHostname,
+          isAllowed
         });
         return url;
       } catch (err) {

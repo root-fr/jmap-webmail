@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
+    totpCode: "",
   });
 
   const [savedUsernames, setSavedUsernames] = useState<string[]>([]);
