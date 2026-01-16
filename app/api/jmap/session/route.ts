@@ -50,6 +50,12 @@ export async function GET(request: NextRequest) {
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
+    logger.info('Fetching JMAP session from upstream', {
+      url: `${JMAP_SERVER_URL}/.well-known/jmap`,
+      hasAuth: !!authHeader,
+      authType: authHeader?.split(' ')[0],
+    });
+
     const response = await fetch(
       `${JMAP_SERVER_URL}/.well-known/jmap`,
       {
@@ -65,17 +71,22 @@ export async function GET(request: NextRequest) {
     clearTimeout(timeout);
 
     if (!response.ok) {
+      const responseText = await response.text();
       logger.warn('Upstream JMAP auth failed', {
         status: response.status,
+        statusText: response.statusText,
+        responseBody: responseText.substring(0, 500),
+        url: `${JMAP_SERVER_URL}/.well-known/jmap`,
       });
 
       return NextResponse.json(
-        { error: 'Authentication failed' },
+        { error: `Authentication failed: ${response.status} ${response.statusText}` },
         { status: response.status }
       );
     }
 
     const json = await response.json();
+    logger.info('JMAP session fetched successfully');
     return NextResponse.json(json);
 
   } catch (err) {
@@ -83,6 +94,8 @@ export async function GET(request: NextRequest) {
 
     logger.error('JMAP session proxy error', {
       error: err instanceof Error ? err.message : err,
+      stack: err instanceof Error ? err.stack : undefined,
+      url: `${JMAP_SERVER_URL}/.well-known/jmap`,
     });
 
     return NextResponse.json(
