@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
           Accept: 'application/json',
         },
         signal: controller.signal,
+        redirect: 'follow', // Follow 307 redirects from .well-known/jmap to /jmap/session
       }
     );
 
@@ -86,6 +87,26 @@ export async function GET(request: NextRequest) {
     }
 
     const json = await response.json();
+
+    // Fix mixed content issues - rewrite HTTP URLs to HTTPS
+    // This is necessary when the JMAP server returns HTTP URLs but the webmail uses HTTPS
+    if (json.apiUrl && json.apiUrl.startsWith('http://')) {
+      json.apiUrl = json.apiUrl.replace('http://', 'https://').replace(':8080', '');
+      logger.info('Rewrote apiUrl to HTTPS', { apiUrl: json.apiUrl });
+    }
+    if (json.downloadUrl && json.downloadUrl.startsWith('http://')) {
+      json.downloadUrl = json.downloadUrl.replace('http://', 'https://').replace(':8080', '');
+      logger.info('Rewrote downloadUrl to HTTPS', { downloadUrl: json.downloadUrl });
+    }
+    if (json.uploadUrl && json.uploadUrl.startsWith('http://')) {
+      json.uploadUrl = json.uploadUrl.replace('http://', 'https://').replace(':8080', '');
+      logger.info('Rewrote uploadUrl to HTTPS', { uploadUrl: json.uploadUrl });
+    }
+    if (json.eventSourceUrl && json.eventSourceUrl.startsWith('http://')) {
+      json.eventSourceUrl = json.eventSourceUrl.replace('http://', 'https://').replace(':8080', '');
+      logger.info('Rewrote eventSourceUrl to HTTPS', { eventSourceUrl: json.eventSourceUrl });
+    }
+
     logger.info('JMAP session fetched successfully');
     return NextResponse.json(json);
 
