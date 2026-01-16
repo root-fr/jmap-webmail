@@ -90,21 +90,62 @@ export async function GET(request: NextRequest) {
 
     // Fix mixed content issues - rewrite HTTP URLs to HTTPS
     // This is necessary when the JMAP server returns HTTP URLs but the webmail uses HTTPS
-    if (json.apiUrl && json.apiUrl.startsWith('http://')) {
-      json.apiUrl = json.apiUrl.replace('http://', 'https://').replace(':8080', '');
-      logger.info('Rewrote apiUrl to HTTPS', { apiUrl: json.apiUrl });
+    // Security: Only rewrite URLs from the configured JMAP server to prevent URL injection
+    const serverHostname = new URL(JMAP_SERVER_URL).hostname;
+
+    const rewriteUrl = (url: string): string => {
+      if (!url || !url.startsWith('http://')) return url;
+
+      try {
+        const urlObj = new URL(url);
+        // Only rewrite if the hostname matches our configured JMAP server
+        if (urlObj.hostname === serverHostname || urlObj.hostname.endsWith(`.${serverHostname}`)) {
+          urlObj.protocol = 'https:';
+          // Remove non-standard ports when switching to HTTPS
+          if (urlObj.port === '8080' || urlObj.port === '80') {
+            urlObj.port = '';
+          }
+          return urlObj.toString();
+        }
+        logger.warn('Refusing to rewrite URL from different hostname', {
+          url,
+          serverHostname,
+          urlHostname: urlObj.hostname
+        });
+        return url;
+      } catch (err) {
+        logger.error('Failed to parse URL for rewriting', { url, error: err });
+        return url;
+      }
+    };
+
+    if (json.apiUrl) {
+      const rewritten = rewriteUrl(json.apiUrl);
+      if (rewritten !== json.apiUrl) {
+        logger.info('Rewrote apiUrl to HTTPS', { original: json.apiUrl, rewritten });
+        json.apiUrl = rewritten;
+      }
     }
-    if (json.downloadUrl && json.downloadUrl.startsWith('http://')) {
-      json.downloadUrl = json.downloadUrl.replace('http://', 'https://').replace(':8080', '');
-      logger.info('Rewrote downloadUrl to HTTPS', { downloadUrl: json.downloadUrl });
+    if (json.downloadUrl) {
+      const rewritten = rewriteUrl(json.downloadUrl);
+      if (rewritten !== json.downloadUrl) {
+        logger.info('Rewrote downloadUrl to HTTPS', { original: json.downloadUrl, rewritten });
+        json.downloadUrl = rewritten;
+      }
     }
-    if (json.uploadUrl && json.uploadUrl.startsWith('http://')) {
-      json.uploadUrl = json.uploadUrl.replace('http://', 'https://').replace(':8080', '');
-      logger.info('Rewrote uploadUrl to HTTPS', { uploadUrl: json.uploadUrl });
+    if (json.uploadUrl) {
+      const rewritten = rewriteUrl(json.uploadUrl);
+      if (rewritten !== json.uploadUrl) {
+        logger.info('Rewrote uploadUrl to HTTPS', { original: json.uploadUrl, rewritten });
+        json.uploadUrl = rewritten;
+      }
     }
-    if (json.eventSourceUrl && json.eventSourceUrl.startsWith('http://')) {
-      json.eventSourceUrl = json.eventSourceUrl.replace('http://', 'https://').replace(':8080', '');
-      logger.info('Rewrote eventSourceUrl to HTTPS', { eventSourceUrl: json.eventSourceUrl });
+    if (json.eventSourceUrl) {
+      const rewritten = rewriteUrl(json.eventSourceUrl);
+      if (rewritten !== json.eventSourceUrl) {
+        logger.info('Rewrote eventSourceUrl to HTTPS', { original: json.eventSourceUrl, rewritten });
+        json.eventSourceUrl = rewritten;
+      }
     }
 
     logger.info('JMAP session fetched successfully');
