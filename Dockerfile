@@ -1,11 +1,11 @@
-FROM node:24-alpine AS builder
+FROM oven/bun:1 AS builder
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json bun.lockb* ./
+RUN bun install --frozen-lockfile
 COPY . .
-RUN npx next build --webpack
+RUN bun run build
 
-FROM node:24-alpine AS runner
+FROM oven/bun:1-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs && \
@@ -17,4 +17,4 @@ USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
-CMD ["node", "server.js"]
+CMD ["bun", "run", "server.js"]

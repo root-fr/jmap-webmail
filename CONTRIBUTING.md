@@ -13,20 +13,20 @@ Thank you for your interest in contributing to JMAP Webmail! This document provi
    ```
 
 2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+    ```bash
+    bun install
+    ```
 
 3. **Set up environment**:
-   ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your JMAP server URL
-   ```
+    ```bash
+    cp .env.example .env.local
+    # Edit .env.local with your JMAP server URL
+    ```
 
 4. **Start development server**:
-   ```bash
-   npm run dev
-   ```
+    ```bash
+    bun run dev
+    ```
 
 ### Code Quality
 
@@ -34,13 +34,13 @@ Before submitting a pull request, ensure your code passes all checks:
 
 ```bash
 # Type checking
-npm run typecheck
+bun run typecheck
 
 # Linting
-npm run lint
+bun run lint
 
 # Fix lint issues automatically
-npm run lint:fix
+bun run lint:fix
 ```
 
 These checks run automatically on commit via Husky pre-commit hooks.
@@ -120,9 +120,9 @@ This project uses **next-intl** for internationalization. Please follow these gu
 4. **Update translations** if you added user-facing text
 
 5. **Run all checks**:
-   ```bash
-   npm run typecheck && npm run lint
-   ```
+    ```bash
+    bun run typecheck && bun run lint
+    ```
 
 ### Submitting
 

@@ -141,7 +141,7 @@ This webmail client is designed to work seamlessly with [**Stalwart Mail Server*
 
 ### Prerequisites
 
-- Node.js 18+
+- Bun 1.0+ (or Node.js 18+)
 - A JMAP-compatible mail server (we recommend [Stalwart](https://stalw.art/))
 
 ### Installation
@@ -152,7 +152,7 @@ git clone https://github.com/root-fr/jmap-webmail.git
 cd jmap-webmail
 
 # Install dependencies
-npm install
+bun install
 
 # Copy environment configuration
 cp .env.example .env.local
@@ -176,23 +176,23 @@ JMAP_SERVER_URL=https://mail.example.com
 
 ```bash
 # Start development server
-npm run dev
+bun run dev
 
 # Type checking
-npm run typecheck
+bun run typecheck
 
 # Linting
-npm run lint
+bun run lint
 ```
 
 ### Production Build
 
 ```bash
 # Build for production
-npm run build
+bun run build
 
 # Start production server
-npm start
+bun run start
 ```
 
 ### Docker

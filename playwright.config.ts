@@ -13,7 +13,7 @@ export default defineConfig({
     { name: 'chromium', use: { browserName: 'chromium' } },
   ],
   webServer: {
-    command: 'npm run dev',
+    command: 'bun run dev',
     port: 3000,
     reuseExistingServer: true,
   },
