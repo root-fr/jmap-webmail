@@ -604,7 +604,7 @@ export default function CalendarPage() {
   return (
     <div className="flex h-screen bg-background">
       {/* Left Navigation Rail */}
-      {!isMobile && (
+      {!isMobile && !isTablet && (
         <div className="w-14 border-r border-border bg-secondary flex flex-col items-center py-3 flex-shrink-0">
           <NavigationRail collapsed className="py-0" />
         </div>

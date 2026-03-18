@@ -430,7 +430,7 @@ export default function ContactsPage() {
 
   return (
     <div className="flex h-screen bg-background">
-      {!isMobile && (
+      {!isMobile && !isTablet && (
         <div className="w-14 border-r border-border bg-secondary flex flex-col items-center flex-shrink-0">
           <NavigationRail collapsed />
         </div>
