@@ -1414,6 +1414,11 @@ export class JMAPClient {
     return coreCapability?.maxCallsInRequest || 50;
   }
 
+  getMaxObjectsInGet(): number {
+    const coreCapability = this.capabilities["urn:ietf:params:jmap:core"] as { maxObjectsInGet?: number } | undefined;
+    return coreCapability?.maxObjectsInGet || 500;
+  }
+
   getEventSourceUrl(): string | null {
     if (!this.session) return null;
 
@@ -1708,23 +1713,58 @@ export class JMAPClient {
   async getContacts(addressBookId?: string): Promise<ContactCard[]> {
     try {
       const accountId = this.getContactsAccountId();
+      const maxBatchSize = this.getMaxObjectsInGet();
       const queryArgs: Record<string, unknown> = { accountId, limit: 1000 };
       if (addressBookId) {
         queryArgs.filter = { inAddressBook: addressBookId };
       }
 
-      const response = await this.request([
+      // Step 1: Query all matching contact IDs
+      const queryResponse = await this.request([
         ["ContactCard/query", queryArgs, "0"],
-        ["ContactCard/get", {
-          accountId,
-          "#ids": { resultOf: "0", name: "ContactCard/query", path: "/ids" },
-        }, "1"],
       ], this.contactUsing());
 
-      if (response.methodResponses?.[1]?.[0] === "ContactCard/get") {
-        return (response.methodResponses[1][1].list || []) as ContactCard[];
+      if (queryResponse.methodResponses?.[0]?.[0] !== "ContactCard/query") {
+        return [];
       }
-      return [];
+
+      const allIds = (queryResponse.methodResponses[0][1].ids || []) as string[];
+      if (allIds.length === 0) {
+        return [];
+      }
+
+      // Step 2: Fetch contacts in batches respecting maxObjectsInGet
+      if (allIds.length <= maxBatchSize) {
+        // Single batch — use back-reference for efficiency
+        const response = await this.request([
+          ["ContactCard/query", queryArgs, "0"],
+          ["ContactCard/get", {
+            accountId,
+            "#ids": { resultOf: "0", name: "ContactCard/query", path: "/ids" },
+          }, "1"],
+        ], this.contactUsing());
+
+        if (response.methodResponses?.[1]?.[0] === "ContactCard/get") {
+          return (response.methodResponses[1][1].list || []) as ContactCard[];
+        }
+        return [];
+      }
+
+      // Multiple batches needed
+      const allContacts: ContactCard[] = [];
+      for (let i = 0; i < allIds.length; i += maxBatchSize) {
+        const batchIds = allIds.slice(i, i + maxBatchSize);
+        const batchResponse = await this.request([
+          ["ContactCard/get", { accountId, ids: batchIds }, "0"],
+        ], this.contactUsing());
+
+        if (batchResponse.methodResponses?.[0]?.[0] === "ContactCard/get") {
+          const contacts = (batchResponse.methodResponses[0][1].list || []) as ContactCard[];
+          allContacts.push(...contacts);
+        }
+      }
+
+      return allContacts;
     } catch (error) {
       console.error('Failed to get contacts:', error);
       return [];
