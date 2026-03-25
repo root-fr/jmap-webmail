@@ -3,7 +3,12 @@
 import { useState, useEffect, useMemo } from "react";
 import DOMPurify from "dompurify";
 import { Email } from "@/lib/jmap/types";
-import { hasRichFormatting, needsIframeRendering, EMAIL_SANITIZE_CONFIG, collapseBlockedImageContainers } from "@/lib/email-sanitization";
+import {
+  hasRichFormatting,
+  needsIframeRendering,
+  EMAIL_SANITIZE_CONFIG,
+  collapseBlockedImageContainers,
+} from "@/lib/email-sanitization";
 import { SandboxedEmailFrame } from "./sandboxed-email-frame";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -56,7 +61,11 @@ import { useUIStore } from "@/stores/ui-store";
 import { useDeviceDetection } from "@/hooks/use-media-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useThemeStore } from "@/stores/theme-store";
-import { transformInlineStyles, transformColorForDarkMode, transformBgColorForDarkMode } from "@/lib/color-transform";
+import {
+  transformInlineStyles,
+  transformColorForDarkMode,
+  transformBgColorForDarkMode,
+} from "@/lib/color-transform";
 import { EmailIdentityBadge } from "./email-identity-badge";
 import { MobileActionBar } from "./mobile-action-bar";
 import { UnsubscribeBanner } from "./unsubscribe-banner";
@@ -91,25 +100,34 @@ interface EmailViewerProps {
 
 // Helper function to get file icon based on mime type or extension
 const getFileIcon = (name?: string, type?: string) => {
-  const ext = name?.split('.').pop()?.toLowerCase();
+  const ext = name?.split(".").pop()?.toLowerCase();
   const mimeType = type?.toLowerCase();
 
-  if (mimeType?.startsWith('image/') || ['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext || '')) {
+  if (
+    mimeType?.startsWith("image/") ||
+    ["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(ext || "")
+  ) {
     return FileImage;
   }
-  if (mimeType?.startsWith('video/') || ['mp4', 'avi', 'mov', 'wmv'].includes(ext || '')) {
+  if (
+    mimeType?.startsWith("video/") ||
+    ["mp4", "avi", "mov", "wmv"].includes(ext || "")
+  ) {
     return FileVideo;
   }
-  if (mimeType?.startsWith('audio/') || ['mp3', 'wav', 'ogg', 'flac'].includes(ext || '')) {
+  if (
+    mimeType?.startsWith("audio/") ||
+    ["mp3", "wav", "ogg", "flac"].includes(ext || "")
+  ) {
     return FileAudio;
   }
-  if (mimeType === 'application/pdf' || ext === 'pdf') {
+  if (mimeType === "application/pdf" || ext === "pdf") {
     return FileText;
   }
-  if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext || '')) {
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext || "")) {
     return FileArchive;
   }
-  if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext || '')) {
+  if (["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(ext || "")) {
     return FileText;
   }
   return File;
@@ -129,25 +147,28 @@ const getCurrentColor = (keywords: Record<string, boolean> | undefined) => {
 const formatRecipients = (
   recipients: Array<{ name?: string; email: string }> | undefined,
   currentUserEmail: string | undefined,
-  t: (key: string, params?: Record<string, string | number>) => string
+  t: (key: string, params?: Record<string, string | number>) => string,
 ): string => {
-  if (!recipients || recipients.length === 0) return '';
+  if (!recipients || recipients.length === 0) return "";
 
   // Check if the first recipient is the current user
   const firstRecipient = recipients[0];
-  const isFirstRecipientMe = currentUserEmail &&
+  const isFirstRecipientMe =
+    currentUserEmail &&
     (firstRecipient.email.toLowerCase() === currentUserEmail.toLowerCase() ||
-     firstRecipient.email.toLowerCase().startsWith(currentUserEmail.toLowerCase().split('@')[0] + '+'));
+      firstRecipient.email
+        .toLowerCase()
+        .startsWith(currentUserEmail.toLowerCase().split("@")[0] + "+"));
 
   // If only one recipient and it's the current user, show "me"
   if (recipients.length === 1 && isFirstRecipientMe) {
-    return t('recipient_me');
+    return t("recipient_me");
   }
 
   // Format up to 2 recipients by name (or email if no name)
   const displayRecipients = recipients.slice(0, 2).map((r, index) => {
     if (index === 0 && isFirstRecipientMe) {
-      return t('recipient_me');
+      return t("recipient_me");
     }
     return r.name || r.email;
   });
@@ -155,10 +176,13 @@ const formatRecipients = (
   // If more than 2 recipients, add count
   if (recipients.length > 2) {
     const displayName = displayRecipients[0];
-    return t('recipient_and_others', { name: displayName, count: recipients.length - 1 });
+    return t("recipient_and_others", {
+      name: displayName,
+      count: recipients.length - 1,
+    });
   }
 
-  return displayRecipients.join(', ');
+  return displayRecipients.join(", ");
 };
 
 export function EmailViewer({
@@ -185,14 +209,16 @@ export function EmailViewer({
   currentMailboxRole,
   className,
 }: EmailViewerProps) {
-  const t = useTranslations('email_viewer');
-  const tCommon = useTranslations('common');
-  const externalContentPolicy = useSettingsStore((state) => state.externalContentPolicy);
+  const t = useTranslations("email_viewer");
+  const tCommon = useTranslations("common");
+  const externalContentPolicy = useSettingsStore(
+    (state) => state.externalContentPolicy,
+  );
   const addTrustedSender = useSettingsStore((state) => state.addTrustedSender);
   const isSenderTrusted = useSettingsStore((state) => state.isSenderTrusted);
 
   // Detect if current mailbox is Junk folder
-  const isInJunkFolder = currentMailboxRole === 'junk';
+  const isInJunkFolder = currentMailboxRole === "junk";
 
   // Color options for email tags (using translations)
   const colorOptions = [
@@ -220,13 +246,13 @@ export function EmailViewer({
   const [showSenderInfo, setShowSenderInfo] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const currentColor = getCurrentColor(email?.keywords);
-  const [dismissedUnsubBanners, setDismissedUnsubBanners] = useState<Set<string>>(
-    () => {
-      if (typeof window === 'undefined') return new Set();
-      const saved = localStorage.getItem('dismissed-unsub-banners');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    }
-  );
+  const [dismissedUnsubBanners, setDismissedUnsubBanners] = useState<
+    Set<string>
+  >(() => {
+    if (typeof window === "undefined") return new Set();
+    const saved = localStorage.getItem("dismissed-unsub-banners");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
 
   const [cidUrls, setCidUrls] = useState<Map<string, string>>(new Map());
   useEffect(() => {
@@ -234,7 +260,7 @@ export function EmailViewer({
       setCidUrls(new Map());
       return;
     }
-    const inlineAtts = email.attachments.filter(a => a.cid && a.blobId);
+    const inlineAtts = email.attachments.filter((a) => a.cid && a.blobId);
     if (inlineAtts.length === 0) {
       setCidUrls(new Map());
       return;
@@ -244,13 +270,17 @@ export function EmailViewer({
     Promise.all(
       inlineAtts.map(async (att) => {
         try {
-          const objectUrl = await client.fetchBlobAsObjectUrl(att.blobId, att.name, att.type);
+          const objectUrl = await client.fetchBlobAsObjectUrl(
+            att.blobId,
+            att.name,
+            att.type,
+          );
           objectUrls.push(objectUrl);
           return [att.cid!, objectUrl] as const;
         } catch {
           return null;
         }
-      })
+      }),
     ).then((results) => {
       if (cancelled) return;
       const map = new Map<string, string>();
@@ -261,7 +291,7 @@ export function EmailViewer({
     });
     return () => {
       cancelled = true;
-      objectUrls.forEach(url => URL.revokeObjectURL(url));
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [email?.id, email?.attachments, client]);
 
@@ -270,14 +300,14 @@ export function EmailViewer({
     if (email && !email.keywords?.$seen && onMarkAsRead) {
       onMarkAsRead(email.id, true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- email?.id changes when email changes, which is the intended trigger
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- email?.id changes when email changes, which is the intended trigger
   }, [email?.id, email?.keywords?.$seen, onMarkAsRead]);
 
   // Reset external content permission and quick reply when email changes
   // Initialize allowExternalContent based on externalContentPolicy setting
   useEffect(() => {
     // 'allow' = always allow, 'block' = always block, 'ask' = user decides per email
-    setAllowExternalContent(externalContentPolicy === 'allow');
+    setAllowExternalContent(externalContentPolicy === "allow");
     setHasBlockedContent(false);
     setQuickReplyText("");
     setIsQuickReplyFocused(false);
@@ -288,108 +318,126 @@ export function EmailViewer({
 
   // Generate email source for viewing
   const generateEmailSource = (email: Email): string => {
-    let source = '';
+    let source = "";
 
     // Headers
-    source += '=== EMAIL HEADERS ===\n\n';
+    source += "=== EMAIL HEADERS ===\n\n";
     if (email.messageId) source += `Message-ID: ${email.messageId}\n`;
-    if (email.from) source += `From: ${email.from.map(a => a.name ? `${a.name} <${a.email}>` : a.email).join(', ')}\n`;
-    if (email.to) source += `To: ${email.to.map(a => a.name ? `${a.name} <${a.email}>` : a.email).join(', ')}\n`;
-    if (email.cc) source += `Cc: ${email.cc.map(a => a.name ? `${a.name} <${a.email}>` : a.email).join(', ')}\n`;
-    if (email.bcc) source += `Bcc: ${email.bcc.map(a => a.name ? `${a.name} <${a.email}>` : a.email).join(', ')}\n`;
-    if (email.replyTo) source += `Reply-To: ${email.replyTo.map(a => a.name ? `${a.name} <${a.email}>` : a.email).join(', ')}\n`;
+    if (email.from)
+      source += `From: ${email.from.map((a) => (a.name ? `${a.name} <${a.email}>` : a.email)).join(", ")}\n`;
+    if (email.to)
+      source += `To: ${email.to.map((a) => (a.name ? `${a.name} <${a.email}>` : a.email)).join(", ")}\n`;
+    if (email.cc)
+      source += `Cc: ${email.cc.map((a) => (a.name ? `${a.name} <${a.email}>` : a.email)).join(", ")}\n`;
+    if (email.bcc)
+      source += `Bcc: ${email.bcc.map((a) => (a.name ? `${a.name} <${a.email}>` : a.email)).join(", ")}\n`;
+    if (email.replyTo)
+      source += `Reply-To: ${email.replyTo.map((a) => (a.name ? `${a.name} <${a.email}>` : a.email)).join(", ")}\n`;
     if (email.subject) source += `Subject: ${email.subject}\n`;
-    if (email.sentAt) source += `Date: ${new Date(email.sentAt).toUTCString()}\n`;
-    if (email.receivedAt) source += `Received-At: ${new Date(email.receivedAt).toUTCString()}\n`;
-    if (email.inReplyTo) source += `In-Reply-To: ${email.inReplyTo.join(', ')}\n`;
-    if (email.references) source += `References: ${email.references.join(', ')}\n`;
+    if (email.sentAt)
+      source += `Date: ${new Date(email.sentAt).toUTCString()}\n`;
+    if (email.receivedAt)
+      source += `Received-At: ${new Date(email.receivedAt).toUTCString()}\n`;
+    if (email.inReplyTo)
+      source += `In-Reply-To: ${email.inReplyTo.join(", ")}\n`;
+    if (email.references)
+      source += `References: ${email.references.join(", ")}\n`;
 
     // Additional headers
     if (email.headers) {
-      source += '\n--- Additional Headers ---\n';
+      source += "\n--- Additional Headers ---\n";
       // Headers should now always be a Record after client processing
       Object.entries(email.headers).forEach(([key, value]) => {
-        const val = Array.isArray(value) ? value.join('\n    ') : String(value);
+        const val = Array.isArray(value) ? value.join("\n    ") : String(value);
         source += `${key}: ${val}\n`;
       });
     }
 
     // Authentication results
     if (email.authenticationResults) {
-      source += '\n--- Authentication Results ---\n';
+      source += "\n--- Authentication Results ---\n";
       if (email.authenticationResults.spf) {
         source += `SPF: ${email.authenticationResults.spf.result}`;
-        if (email.authenticationResults.spf.domain) source += ` (${email.authenticationResults.spf.domain})`;
-        source += '\n';
+        if (email.authenticationResults.spf.domain)
+          source += ` (${email.authenticationResults.spf.domain})`;
+        source += "\n";
       }
       if (email.authenticationResults.dkim) {
         source += `DKIM: ${email.authenticationResults.dkim.result}`;
-        if (email.authenticationResults.dkim.domain) source += ` (${email.authenticationResults.dkim.domain})`;
-        source += '\n';
+        if (email.authenticationResults.dkim.domain)
+          source += ` (${email.authenticationResults.dkim.domain})`;
+        source += "\n";
       }
       if (email.authenticationResults.dmarc) {
         source += `DMARC: ${email.authenticationResults.dmarc.result}`;
-        if (email.authenticationResults.dmarc.policy) source += ` policy=${email.authenticationResults.dmarc.policy}`;
-        source += '\n';
+        if (email.authenticationResults.dmarc.policy)
+          source += ` policy=${email.authenticationResults.dmarc.policy}`;
+        source += "\n";
       }
     }
 
     if (email.spamScore !== undefined) {
       source += `Spam Score: ${email.spamScore}`;
       if (email.spamStatus) source += ` (${email.spamStatus})`;
-      source += '\n';
+      source += "\n";
     }
 
     // Metadata
-    source += '\n=== EMAIL METADATA ===\n\n';
+    source += "\n=== EMAIL METADATA ===\n\n";
     source += `Email ID: ${email.id}\n`;
     source += `Thread ID: ${email.threadId}\n`;
     source += `Size: ${formatFileSize(email.size)}\n`;
-    source += `Has Attachment: ${email.hasAttachment ? 'Yes' : 'No'}\n`;
+    source += `Has Attachment: ${email.hasAttachment ? "Yes" : "No"}\n`;
     if (email.keywords) {
       const keywords = Object.entries(email.keywords)
         .filter(([_, v]) => v)
         .map(([k]) => k)
-        .join(', ');
+        .join(", ");
       if (keywords) source += `Keywords: ${keywords}\n`;
     }
 
     // Attachments
     if (email.attachments && email.attachments.length > 0) {
-      source += '\n=== ATTACHMENTS ===\n\n';
+      source += "\n=== ATTACHMENTS ===\n\n";
       email.attachments.forEach((att, i) => {
-        source += `[${i + 1}] ${att.name || 'Unnamed'}\n`;
+        source += `[${i + 1}] ${att.name || "Unnamed"}\n`;
         source += `    Type: ${att.type}\n`;
         source += `    Size: ${formatFileSize(att.size)}\n`;
         source += `    Blob ID: ${att.blobId}\n`;
         if (att.cid) source += `    Content-ID: ${att.cid}\n`;
-        source += '\n';
+        source += "\n";
       });
     }
 
     // Body content
-    source += '\n=== EMAIL BODY ===\n\n';
+    source += "\n=== EMAIL BODY ===\n\n";
 
     let hasBodyContent = false;
 
     // Text version
-    if (email.textBody?.[0]?.partId && email.bodyValues?.[email.textBody[0].partId]) {
+    if (
+      email.textBody?.[0]?.partId &&
+      email.bodyValues?.[email.textBody[0].partId]
+    ) {
       const textValue = email.bodyValues[email.textBody[0].partId].value;
       if (textValue && textValue.trim()) {
-        source += '--- Plain Text Version ---\n\n';
+        source += "--- Plain Text Version ---\n\n";
         source += textValue;
-        source += '\n\n';
+        source += "\n\n";
         hasBodyContent = true;
       }
     }
 
     // HTML version
-    if (email.htmlBody?.[0]?.partId && email.bodyValues?.[email.htmlBody[0].partId]) {
+    if (
+      email.htmlBody?.[0]?.partId &&
+      email.bodyValues?.[email.htmlBody[0].partId]
+    ) {
       const htmlValue = email.bodyValues[email.htmlBody[0].partId].value;
       if (htmlValue && htmlValue.trim()) {
-        source += '--- HTML Version ---\n\n';
+        source += "--- HTML Version ---\n\n";
         source += htmlValue;
-        source += '\n\n';
+        source += "\n\n";
         hasBodyContent = true;
       }
     }
@@ -398,13 +446,13 @@ export function EmailViewer({
     if (!hasBodyContent && email.bodyValues) {
       const bodyKeys = Object.keys(email.bodyValues);
       if (bodyKeys.length > 0) {
-        source += '--- Body Parts ---\n\n';
+        source += "--- Body Parts ---\n\n";
         bodyKeys.forEach((key, index) => {
           const bodyValue = email.bodyValues![key].value;
           if (bodyValue && bodyValue.trim()) {
             source += `Part ${index + 1} (${key}):\n`;
             source += bodyValue;
-            source += '\n\n';
+            source += "\n\n";
             hasBodyContent = true;
           }
         });
@@ -413,13 +461,13 @@ export function EmailViewer({
 
     // Preview if no body
     if (!hasBodyContent && email.preview) {
-      source += '--- Preview Only ---\n\n';
+      source += "--- Preview Only ---\n\n";
       source += email.preview;
-      source += '\n';
+      source += "\n";
     }
 
     if (!hasBodyContent && !email.preview) {
-      source += '(No body content available)\n';
+      source += "(No body content available)\n";
     }
 
     return source;
@@ -447,9 +495,12 @@ export function EmailViewer({
     if (email.bodyValues) {
       // Check if HTML content exists and if it's actually rich HTML or just plain text wrapper
       let useHtmlVersion = false;
-      let htmlContent = '';
+      let htmlContent = "";
 
-      if (email.htmlBody?.[0]?.partId && email.bodyValues[email.htmlBody[0].partId]) {
+      if (
+        email.htmlBody?.[0]?.partId &&
+        email.bodyValues[email.htmlBody[0].partId]
+      ) {
         htmlContent = email.bodyValues[email.htmlBody[0].partId].value;
 
         // Use safe parsing instead of innerHTML to detect rich formatting
@@ -466,69 +517,90 @@ export function EmailViewer({
 
         // Check if sender is trusted
         const senderEmail = email.from?.[0]?.email?.toLowerCase();
-        const senderIsTrusted = senderEmail ? isSenderTrusted(senderEmail) : false;
+        const senderIsTrusted = senderEmail
+          ? isSenderTrusted(senderEmail)
+          : false;
 
         // Block external content based on policy:
         // 'allow' = never block, 'block' = always block (unless trusted), 'ask' = block until user allows or trusted
-        const shouldBlockExternal = !senderIsTrusted && (
-          externalContentPolicy === 'block' ||
-          (externalContentPolicy === 'ask' && !allowExternalContent)
-        );
+        const shouldBlockExternal =
+          !senderIsTrusted &&
+          (externalContentPolicy === "block" ||
+            (externalContentPolicy === "ask" && !allowExternalContent));
 
         if (shouldBlockExternal) {
-          sanitizeConfig.FORBID_TAGS.push('link');
-          sanitizeConfig.FORBID_ATTR.push('background');
+          sanitizeConfig.FORBID_TAGS.push("link");
+          sanitizeConfig.FORBID_ATTR.push("background");
         }
 
-        DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+        DOMPurify.addHook("afterSanitizeAttributes", (node) => {
           const htmlNode = node as HTMLElement;
 
           if (shouldBlockExternal) {
-            if (node.tagName === 'IMG') {
-              const src = node.getAttribute('src');
-              if (src && (src.startsWith('http://') || src.startsWith('https://') || src.startsWith('//'))) {
-                node.setAttribute('data-blocked-src', src);
-                node.setAttribute('src', 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB2aWV3Qm94PSIwIDAgMSAxIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJ0cmFuc3BhcmVudCIvPgo8L3N2Zz4=');
-                node.setAttribute('alt', '');
-                htmlNode.style.display = 'none';
+            if (node.tagName === "IMG") {
+              const src = node.getAttribute("src");
+              if (
+                src &&
+                (src.startsWith("http://") ||
+                  src.startsWith("https://") ||
+                  src.startsWith("//"))
+              ) {
+                node.setAttribute("data-blocked-src", src);
+                node.setAttribute(
+                  "src",
+                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB2aWV3Qm94PSIwIDAgMSAxIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJ0cmFuc3BhcmVudCIvPgo8L3N2Zz4=",
+                );
+                node.setAttribute("alt", "");
+                htmlNode.style.display = "none";
                 blockedExternalContent = true;
               }
             }
 
             if (htmlNode.style) {
               const style = htmlNode.style.cssText;
-              if (style && style.includes('url(')) {
-                const urlMatch = style.match(/url\(['"]?(https?:\/\/[^'")\s]+)['"]?\)/gi);
+              if (style && style.includes("url(")) {
+                const urlMatch = style.match(
+                  /url\(['"]?(https?:\/\/[^'")\s]+)['"]?\)/gi,
+                );
                 if (urlMatch) {
-                  htmlNode.style.cssText = style.replace(/url\(['"]?https?:\/\/[^'")\s]+['"]?\)/gi, 'url()');
+                  htmlNode.style.cssText = style.replace(
+                    /url\(['"]?https?:\/\/[^'")\s]+['"]?\)/gi,
+                    "url()",
+                  );
                   blockedExternalContent = true;
                 }
               }
             }
           }
 
-          if (node.tagName === 'A') {
-            node.setAttribute('target', '_blank');
-            node.setAttribute('rel', 'noopener noreferrer');
+          if (node.tagName === "A") {
+            node.setAttribute("target", "_blank");
+            node.setAttribute("rel", "noopener noreferrer");
           }
 
-          if (resolvedTheme === 'dark') {
+          if (resolvedTheme === "dark") {
             if (htmlNode.style) {
               const originalStyles = htmlNode.style.cssText;
-              const transformedStyles = transformInlineStyles(originalStyles, 'dark');
+              const transformedStyles = transformInlineStyles(
+                originalStyles,
+                "dark",
+              );
               if (transformedStyles !== originalStyles) {
                 htmlNode.style.cssText = transformedStyles;
               }
             }
 
-            const colorAttr = node.getAttribute('color');
+            const colorAttr = node.getAttribute("color");
             if (colorAttr) {
-              node.setAttribute('color', transformColorForDarkMode(colorAttr));
+              node.setAttribute("color", transformColorForDarkMode(colorAttr));
             }
 
-            const bgcolorAttr = node.getAttribute('bgcolor');
+            const bgcolorAttr = node.getAttribute("bgcolor");
             if (bgcolorAttr) {
-              node.setAttribute('bgcolor', transformBgColorForDarkMode(bgcolorAttr));
+              node.setAttribute(
+                "bgcolor",
+                transformBgColorForDarkMode(bgcolorAttr),
+              );
             }
           }
         });
@@ -565,23 +637,29 @@ export function EmailViewer({
       }
 
       // Use text content if available (either as fallback or when HTML is minimal)
-      if (email.textBody?.[0]?.partId && email.bodyValues[email.textBody[0].partId]) {
+      if (
+        email.textBody?.[0]?.partId &&
+        email.bodyValues[email.textBody[0].partId]
+      ) {
         const textContent = email.bodyValues[email.textBody[0].partId].value;
 
         // Convert plain text to HTML with proper formatting
         const htmlFromText = textContent
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/\r\n/g, '<br>')  // Windows line endings
-          .replace(/\r/g, '<br>')    // Old Mac line endings
-          .replace(/\n/g, '<br>')    // Unix line endings
-          .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')  // Convert tabs to spaces
-          .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\r\n/g, "<br>") // Windows line endings
+          .replace(/\r/g, "<br>") // Old Mac line endings
+          .replace(/\n/g, "<br>") // Unix line endings
+          .replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;") // Convert tabs to spaces
+          .replace(
+            /(https?:\/\/[^\s<]+)/g,
+            '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>',
+          );
 
         return {
           html: htmlFromText,
-          isHtml: false
+          isHtml: false,
         };
       }
     }
@@ -589,24 +667,32 @@ export function EmailViewer({
     // If no body content is available, show the preview or a message
     if (email.preview) {
       const previewHtml = email.preview
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\r\n/g, '<br>')
-        .replace(/\r/g, '<br>')
-        .replace(/\n/g, '<br>');
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\r\n/g, "<br>")
+        .replace(/\r/g, "<br>")
+        .replace(/\n/g, "<br>");
 
       return {
         html: `<div style="color: var(--color-muted-foreground); font-style: italic;">${previewHtml}</div>`,
-        isHtml: false
+        isHtml: false,
       };
     }
 
     return {
       html: '<p style="color: var(--color-muted-foreground);">No content available</p>',
-      isHtml: false
+      isHtml: false,
     };
-  }, [email, allowExternalContent, hasBlockedContent, externalContentPolicy, isSenderTrusted, resolvedTheme, cidUrls]);
+  }, [
+    email,
+    allowExternalContent,
+    hasBlockedContent,
+    externalContentPolicy,
+    isSenderTrusted,
+    resolvedTheme,
+    cidUrls,
+  ]);
 
   // Detect List-Unsubscribe header for newsletter banners
   const listHeaders = useMemo(() => {
@@ -616,14 +702,19 @@ export function EmailViewer({
 
   const shouldShowUnsubBanner =
     listHeaders?.listUnsubscribe?.preferred &&
-    !dismissedUnsubBanners.has(email?.messageId || '');
+    !dismissedUnsubBanners.has(email?.messageId || "");
 
   const hasCalendarInvitation = email ? !!findCalendarAttachment(email) : false;
 
   // Show loading skeleton while email is being fetched
   if (isLoading && !email) {
     return (
-      <div className={cn("flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-200", className)}>
+      <div
+        className={cn(
+          "flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-200",
+          className,
+        )}
+      >
         {/* Loading Header Skeleton - gentler animation */}
         <div className="bg-background border-b border-border">
           <div className="px-4 lg:px-6 py-3 lg:py-4">
@@ -672,13 +763,22 @@ export function EmailViewer({
 
   if (!email) {
     return (
-      <div className={cn("flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-muted/30 to-muted/50", className)}>
+      <div
+        className={cn(
+          "flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-muted/30 to-muted/50",
+          className,
+        )}
+      >
         <div className="text-center p-8">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-background shadow-lg flex items-center justify-center">
             <Mail className="w-10 h-10 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">{t('no_conversation_selected')}</h3>
-          <p className="text-muted-foreground">{t('no_conversation_description')}</p>
+          <h3 className="text-xl font-semibold text-foreground mb-2">
+            {t("no_conversation_selected")}
+          </h3>
+          <p className="text-muted-foreground">
+            {t("no_conversation_description")}
+          </p>
         </div>
       </div>
     );
@@ -690,23 +790,31 @@ export function EmailViewer({
 
   return (
     <div
+      id="print-email-content"
       key={email.id}
-      className={cn("flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300 relative", className)}
+      className={cn(
+        "flex-1 flex flex-col h-full bg-background overflow-hidden animate-in fade-in duration-300 relative",
+        className,
+      )}
     >
       {/* Loading overlay when fetching new email */}
       {isLoading && (
         <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-50 flex items-center justify-center animate-in fade-in duration-200">
           <div className="bg-background rounded-lg shadow-lg border border-border p-4 flex items-center gap-3">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span className="text-sm font-medium text-foreground">{t('loading_email')}</span>
+            <span className="text-sm font-medium text-foreground">
+              {t("loading_email")}
+            </span>
           </div>
         </div>
       )}
       {/* Subject Bar - sticky on mobile/tablet for quick actions */}
-      <div className={cn(
-        "bg-background border-b border-border",
-        "max-lg:sticky max-lg:top-0 max-lg:z-10"
-      )}>
+      <div
+        className={cn(
+          "bg-background border-b border-border",
+          "max-lg:sticky max-lg:top-0 max-lg:z-10",
+        )}
+      >
         <div className="px-4 lg:px-6 py-3 lg:py-4">
           <div className="flex items-start justify-between gap-2 lg:gap-4">
             {/* Tablet Back Button - show when list is hidden */}
@@ -716,36 +824,36 @@ export function EmailViewer({
                 size="icon"
                 onClick={onBack}
                 className="h-11 w-11 lg:h-10 lg:w-10 flex-shrink-0 -ml-2"
-                aria-label={t('back_to_list')}
+                aria-label={t("back_to_list")}
               >
                 <ChevronLeft className="w-5 h-5" />
               </Button>
             )}
             <div className="flex-1 min-w-0">
               <h1 className="text-lg lg:text-2xl font-bold text-foreground tracking-tight truncate pr-2">
-                {email.subject || t('no_subject')}
+                {email.subject || t("no_subject")}
               </h1>
               <div className="flex items-center gap-2 lg:gap-3 mt-1.5 lg:mt-2 text-xs lg:text-sm text-muted-foreground flex-wrap lg:flex-nowrap">
                 <span className="flex items-center gap-1 lg:gap-1.5 whitespace-nowrap">
                   <Clock className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                  {new Date(email.receivedAt).toLocaleString('en-US', {
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                  {new Date(email.receivedAt).toLocaleString("en-US", {
+                    weekday: "short",
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </span>
                 {email.hasAttachment && (
                   <span className="flex items-center gap-1 lg:gap-1.5 whitespace-nowrap">
                     <Paperclip className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                    <span className="hidden lg:inline">{t('attachments')}</span>
+                    <span className="hidden lg:inline">{t("attachments")}</span>
                   </span>
                 )}
                 {isImportant && (
                   <span className="px-1.5 lg:px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full text-xs font-medium whitespace-nowrap">
-                    {t('important')}
+                    {t("important")}
                   </span>
                 )}
               </div>
@@ -757,7 +865,7 @@ export function EmailViewer({
               {isLoading && (
                 <div className="mr-2 flex items-center gap-1.5 text-muted-foreground hidden lg:flex">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-xs">{t('loading')}</span>
+                  <span className="text-xs">{t("loading")}</span>
                 </div>
               )}
               {/* Primary Reply Button */}
@@ -765,7 +873,7 @@ export function EmailViewer({
                 onClick={() => onReply?.()}
                 size="sm"
                 className="mr-1 h-10 lg:h-9"
-                title={t('tooltips.reply')}
+                title={t("tooltips.reply")}
               >
                 <Reply className="w-4 h-4" />
                 <span className="ml-1.5 hidden lg:inline">Reply</span>
@@ -777,7 +885,7 @@ export function EmailViewer({
                   variant="ghost"
                   size="icon"
                   className="h-10 w-10 lg:h-8 lg:w-8 hover:bg-muted"
-                  title={t('more_reply_options')}
+                  title={t("more_reply_options")}
                 >
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </Button>
@@ -806,7 +914,7 @@ export function EmailViewer({
                 size="icon"
                 onClick={onArchive}
                 className="h-10 w-10 lg:h-8 lg:w-8 hover:bg-muted hidden lg:flex"
-                title={t('tooltips.archive')}
+                title={t("tooltips.archive")}
               >
                 <Archive className="w-4 h-4 text-muted-foreground" />
               </Button>
@@ -821,9 +929,13 @@ export function EmailViewer({
                     "hidden h-10 w-10 lg:h-8 lg:w-8 lg:flex",
                     isInJunkFolder
                       ? "hover:bg-green-50 dark:hover:bg-green-950/30"
-                      : "hover:bg-red-50 dark:hover:bg-red-950/30"
+                      : "hover:bg-red-50 dark:hover:bg-red-950/30",
                   )}
-                  title={isInJunkFolder ? t('spam.not_spam_title') : t('spam.button_title')}
+                  title={
+                    isInJunkFolder
+                      ? t("spam.not_spam_title")
+                      : t("spam.button_title")
+                  }
                 >
                   {isInJunkFolder ? (
                     <ShieldCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -838,7 +950,7 @@ export function EmailViewer({
                 size="icon"
                 onClick={onDelete}
                 className="h-10 w-10 lg:h-8 lg:w-8 hover:bg-muted"
-                title={t('tooltips.delete')}
+                title={t("tooltips.delete")}
               >
                 <Trash2 className="w-4 h-4 text-muted-foreground" />
               </Button>
@@ -849,10 +961,14 @@ export function EmailViewer({
                 className="h-10 w-10 lg:h-8 lg:w-8 hover:bg-muted hidden lg:flex"
                 title={isStarred ? "Unstar" : "Star"}
               >
-                <Star className={cn(
-                  "w-4 h-4 transition-colors",
-                  isStarred ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
-                )} />
+                <Star
+                  className={cn(
+                    "w-4 h-4 transition-colors",
+                    isStarred
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-muted-foreground",
+                  )}
+                />
               </Button>
 
               <div className="w-px h-5 bg-border mx-1 hidden lg:block" />
@@ -861,19 +977,25 @@ export function EmailViewer({
               <div className="relative group hidden lg:block">
                 <button
                   className="h-8 w-8 rounded hover:bg-muted flex items-center justify-center"
-                  title={t('set_color')}
+                  title={t("set_color")}
                 >
-                  <Circle className={cn(
-                    "w-4 h-4",
-                    currentColor === 'red' && "fill-red-500 text-red-500",
-                    currentColor === 'orange' && "fill-orange-500 text-orange-500",
-                    currentColor === 'yellow' && "fill-yellow-500 text-yellow-500",
-                    currentColor === 'green' && "fill-green-500 text-green-500",
-                    currentColor === 'blue' && "fill-blue-500 text-blue-500",
-                    currentColor === 'purple' && "fill-purple-500 text-purple-500",
-                    currentColor === 'pink' && "fill-pink-500 text-pink-500",
-                    !currentColor && "text-gray-400"
-                  )} />
+                  <Circle
+                    className={cn(
+                      "w-4 h-4",
+                      currentColor === "red" && "fill-red-500 text-red-500",
+                      currentColor === "orange" &&
+                        "fill-orange-500 text-orange-500",
+                      currentColor === "yellow" &&
+                        "fill-yellow-500 text-yellow-500",
+                      currentColor === "green" &&
+                        "fill-green-500 text-green-500",
+                      currentColor === "blue" && "fill-blue-500 text-blue-500",
+                      currentColor === "purple" &&
+                        "fill-purple-500 text-purple-500",
+                      currentColor === "pink" && "fill-pink-500 text-pink-500",
+                      !currentColor && "text-gray-400",
+                    )}
+                  />
                 </button>
 
                 {/* Colors appear on hover */}
@@ -890,7 +1012,8 @@ export function EmailViewer({
                         className={cn(
                           "w-6 h-6 rounded-full hover:scale-110 transition-transform",
                           option.color,
-                          currentColor === option.value && "ring-2 ring-offset-1 ring-gray-400"
+                          currentColor === option.value &&
+                            "ring-2 ring-offset-1 ring-gray-400",
                         )}
                         title={option.name}
                       />
@@ -906,7 +1029,7 @@ export function EmailViewer({
                           }
                         }}
                         className="w-6 h-6 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 hover:bg-muted flex items-center justify-center"
-                        title={t('remove_color')}
+                        title={t("remove_color")}
                       >
                         <X className="w-3 h-3 text-muted-foreground" />
                       </button>
@@ -916,67 +1039,91 @@ export function EmailViewer({
               </div>
 
               {/* More Actions Dropdown */}
-              <div className="relative">
+              <div className="relative print:hidden">
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-10 w-10 lg:h-8 lg:w-8 hover:bg-muted"
-                  title={t('more_actions')}
-                  onClick={() => setShowMoreActions(prev => !prev)}
+                  title={t("more_actions")}
+                  onClick={() => setShowMoreActions((prev) => !prev)}
                 >
                   <MoreVertical className="w-4 h-4 text-muted-foreground" />
                 </Button>
                 {showMoreActions && (
                   <>
-                    <div className="fixed inset-0 z-[9]" onClick={() => setShowMoreActions(false)} onKeyDown={(e) => e.key === 'Escape' && setShowMoreActions(false)} role="presentation" />
-                    <div className="absolute right-0 top-full mt-1 w-44 bg-background rounded-md shadow-lg border border-border z-10" role="menu">
-                  <button
-                    onClick={() => { setShowSourceModal(true); setShowMoreActions(false); }}
-                    className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
-                  >
-                    <Code className="w-4 h-4" />
-                    {t('view_source')}
-                  </button>
-                  <button
-                    onClick={() => { window.print(); setShowMoreActions(false); }}
-                    className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
-                  >
-                    <Printer className="w-4 h-4" />
-                    {t('print')}
-                  </button>
-                  {onShowShortcuts && (
-                    <button
-                      onClick={() => { onShowShortcuts(); setShowMoreActions(false); }}
-                      className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
+                    <div
+                      className="fixed inset-0 z-[9]"
+                      onClick={() => setShowMoreActions(false)}
+                      onKeyDown={(e) =>
+                        e.key === "Escape" && setShowMoreActions(false)
+                      }
+                      role="presentation"
+                    />
+                    <div
+                      className="absolute right-0 top-full mt-1 w-44 bg-background rounded-md shadow-lg border border-border z-10"
+                      role="menu"
                     >
-                      <Keyboard className="w-4 h-4" />
-                      {t('keyboard_shortcuts')}
-                    </button>
-                  )}
-                  {/* Separator */}
-                  <div className="h-px bg-border my-1" />
-                  {/* Spam action - contextual */}
-                  {(onMarkAsSpam || onUndoSpam) && (
-                    <button
-                      onClick={() => { (isInJunkFolder ? onUndoSpam : onMarkAsSpam)?.(); setShowMoreActions(false); }}
-                      className={cn(
-                        "w-full px-3 py-2 text-sm text-left hover:bg-muted flex items-center gap-2",
-                        isInJunkFolder ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
+                      <button
+                        onClick={() => {
+                          setShowSourceModal(true);
+                          setShowMoreActions(false);
+                        }}
+                        className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
+                      >
+                        <Code className="w-4 h-4" />
+                        {t("view_source")}
+                      </button>
+                      <button
+                        onClick={() => {
+                          window.print();
+                          setShowMoreActions(false);
+                        }}
+                        className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
+                      >
+                        <Printer className="w-4 h-4" />
+                        {t("print")}
+                      </button>
+                      {onShowShortcuts && (
+                        <button
+                          onClick={() => {
+                            onShowShortcuts();
+                            setShowMoreActions(false);
+                          }}
+                          className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
+                        >
+                          <Keyboard className="w-4 h-4" />
+                          {t("keyboard_shortcuts")}
+                        </button>
                       )}
-                    >
-                      {isInJunkFolder ? (
-                        <>
-                          <ShieldCheck className="w-4 h-4" />
-                          {t('spam.not_spam_title')}
-                        </>
-                      ) : (
-                        <>
-                          <ShieldAlert className="w-4 h-4" />
-                          {t('spam.button_title')}
-                        </>
+                      {/* Separator */}
+                      <div className="h-px bg-border my-1" />
+                      {/* Spam action - contextual */}
+                      {(onMarkAsSpam || onUndoSpam) && (
+                        <button
+                          onClick={() => {
+                            (isInJunkFolder ? onUndoSpam : onMarkAsSpam)?.();
+                            setShowMoreActions(false);
+                          }}
+                          className={cn(
+                            "w-full px-3 py-2 text-sm text-left hover:bg-muted flex items-center gap-2",
+                            isInJunkFolder
+                              ? "text-green-700 dark:text-green-400"
+                              : "text-red-700 dark:text-red-400",
+                          )}
+                        >
+                          {isInJunkFolder ? (
+                            <>
+                              <ShieldCheck className="w-4 h-4" />
+                              {t("spam.not_spam_title")}
+                            </>
+                          ) : (
+                            <>
+                              <ShieldAlert className="w-4 h-4" />
+                              {t("spam.button_title")}
+                            </>
+                          )}
+                        </button>
                       )}
-                    </button>
-                  )}
                     </div>
                   </>
                 )}
@@ -988,326 +1135,569 @@ export function EmailViewer({
 
       {/* Sender Info - Desktop only (hidden on mobile/tablet, they see it in scrollable content) */}
       <div className="hidden lg:block bg-background border-b border-border">
-          <div className="flex items-start gap-4 px-6 py-4">
+        <div className="flex items-start gap-4 px-6 py-4">
+          <button
+            type="button"
+            onClick={() => setShowSenderInfo(!showSenderInfo)}
+            className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+          >
+            <Avatar
+              name={sender?.name}
+              email={sender?.email}
+              size="lg"
+              className="shadow-sm w-12 h-12"
+            />
+          </button>
+
+          <div className="flex-1 min-w-0">
+            {/* Sender line with compact badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setShowSenderInfo(!showSenderInfo)}
+                className="font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
+              >
+                {sender?.name || sender?.email || t("unknown_sender")}
+              </button>
+              <EmailIdentityBadge email={email} identities={identities} />
+            </div>
+
+            {/* Recipient section - separate line */}
+            <div className="mt-2 space-y-1">
+              {email.to && email.to.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1 text-sm">
+                  <span className="text-muted-foreground">
+                    {t("recipient_to_prefix")}
+                  </span>
+                  <span className="text-foreground">
+                    {formatRecipients(email.to, currentUserEmail, t)}
+                  </span>
+                  {email.to.length > 2 && (
+                    <button
+                      onClick={() => setShowFullHeaders(!showFullHeaders)}
+                      className="ml-1 text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {t("more_count", { count: email.to.length - 2 })}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {email.cc && email.cc.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1 text-sm">
+                  <span className="text-muted-foreground">CC:</span>
+                  <span className="text-foreground">
+                    {email.cc
+                      .slice(0, 2)
+                      .map((r) => r.name || r.email)
+                      .join(", ")}
+                    {email.cc.length > 2 && ` +${email.cc.length - 2}`}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Details toggle - stays in place when expanded */}
             <button
-              type="button"
-              onClick={() => setShowSenderInfo(!showSenderInfo)}
-              className="cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
+              onClick={() => setShowFullHeaders(!showFullHeaders)}
+              className="mt-3 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
             >
-              <Avatar
-                name={sender?.name}
-                email={sender?.email}
-                size="lg"
-                className="shadow-sm w-12 h-12"
-              />
+              {showFullHeaders ? (
+                <>
+                  <ChevronUp className="w-3 h-3" />
+                  {t("hide_details")}
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3 h-3" />
+                  {t("show_details")}
+                </>
+              )}
             </button>
 
-            <div className="flex-1 min-w-0">
-              {/* Sender line with compact badges */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => setShowSenderInfo(!showSenderInfo)}
-                  className="font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
-                >
-                  {sender?.name || sender?.email || t('unknown_sender')}
-                </button>
-                <EmailIdentityBadge email={email} identities={identities} />
-              </div>
-
-              {/* Recipient section - separate line */}
-              <div className="mt-2 space-y-1">
-                {email.to && email.to.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1 text-sm">
-                    <span className="text-muted-foreground">{t('recipient_to_prefix')}</span>
-                    <span className="text-foreground">
-                      {formatRecipients(email.to, currentUserEmail, t)}
-                    </span>
-                    {email.to.length > 2 && (
-                      <button
-                        onClick={() => setShowFullHeaders(!showFullHeaders)}
-                        className="ml-1 text-blue-600 dark:text-blue-400 hover:underline"
-                      >
-                        {t('more_count', { count: email.to.length - 2 })}
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {email.cc && email.cc.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1 text-sm">
-                    <span className="text-muted-foreground">CC:</span>
-                    <span className="text-foreground">
-                      {email.cc.slice(0, 2).map(r => r.name || r.email).join(", ")}
-                      {email.cc.length > 2 && ` +${email.cc.length - 2}`}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Details toggle - stays in place when expanded */}
-              <button
-                onClick={() => setShowFullHeaders(!showFullHeaders)}
-                className="mt-3 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-              >
-                {showFullHeaders ? (
-                  <>
-                    <ChevronUp className="w-3 h-3" />
-                    {t('hide_details')}
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-3 h-3" />
-                    {t('show_details')}
-                  </>
-                )}
-              </button>
-
-              {/* Expandable Details */}
-              {showFullHeaders && (
-                <div className="mt-3 space-y-3">
-                  {/* Security & Authentication Section */}
-                  {(email.authenticationResults || email.spamScore !== undefined) && (
-                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                      <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          {t('security_authentication')}
-                        </h3>
-                      </div>
-                      <div className="bg-background p-4 space-y-3">
-                        {/* Authentication Results */}
-                        {email.authenticationResults && (
-                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                            {/* SPF Check */}
-                            {email.authenticationResults.spf && (
-                              <div className="group/spf relative">
-                                <div className={cn(
-                                  "px-3 py-2 rounded-md",
-                                  getSecurityStatus(email.authenticationResults.spf.result).bgColor,
-                                  getSecurityStatus(email.authenticationResults.spf.result).borderColor
-                                )}>
-                                  <div className="flex items-center gap-2">
-                                    {getSecurityStatus(email.authenticationResults.spf.result).icon === 'check' &&
-                                      <Check className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
-                                    {getSecurityStatus(email.authenticationResults.spf.result).icon === 'x' &&
-                                      <X className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
-                                    {getSecurityStatus(email.authenticationResults.spf.result).icon === 'alert' &&
-                                      <AlertTriangle className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
-                                    {getSecurityStatus(email.authenticationResults.spf.result).icon === 'minus' &&
-                                      <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.spf.result).color)} />}
-                                    <div>
-                                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">SPF</div>
-                                      <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.spf.result).color)}>
-                                        {email.authenticationResults.spf.result}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {email.authenticationResults.spf.domain && (
-                                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate" title={email.authenticationResults.spf.domain}>
-                                      {email.authenticationResults.spf.domain}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="absolute invisible group-hover/spf:visible bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg shadow-lg max-w-xs z-50 whitespace-normal pointer-events-none">
-                                  {t(`security.tooltip.spf_${email.authenticationResults.spf.result}`)}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* DKIM Check */}
-                            {email.authenticationResults.dkim && (
-                              <div className="group/dkim relative">
-                                <div className={cn(
-                                  "px-3 py-2 rounded-md",
-                                  getSecurityStatus(email.authenticationResults.dkim.result).bgColor,
-                                  getSecurityStatus(email.authenticationResults.dkim.result).borderColor
-                                )}>
-                                  <div className="flex items-center gap-2">
-                                    {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'check' &&
-                                      <Check className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
-                                    {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'x' &&
-                                      <X className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
-                                    {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'alert' &&
-                                      <AlertTriangle className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
-                                    {getSecurityStatus(email.authenticationResults.dkim.result).icon === 'minus' &&
-                                      <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dkim.result).color)} />}
-                                    <div>
-                                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">DKIM</div>
-                                      <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.dkim.result).color)}>
-                                        {email.authenticationResults.dkim.result}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {email.authenticationResults.dkim.domain && (
-                                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate" title={email.authenticationResults.dkim.domain}>
-                                      {email.authenticationResults.dkim.domain}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="absolute invisible group-hover/dkim:visible bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg shadow-lg max-w-xs z-50 whitespace-normal pointer-events-none">
-                                  {t(`security.tooltip.dkim_${email.authenticationResults.dkim.result}`)}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* DMARC Check */}
-                            {email.authenticationResults.dmarc && (
-                              <div className="group/dmarc relative">
-                                <div className={cn(
-                                  "px-3 py-2 rounded-md",
-                                  getSecurityStatus(email.authenticationResults.dmarc.result).bgColor,
-                                  getSecurityStatus(email.authenticationResults.dmarc.result).borderColor
-                                )}>
-                                  <div className="flex items-center gap-2">
-                                    {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'check' &&
-                                      <Check className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
-                                    {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'x' &&
-                                      <X className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
-                                    {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'alert' &&
-                                      <AlertTriangle className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
-                                    {getSecurityStatus(email.authenticationResults.dmarc.result).icon === 'minus' &&
-                                      <Minus className={cn("w-4 h-4", getSecurityStatus(email.authenticationResults.dmarc.result).color)} />}
-                                    <div>
-                                      <div className="text-xs font-medium text-gray-900 dark:text-gray-100">DMARC</div>
-                                      <div className={cn("text-xs capitalize", getSecurityStatus(email.authenticationResults.dmarc.result).color)}>
-                                        {email.authenticationResults.dmarc.result}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {email.authenticationResults.dmarc.policy && (
-                                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                      Policy: {email.authenticationResults.dmarc.policy}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="absolute invisible group-hover/dmarc:visible bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg shadow-lg max-w-xs z-50 whitespace-normal pointer-events-none">
-                                  {t(`security.tooltip.dmarc_${email.authenticationResults.dmarc.result}`)}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Spam Score */}
-                            {email.spamScore !== undefined && (
-                              <div className={cn(
-                                "px-3 py-2 rounded-md",
-                                email.spamScore > 5 ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-red-600 dark:border-red-500" :
-                                email.spamScore > 2 ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-amber-600 dark:border-amber-500" :
-                                "bg-gray-50 dark:bg-gray-800 border-l-4 border-green-600 dark:border-green-500"
-                              )}>
-                                <div className="flex items-center gap-2">
-                                  <Shield className={cn(
-                                    "w-4 h-4",
-                                    email.spamScore > 5 ? "text-red-700 dark:text-red-400" :
-                                    email.spamScore > 2 ? "text-amber-700 dark:text-amber-400" :
-                                    "text-green-700 dark:text-green-400"
-                                  )} />
-                                  <div>
-                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">Spam Score</div>
-                                    <div className={cn(
-                                      "text-xs",
-                                      email.spamScore > 5 ? "text-red-700 dark:text-red-400" :
-                                      email.spamScore > 2 ? "text-amber-700 dark:text-amber-400" :
-                                      "text-green-700 dark:text-green-400"
-                                    )}>
-                                      {email.spamScore.toFixed(1)}
-                                    </div>
-                                  </div>
-                                </div>
-                                {email.spamStatus && (
-                                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">
-                                    {email.spamStatus}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Spam analysis (X-Spam-LLM header) */}
-                        {email.spamLLM && (
-                          <div className={cn(
-                            "mt-3 px-4 py-3 rounded-lg",
-                            email.spamLLM.verdict === 'LEGITIMATE'
-                              ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-green-600 dark:border-green-500"
-                              : email.spamLLM.verdict === 'SPAM'
-                              ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-red-600 dark:border-red-500"
-                              : "bg-gray-50 dark:bg-gray-800 border-l-4 border-amber-600 dark:border-amber-500"
-                          )}>
-                            <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0 mt-0.5">
-                                {email.spamLLM.verdict === 'LEGITIMATE' ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <Brain className="w-4 h-4 text-green-700 dark:text-green-400" />
-                                    <Sparkles className="w-3 h-3 text-green-700 dark:text-green-400" />
-                                  </div>
-                                ) : email.spamLLM.verdict === 'SPAM' ? (
-                                  <ShieldAlert className="w-4 h-4 text-red-700 dark:text-red-400" />
-                                ) : (
-                                  <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />
-                                )}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className={cn(
-                                    "text-xs font-semibold uppercase tracking-wide",
-                                    email.spamLLM.verdict === 'LEGITIMATE'
-                                      ? "text-green-700 dark:text-green-400"
-                                      : email.spamLLM.verdict === 'SPAM'
-                                      ? "text-red-700 dark:text-red-400"
-                                      : "text-amber-700 dark:text-amber-400"
-                                  )}>
-                                    Spam Analysis: {email.spamLLM.verdict}
-                                  </span>
-                                </div>
-                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
-                                  {email.spamLLM.explanation}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+            {/* Expandable Details */}
+            {showFullHeaders && (
+              <div className="mt-3 space-y-3">
+                {/* Security & Authentication Section */}
+                {(email.authenticationResults ||
+                  email.spamScore !== undefined) && (
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        {t("security_authentication")}
+                      </h3>
                     </div>
-                  )}
-
-                  {/* Technical Details Section - Only show if we have useful technical info */}
-                  {(email.messageId || email.replyTo?.length || (email.sentAt && email.receivedAt &&
-                    Math.abs(new Date(email.sentAt).getTime() - new Date(email.receivedAt).getTime()) > 60000)) && (
-                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                      <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
-                          <Network className="w-3.5 h-3.5" />
-                          {t('technical_details')}
-                        </h3>
-                      </div>
-                      <div className="bg-background p-4">
-                        <div className="space-y-3 text-xs">
-                          {/* Message ID */}
-                          {email.messageId && (
-                            <div className="flex items-start gap-2">
-                              <Hash className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
-                              <div className="flex-1 min-w-0">
-                                <span className="font-medium text-muted-foreground">{t('message_id_label')}</span>
-                                <div className="text-foreground break-all font-mono text-xs mt-0.5">
-                                  {email.messageId}
+                    <div className="bg-background p-4 space-y-3">
+                      {/* Authentication Results */}
+                      {email.authenticationResults && (
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                          {/* SPF Check */}
+                          {email.authenticationResults.spf && (
+                            <div className="group/spf relative">
+                              <div
+                                className={cn(
+                                  "px-3 py-2 rounded-md",
+                                  getSecurityStatus(
+                                    email.authenticationResults.spf.result,
+                                  ).bgColor,
+                                  getSecurityStatus(
+                                    email.authenticationResults.spf.result,
+                                  ).borderColor,
+                                )}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {getSecurityStatus(
+                                    email.authenticationResults.spf.result,
+                                  ).icon === "check" && (
+                                    <Check
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.spf
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  {getSecurityStatus(
+                                    email.authenticationResults.spf.result,
+                                  ).icon === "x" && (
+                                    <X
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.spf
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  {getSecurityStatus(
+                                    email.authenticationResults.spf.result,
+                                  ).icon === "alert" && (
+                                    <AlertTriangle
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.spf
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  {getSecurityStatus(
+                                    email.authenticationResults.spf.result,
+                                  ).icon === "minus" && (
+                                    <Minus
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.spf
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  <div>
+                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                                      SPF
+                                    </div>
+                                    <div
+                                      className={cn(
+                                        "text-xs capitalize",
+                                        getSecurityStatus(
+                                          email.authenticationResults.spf
+                                            .result,
+                                        ).color,
+                                      )}
+                                    >
+                                      {email.authenticationResults.spf.result}
+                                    </div>
+                                  </div>
                                 </div>
+                                {email.authenticationResults.spf.domain && (
+                                  <div
+                                    className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate"
+                                    title={
+                                      email.authenticationResults.spf.domain
+                                    }
+                                  >
+                                    {email.authenticationResults.spf.domain}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="absolute invisible group-hover/spf:visible bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg shadow-lg max-w-xs z-50 whitespace-normal pointer-events-none">
+                                {t(
+                                  `security.tooltip.spf_${email.authenticationResults.spf.result}`,
+                                )}
                               </div>
                             </div>
                           )}
 
-                          {/* Reply-To if different from sender */}
-                          {email.replyTo && email.replyTo.length > 0 &&
-                           (!email.from || email.replyTo[0].email !== email.from[0]?.email) && (
+                          {/* DKIM Check */}
+                          {email.authenticationResults.dkim && (
+                            <div className="group/dkim relative">
+                              <div
+                                className={cn(
+                                  "px-3 py-2 rounded-md",
+                                  getSecurityStatus(
+                                    email.authenticationResults.dkim.result,
+                                  ).bgColor,
+                                  getSecurityStatus(
+                                    email.authenticationResults.dkim.result,
+                                  ).borderColor,
+                                )}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {getSecurityStatus(
+                                    email.authenticationResults.dkim.result,
+                                  ).icon === "check" && (
+                                    <Check
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.dkim
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  {getSecurityStatus(
+                                    email.authenticationResults.dkim.result,
+                                  ).icon === "x" && (
+                                    <X
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.dkim
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  {getSecurityStatus(
+                                    email.authenticationResults.dkim.result,
+                                  ).icon === "alert" && (
+                                    <AlertTriangle
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.dkim
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  {getSecurityStatus(
+                                    email.authenticationResults.dkim.result,
+                                  ).icon === "minus" && (
+                                    <Minus
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.dkim
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  <div>
+                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                                      DKIM
+                                    </div>
+                                    <div
+                                      className={cn(
+                                        "text-xs capitalize",
+                                        getSecurityStatus(
+                                          email.authenticationResults.dkim
+                                            .result,
+                                        ).color,
+                                      )}
+                                    >
+                                      {email.authenticationResults.dkim.result}
+                                    </div>
+                                  </div>
+                                </div>
+                                {email.authenticationResults.dkim.domain && (
+                                  <div
+                                    className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate"
+                                    title={
+                                      email.authenticationResults.dkim.domain
+                                    }
+                                  >
+                                    {email.authenticationResults.dkim.domain}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="absolute invisible group-hover/dkim:visible bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg shadow-lg max-w-xs z-50 whitespace-normal pointer-events-none">
+                                {t(
+                                  `security.tooltip.dkim_${email.authenticationResults.dkim.result}`,
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* DMARC Check */}
+                          {email.authenticationResults.dmarc && (
+                            <div className="group/dmarc relative">
+                              <div
+                                className={cn(
+                                  "px-3 py-2 rounded-md",
+                                  getSecurityStatus(
+                                    email.authenticationResults.dmarc.result,
+                                  ).bgColor,
+                                  getSecurityStatus(
+                                    email.authenticationResults.dmarc.result,
+                                  ).borderColor,
+                                )}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {getSecurityStatus(
+                                    email.authenticationResults.dmarc.result,
+                                  ).icon === "check" && (
+                                    <Check
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.dmarc
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  {getSecurityStatus(
+                                    email.authenticationResults.dmarc.result,
+                                  ).icon === "x" && (
+                                    <X
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.dmarc
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  {getSecurityStatus(
+                                    email.authenticationResults.dmarc.result,
+                                  ).icon === "alert" && (
+                                    <AlertTriangle
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.dmarc
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  {getSecurityStatus(
+                                    email.authenticationResults.dmarc.result,
+                                  ).icon === "minus" && (
+                                    <Minus
+                                      className={cn(
+                                        "w-4 h-4",
+                                        getSecurityStatus(
+                                          email.authenticationResults.dmarc
+                                            .result,
+                                        ).color,
+                                      )}
+                                    />
+                                  )}
+                                  <div>
+                                    <div className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                                      DMARC
+                                    </div>
+                                    <div
+                                      className={cn(
+                                        "text-xs capitalize",
+                                        getSecurityStatus(
+                                          email.authenticationResults.dmarc
+                                            .result,
+                                        ).color,
+                                      )}
+                                    >
+                                      {email.authenticationResults.dmarc.result}
+                                    </div>
+                                  </div>
+                                </div>
+                                {email.authenticationResults.dmarc.policy && (
+                                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                    Policy:{" "}
+                                    {email.authenticationResults.dmarc.policy}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="absolute invisible group-hover/dmarc:visible bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 text-xs text-white bg-gray-900 dark:bg-gray-100 dark:text-gray-900 rounded-lg shadow-lg max-w-xs z-50 whitespace-normal pointer-events-none">
+                                {t(
+                                  `security.tooltip.dmarc_${email.authenticationResults.dmarc.result}`,
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Spam Score */}
+                          {email.spamScore !== undefined && (
+                            <div
+                              className={cn(
+                                "px-3 py-2 rounded-md",
+                                email.spamScore > 5
+                                  ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-red-600 dark:border-red-500"
+                                  : email.spamScore > 2
+                                    ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-amber-600 dark:border-amber-500"
+                                    : "bg-gray-50 dark:bg-gray-800 border-l-4 border-green-600 dark:border-green-500",
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Shield
+                                  className={cn(
+                                    "w-4 h-4",
+                                    email.spamScore > 5
+                                      ? "text-red-700 dark:text-red-400"
+                                      : email.spamScore > 2
+                                        ? "text-amber-700 dark:text-amber-400"
+                                        : "text-green-700 dark:text-green-400",
+                                  )}
+                                />
+                                <div>
+                                  <div className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                                    Spam Score
+                                  </div>
+                                  <div
+                                    className={cn(
+                                      "text-xs",
+                                      email.spamScore > 5
+                                        ? "text-red-700 dark:text-red-400"
+                                        : email.spamScore > 2
+                                          ? "text-amber-700 dark:text-amber-400"
+                                          : "text-green-700 dark:text-green-400",
+                                    )}
+                                  >
+                                    {email.spamScore.toFixed(1)}
+                                  </div>
+                                </div>
+                              </div>
+                              {email.spamStatus && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">
+                                  {email.spamStatus}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Spam analysis (X-Spam-LLM header) */}
+                      {email.spamLLM && (
+                        <div
+                          className={cn(
+                            "mt-3 px-4 py-3 rounded-lg",
+                            email.spamLLM.verdict === "LEGITIMATE"
+                              ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-green-600 dark:border-green-500"
+                              : email.spamLLM.verdict === "SPAM"
+                                ? "bg-gray-50 dark:bg-gray-800 border-l-4 border-red-600 dark:border-red-500"
+                                : "bg-gray-50 dark:bg-gray-800 border-l-4 border-amber-600 dark:border-amber-500",
+                          )}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-0.5">
+                              {email.spamLLM.verdict === "LEGITIMATE" ? (
+                                <div className="flex items-center gap-1.5">
+                                  <Brain className="w-4 h-4 text-green-700 dark:text-green-400" />
+                                  <Sparkles className="w-3 h-3 text-green-700 dark:text-green-400" />
+                                </div>
+                              ) : email.spamLLM.verdict === "SPAM" ? (
+                                <ShieldAlert className="w-4 h-4 text-red-700 dark:text-red-400" />
+                              ) : (
+                                <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span
+                                  className={cn(
+                                    "text-xs font-semibold uppercase tracking-wide",
+                                    email.spamLLM.verdict === "LEGITIMATE"
+                                      ? "text-green-700 dark:text-green-400"
+                                      : email.spamLLM.verdict === "SPAM"
+                                        ? "text-red-700 dark:text-red-400"
+                                        : "text-amber-700 dark:text-amber-400",
+                                  )}
+                                >
+                                  Spam Analysis: {email.spamLLM.verdict}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                                {email.spamLLM.explanation}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Technical Details Section - Only show if we have useful technical info */}
+                {(email.messageId ||
+                  email.replyTo?.length ||
+                  (email.sentAt &&
+                    email.receivedAt &&
+                    Math.abs(
+                      new Date(email.sentAt).getTime() -
+                        new Date(email.receivedAt).getTime(),
+                    ) > 60000)) && (
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-2">
+                        <Network className="w-3.5 h-3.5" />
+                        {t("technical_details")}
+                      </h3>
+                    </div>
+                    <div className="bg-background p-4">
+                      <div className="space-y-3 text-xs">
+                        {/* Message ID */}
+                        {email.messageId && (
+                          <div className="flex items-start gap-2">
+                            <Hash className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium text-muted-foreground">
+                                {t("message_id_label")}
+                              </span>
+                              <div className="text-foreground break-all font-mono text-xs mt-0.5">
+                                {email.messageId}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Reply-To if different from sender */}
+                        {email.replyTo &&
+                          email.replyTo.length > 0 &&
+                          (!email.from ||
+                            email.replyTo[0].email !==
+                              email.from[0]?.email) && (
                             <div className="flex items-start gap-2">
                               <Mail className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1">
-                                <span className="font-medium text-muted-foreground">{t('reply_to_label')}</span>
+                                <span className="font-medium text-muted-foreground">
+                                  {t("reply_to_label")}
+                                </span>
                                 <div className="flex flex-wrap gap-2 mt-1">
                                   {email.replyTo.map((recipient, i) => (
-                                    <span key={i} className="inline-flex items-center px-2 py-1 bg-accent/50 border border-accent rounded text-xs">
-                                      {recipient.name && <span className="font-medium mr-1 text-accent-foreground">{recipient.name}</span>}
-                                      <span className="text-accent-foreground/90">{recipient.email}</span>
+                                    <span
+                                      key={i}
+                                      className="inline-flex items-center px-2 py-1 bg-accent/50 border border-accent rounded text-xs"
+                                    >
+                                      {recipient.name && (
+                                        <span className="font-medium mr-1 text-accent-foreground">
+                                          {recipient.name}
+                                        </span>
+                                      )}
+                                      <span className="text-accent-foreground/90">
+                                        {recipient.email}
+                                      </span>
                                     </span>
                                   ))}
                                 </div>
@@ -1315,25 +1705,46 @@ export function EmailViewer({
                             </div>
                           )}
 
-                          {/* Time delay if significant (>1 minute difference) */}
-                          {email.sentAt && email.receivedAt &&
-                           Math.abs(new Date(email.sentAt).getTime() - new Date(email.receivedAt).getTime()) > 60000 && (
+                        {/* Time delay if significant (>1 minute difference) */}
+                        {email.sentAt &&
+                          email.receivedAt &&
+                          Math.abs(
+                            new Date(email.sentAt).getTime() -
+                              new Date(email.receivedAt).getTime(),
+                          ) > 60000 && (
                             <div className="flex items-start gap-2">
                               <Clock className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
                               <div className="flex-1">
-                                <span className="font-medium text-muted-foreground">{t('delivery_time_label')}</span>
+                                <span className="font-medium text-muted-foreground">
+                                  {t("delivery_time_label")}
+                                </span>
                                 <div className="text-foreground">
                                   {(() => {
-                                    const diff = Math.abs(new Date(email.receivedAt).getTime() - new Date(email.sentAt).getTime());
+                                    const diff = Math.abs(
+                                      new Date(email.receivedAt).getTime() -
+                                        new Date(email.sentAt).getTime(),
+                                    );
                                     const minutes = Math.floor(diff / 60000);
                                     const hours = Math.floor(minutes / 60);
                                     const days = Math.floor(hours / 24);
-                                    const dayUnit = days > 1 ? t('time.days') : t('time.day');
-                                    const hourUnit = (hours % 24) > 1 ? t('time.hours') : t('time.hour');
-                                    const minuteUnit = (minutes % 60) > 1 ? t('time.minutes') : t('time.minute');
-                                    const minuteUnitSingle = minutes > 1 ? t('time.minutes') : t('time.minute');
-                                    if (days > 0) return `${days} ${dayUnit} ${hours % 24} ${hourUnit}`;
-                                    if (hours > 0) return `${hours} ${hours > 1 ? t('time.hours') : t('time.hour')} ${minutes % 60} ${minuteUnit}`;
+                                    const dayUnit =
+                                      days > 1 ? t("time.days") : t("time.day");
+                                    const hourUnit =
+                                      hours % 24 > 1
+                                        ? t("time.hours")
+                                        : t("time.hour");
+                                    const minuteUnit =
+                                      minutes % 60 > 1
+                                        ? t("time.minutes")
+                                        : t("time.minute");
+                                    const minuteUnitSingle =
+                                      minutes > 1
+                                        ? t("time.minutes")
+                                        : t("time.minute");
+                                    if (days > 0)
+                                      return `${days} ${dayUnit} ${hours % 24} ${hourUnit}`;
+                                    if (hours > 0)
+                                      return `${hours} ${hours > 1 ? t("time.hours") : t("time.hour")} ${minutes % 60} ${minuteUnit}`;
                                     return `${minutes} ${minuteUnitSingle}`;
                                   })()}
                                 </div>
@@ -1341,38 +1752,44 @@ export function EmailViewer({
                             </div>
                           )}
 
-                          {/* Part of conversation */}
-                          {email.references && email.references.length > 0 && (
-                            <div className="flex items-start gap-2">
-                              <List className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
-                              <div className="flex-1 min-w-0">
-                                <span className="font-medium text-muted-foreground">{t('conversation_part_label')}</span>
-                                <div className="text-foreground text-xs mt-0.5">
-                                  {t(email.references.length === 1 ? 'previous_messages' : 'previous_messages_plural', { count: email.references.length })}
-                                </div>
+                        {/* Part of conversation */}
+                        {email.references && email.references.length > 0 && (
+                          <div className="flex items-start gap-2">
+                            <List className="w-3.5 h-3.5 text-muted-foreground mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium text-muted-foreground">
+                                {t("conversation_part_label")}
+                              </span>
+                              <div className="text-foreground text-xs mt-0.5">
+                                {t(
+                                  email.references.length === 1
+                                    ? "previous_messages"
+                                    : "previous_messages_plural",
+                                  { count: email.references.length },
+                                )}
                               </div>
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
-
-            </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          {showSenderInfo && sender && (
-            <SenderInfoPanel
-              sender={sender}
-              onSearch={(email) => onSearchSender?.(email)}
-              onAddContact={(name, email) => onAddContact?.(name, email)}
-            />
-          )}
+        </div>
+        {showSenderInfo && sender && (
+          <SenderInfoPanel
+            sender={sender}
+            onSearch={(email) => onSearchSender?.(email)}
+            onAddContact={(name, email) => onAddContact?.(name, email)}
+          />
+        )}
       </div>
 
       {/* Email Content Area */}
-      <div className="flex-1 overflow-auto bg-muted/30">
+      <div id="email-content-area" className="flex-1 overflow-auto bg-muted/30">
         {/* Mobile/Tablet Sender Info - scrolls with content */}
         <div className="lg:hidden bg-background border-b border-border px-4 py-3">
           <div className="flex items-start gap-3">
@@ -1396,7 +1813,7 @@ export function EmailViewer({
                   onClick={() => setShowSenderInfo(!showSenderInfo)}
                   className="text-sm font-semibold text-foreground hover:text-primary transition-colors cursor-pointer"
                 >
-                  {sender?.name || sender?.email || t('unknown_sender')}
+                  {sender?.name || sender?.email || t("unknown_sender")}
                 </button>
                 <EmailIdentityBadge email={email} identities={identities} />
               </div>
@@ -1409,7 +1826,7 @@ export function EmailViewer({
                 )}
                 {email.to && email.to.length > 0 && (
                   <>
-                    <span>→ {t('recipient_to_prefix')}</span>
+                    <span>→ {t("recipient_to_prefix")}</span>
                     <span className="text-foreground">
                       {formatRecipients(email.to, currentUserEmail, t)}
                     </span>
@@ -1421,7 +1838,10 @@ export function EmailViewer({
                 <div className="mt-1 flex items-center gap-1 text-sm">
                   <span className="text-muted-foreground">CC:</span>
                   <span className="text-foreground truncate">
-                    {email.cc.slice(0, 2).map(r => r.name || r.email).join(", ")}
+                    {email.cc
+                      .slice(0, 2)
+                      .map((r) => r.name || r.email)
+                      .join(", ")}
                     {email.cc.length > 2 && ` +${email.cc.length - 2}`}
                   </span>
                 </div>
@@ -1438,52 +1858,61 @@ export function EmailViewer({
         </div>
 
         {/* Unified Notification Banner - External Content + Unsubscribe + Calendar Invitation */}
-        {((hasBlockedContent && !allowExternalContent && externalContentPolicy !== 'allow') ||
+        {((hasBlockedContent &&
+          !allowExternalContent &&
+          externalContentPolicy !== "allow") ||
           (shouldShowUnsubBanner && listHeaders?.listUnsubscribe) ||
           hasCalendarInvitation) && (
           <div className="border-b border-border bg-muted/30 isolate">
             <div className="max-w-4xl mx-auto px-6 py-1.5">
               <div className="flex flex-col gap-3 isolate">
                 {/* External Content Controls */}
-                {hasBlockedContent && !allowExternalContent && externalContentPolicy !== 'allow' && (
-                  <div className="flex items-center gap-3 flex-wrap md:justify-center rounded-md px-3 py-1 bg-muted/50 dark:bg-muted/30">
-                    {externalContentPolicy === 'ask' && (
-                      <button
-                        onClick={() => setAllowExternalContent(true)}
-                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground bg-transparent hover:bg-transparent transition-colors min-h-[44px] md:min-h-0"
-                      >
-                        <Image className="w-3.5 h-3.5" />
-                        {t('load_external_content')}
-                      </button>
-                    )}
-                    {email.from?.[0]?.email && (
-                      <button
-                        onClick={() => {
-                          const senderEmail = email.from?.[0]?.email;
-                          if (senderEmail) {
-                            addTrustedSender(senderEmail);
-                            setAllowExternalContent(true);
-                          }
-                        }}
-                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground bg-transparent hover:bg-transparent transition-colors min-h-[44px] md:min-h-0"
-                      >
-                        {t('trust_sender')}
-                      </button>
-                    )}
-                  </div>
-                )}
+                {hasBlockedContent &&
+                  !allowExternalContent &&
+                  externalContentPolicy !== "allow" && (
+                    <div className="flex items-center gap-3 flex-wrap md:justify-center rounded-md px-3 py-1 bg-muted/50 dark:bg-muted/30">
+                      {externalContentPolicy === "ask" && (
+                        <button
+                          onClick={() => setAllowExternalContent(true)}
+                          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground bg-transparent hover:bg-transparent transition-colors min-h-[44px] md:min-h-0"
+                        >
+                          <Image className="w-3.5 h-3.5" />
+                          {t("load_external_content")}
+                        </button>
+                      )}
+                      {email.from?.[0]?.email && (
+                        <button
+                          onClick={() => {
+                            const senderEmail = email.from?.[0]?.email;
+                            if (senderEmail) {
+                              addTrustedSender(senderEmail);
+                              setAllowExternalContent(true);
+                            }
+                          }}
+                          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground bg-transparent hover:bg-transparent transition-colors min-h-[44px] md:min-h-0"
+                        >
+                          {t("trust_sender")}
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                 {/* Unsubscribe Controls */}
                 {shouldShowUnsubBanner && listHeaders?.listUnsubscribe && (
                   <div className="flex items-center md:justify-center rounded-md px-3 py-1 bg-blue-50/50 dark:bg-blue-950/20">
                     <UnsubscribeBanner
                       listUnsubscribe={listHeaders.listUnsubscribe}
-                      senderEmail={email?.from?.[0]?.email || ''}
+                      senderEmail={email?.from?.[0]?.email || ""}
                       onDismiss={() => {
-                        const messageId = email?.messageId || '';
-                        const newSet = new Set(dismissedUnsubBanners).add(messageId);
+                        const messageId = email?.messageId || "";
+                        const newSet = new Set(dismissedUnsubBanners).add(
+                          messageId,
+                        );
                         setDismissedUnsubBanners(newSet);
-                        localStorage.setItem('dismissed-unsub-banners', JSON.stringify([...newSet]));
+                        localStorage.setItem(
+                          "dismissed-unsub-banners",
+                          JSON.stringify([...newSet]),
+                        );
                       }}
                     />
                   </div>
@@ -1501,107 +1930,134 @@ export function EmailViewer({
         )}
 
         <div className="max-w-4xl mx-auto p-6">
-
           {/* Attachments (excluding inline/CID images already rendered in the body) */}
-          {email.attachments && email.attachments.filter(a => !a.cid).length > 0 && (
-            <div className="mb-4">
-              {/* Image attachments as thumbnails */}
-              {email.attachments.filter(a =>
-                !a.cid && (
-                a.type?.startsWith('image/') ||
-                ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || ''))
-              ).length > 0 && (
-                <div className="mb-3">
-                  <div className="flex flex-wrap gap-2">
-                    {email.attachments
-                      .filter(a =>
-                        !a.cid && (
-                        a.type?.startsWith('image/') ||
-                        ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || ''))
-                      )
-                      .map((attachment, i) => (
-                        <div
-                          key={i}
-                          className="relative group cursor-pointer"
-                          title={attachment.name}
-                          onClick={() => {
-                            if (attachment.blobId && onDownloadAttachment) {
-                              onDownloadAttachment(attachment.blobId, attachment.name || 'download', attachment.type);
-                            }
-                          }}
-                        >
-                          <div className="w-32 h-32 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
-                            <div className="w-full h-full flex items-center justify-center">
-                              <FileImage className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+          {email.attachments &&
+            email.attachments.filter((a) => !a.cid).length > 0 && (
+              <div className="mb-4">
+                {/* Image attachments as thumbnails */}
+                {email.attachments.filter(
+                  (a) =>
+                    !a.cid &&
+                    (a.type?.startsWith("image/") ||
+                      ["jpg", "jpeg", "png", "gif", "webp"].includes(
+                        a.name?.split(".").pop()?.toLowerCase() || "",
+                      )),
+                ).length > 0 && (
+                  <div className="mb-3">
+                    <div className="flex flex-wrap gap-2">
+                      {email.attachments
+                        .filter(
+                          (a) =>
+                            !a.cid &&
+                            (a.type?.startsWith("image/") ||
+                              ["jpg", "jpeg", "png", "gif", "webp"].includes(
+                                a.name?.split(".").pop()?.toLowerCase() || "",
+                              )),
+                        )
+                        .map((attachment, i) => (
+                          <div
+                            key={i}
+                            className="relative group cursor-pointer"
+                            title={attachment.name}
+                            onClick={() => {
+                              if (attachment.blobId && onDownloadAttachment) {
+                                onDownloadAttachment(
+                                  attachment.blobId,
+                                  attachment.name || "download",
+                                  attachment.type,
+                                );
+                              }
+                            }}
+                          >
+                            <div className="w-32 h-32 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                              <div className="w-full h-full flex items-center justify-center">
+                                <FileImage className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+                              </div>
+                            </div>
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <Download className="w-6 h-6 text-white" />
+                            </div>
+                            <div className="mt-1 text-xs text-gray-600 dark:text-gray-400 truncate max-w-[128px]">
+                              {attachment.name}
                             </div>
                           </div>
-                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                            <Download className="w-6 h-6 text-white" />
-                          </div>
-                          <div className="mt-1 text-xs text-gray-600 dark:text-gray-400 truncate max-w-[128px]">
-                            {attachment.name}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Non-image attachments in a compact list */}
-              {email.attachments.filter(a =>
-                !a.cid &&
-                !a.type?.startsWith('image/') &&
-                !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || '')
-              ).length > 0 && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Paperclip className="w-4 h-4 text-muted-foreground" />
-                  {email.attachments
-                    .filter(a =>
-                      !a.cid &&
-                      !a.type?.startsWith('image/') &&
-                      !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(a.name?.split('.').pop()?.toLowerCase() || '')
-                    )
-                    .map((attachment, i) => {
-                      const FileIcon = getFileIcon(attachment.name, attachment.type);
-                      return (
-                        <button
-                          key={i}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted hover:bg-accent rounded-md transition-colors group"
-                          title={`Download ${attachment.name} (${formatFileSize(attachment.size)})`}
-                          onClick={() => {
-                            if (attachment.blobId && onDownloadAttachment) {
-                              onDownloadAttachment(attachment.blobId, attachment.name || 'download', attachment.type);
-                            }
-                          }}
-                        >
-                          <FileIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                          <span className="text-sm text-foreground">
-                            {attachment.name || "Unnamed"}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            ({formatFileSize(attachment.size)})
-                          </span>
-                        </button>
-                      );
-                    })}
-                </div>
-              )}
-            </div>
-          )}
+                {/* Non-image attachments in a compact list */}
+                {email.attachments.filter(
+                  (a) =>
+                    !a.cid &&
+                    !a.type?.startsWith("image/") &&
+                    !["jpg", "jpeg", "png", "gif", "webp"].includes(
+                      a.name?.split(".").pop()?.toLowerCase() || "",
+                    ),
+                ).length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Paperclip className="w-4 h-4 text-muted-foreground" />
+                    {email.attachments
+                      .filter(
+                        (a) =>
+                          !a.cid &&
+                          !a.type?.startsWith("image/") &&
+                          !["jpg", "jpeg", "png", "gif", "webp"].includes(
+                            a.name?.split(".").pop()?.toLowerCase() || "",
+                          ),
+                      )
+                      .map((attachment, i) => {
+                        const FileIcon = getFileIcon(
+                          attachment.name,
+                          attachment.type,
+                        );
+                        return (
+                          <button
+                            key={i}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted hover:bg-accent rounded-md transition-colors group"
+                            title={`Download ${attachment.name} (${formatFileSize(attachment.size)})`}
+                            onClick={() => {
+                              if (attachment.blobId && onDownloadAttachment) {
+                                onDownloadAttachment(
+                                  attachment.blobId,
+                                  attachment.name || "download",
+                                  attachment.type,
+                                );
+                              }
+                            }}
+                          >
+                            <FileIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-sm text-foreground">
+                              {attachment.name || "Unnamed"}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              ({formatFileSize(attachment.size)})
+                            </span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            )}
 
           {/* Email Body */}
           <div className="bg-background rounded-lg shadow-sm border border-border overflow-x-auto">
             <div className="email-content-wrapper p-6">
               {emailContent.isHtml && emailContent.useIframe ? (
-                <SandboxedEmailFrame html={emailContent.html} className="w-full" />
+                <SandboxedEmailFrame
+                  html={emailContent.html}
+                  className="w-full"
+                />
               ) : emailContent.isHtml ? (
                 <div
                   className="email-content prose dark:prose-invert max-w-none"
                   dangerouslySetInnerHTML={{ __html: emailContent.html }}
                   style={{
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    fontSize: '14px',
-                    lineHeight: '1.6',
+                    fontFamily:
+                      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    fontSize: "14px",
+                    lineHeight: "1.6",
                   }}
                 />
               ) : (
@@ -1610,9 +2066,9 @@ export function EmailViewer({
                   dangerouslySetInnerHTML={{ __html: emailContent.html }}
                   style={{
                     fontFamily: 'ui-monospace, "SF Mono", Consolas, monospace',
-                    fontSize: '14px',
-                    lineHeight: '1.6',
-                    wordBreak: 'break-word',
+                    fontSize: "14px",
+                    lineHeight: "1.6",
+                    wordBreak: "break-word",
                   }}
                 />
               )}
@@ -1620,10 +2076,14 @@ export function EmailViewer({
           </div>
 
           {/* Quick Reply Section */}
-          <div className={cn(
-            "mt-6 bg-background rounded-lg shadow-sm border transition-all",
-            isQuickReplyFocused || quickReplyText ? "border-primary" : "border-border"
-          )}>
+          <div
+            className={cn(
+              "print:hidden mt-6 bg-background rounded-lg shadow-sm border transition-all",
+              isQuickReplyFocused || quickReplyText
+                ? "border-primary"
+                : "border-border",
+            )}
+          >
             <div className="p-4">
               <div className="flex items-start gap-3">
                 <Avatar
@@ -1636,11 +2096,11 @@ export function EmailViewer({
                     value={quickReplyText}
                     onChange={(e) => setQuickReplyText(e.target.value)}
                     onFocus={() => setIsQuickReplyFocused(true)}
-                    placeholder={t('quick_reply_placeholder')}
+                    placeholder={t("quick_reply_placeholder")}
                     className={cn(
                       "w-full px-3 py-2 text-sm border border-border bg-background text-foreground rounded-lg",
                       "hover:border-accent focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all",
-                      "resize-none"
+                      "resize-none",
                     )}
                     rows={isQuickReplyFocused || quickReplyText ? 3 : 2}
                     disabled={isSendingQuickReply}
@@ -1650,7 +2110,9 @@ export function EmailViewer({
                   {(isQuickReplyFocused || quickReplyText) && (
                     <div className="flex items-center justify-between gap-2 animate-in fade-in slide-in-from-top-1 duration-200">
                       <div className="text-xs text-muted-foreground">
-                        {t('characters_count', { count: quickReplyText.length })}
+                        {t("characters_count", {
+                          count: quickReplyText.length,
+                        })}
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -1662,7 +2124,7 @@ export function EmailViewer({
                           }}
                           disabled={isSendingQuickReply}
                         >
-                          {tCommon('cancel')}
+                          {tCommon("cancel")}
                         </Button>
                         <Button
                           variant="ghost"
@@ -1676,7 +2138,7 @@ export function EmailViewer({
                           className="text-muted-foreground"
                         >
                           <MoreVertical className="w-4 h-4 mr-1" />
-                          {t('more_options')}
+                          {t("more_options")}
                         </Button>
                         <Button
                           size="sm"
@@ -1694,17 +2156,19 @@ export function EmailViewer({
                               setIsSendingQuickReply(false);
                             }
                           }}
-                          disabled={!quickReplyText.trim() || isSendingQuickReply}
+                          disabled={
+                            !quickReplyText.trim() || isSendingQuickReply
+                          }
                         >
                           {isSendingQuickReply ? (
                             <>
                               <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                              {t('sending')}
+                              {t("sending")}
                             </>
                           ) : (
                             <>
                               <Reply className="w-4 h-4 mr-1" />
-                              {t('send')}
+                              {t("send")}
                             </>
                           )}
                         </Button>
@@ -1746,7 +2210,9 @@ export function EmailViewer({
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex items-center gap-2">
                 <Code className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-semibold text-foreground">{t('email_source')}</h2>
+                <h2 className="text-lg font-semibold text-foreground">
+                  {t("email_source")}
+                </h2>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -1755,8 +2221,12 @@ export function EmailViewer({
                   onClick={copySourceToClipboard}
                   className="flex items-center gap-1.5"
                 >
-                  {sourceCopied ? <Check className="w-4 h-4 text-green-600 dark:text-green-400" /> : <Copy className="w-4 h-4" />}
-                  {sourceCopied ? tCommon('copied') : t('copy_source')}
+                  {sourceCopied ? (
+                    <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
+                  {sourceCopied ? tCommon("copied") : t("copy_source")}
                 </Button>
                 <Button
                   variant="ghost"
