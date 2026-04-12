@@ -194,6 +194,12 @@ OAUTH_ISSUER_URL=                 # optional, for external IdPs (Keycloak, Authe
 
 Endpoints are auto-discovered via `.well-known/oauth-authorization-server` or `.well-known/openid-configuration`. If your JMAP server delegates auth to an external IdP, set `OAUTH_ISSUER_URL` to the IdP's base URL (e.g., `https://keycloak.example.com/realms/mail`).
 
+To disable Basic Auth:
+
+```env
+OAUTH_ONLY=true
+```
+
 #### Remember me (optional)
 
 To enable "Remember me" for Basic Auth login:
