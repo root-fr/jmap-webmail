@@ -34,6 +34,7 @@ import { AdvancedSearchPanel } from "@/components/search/advanced-search-panel";
 import { isFilterEmpty } from "@/lib/jmap/search-utils";
 import { WelcomeBanner } from "@/components/ui/welcome-banner";
 import { NavigationRail } from "@/components/layout/navigation-rail";
+import { useFaviconBadge } from "@/hooks/use-favicon-badge";
 
 export default function Home() {
   const router = useRouter();
@@ -97,6 +98,9 @@ export default function Home() {
   } = useEmailStore();
 
   const contactStore = useContactStore();
+
+  const inboxUnread = mailboxes.find(m => m.role === "inbox")?.unreadEmails || 0;
+  useFaviconBadge(inboxUnread);
 
   // Keyboard shortcuts handlers
   const keyboardHandlers = useMemo(() => ({

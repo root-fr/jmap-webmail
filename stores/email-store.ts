@@ -1027,14 +1027,15 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       const accountChanges = change.changed[accountId];
       if (!accountChanges) return;
 
-      // Handle Email state changes - refresh current mailbox
+      // Handle Email state changes - refresh current mailbox and mailbox counts
       if (accountChanges.Email) {
         await get().refreshCurrentMailbox(client);
         get().fetchTagCounts(client);
+        get().fetchMailboxes(client);
       }
 
       // Handle Mailbox state changes - refresh mailbox list
-      if (accountChanges.Mailbox) {
+      if (accountChanges.Mailbox && !accountChanges.Email) {
         await get().fetchMailboxes(client);
       }
 
