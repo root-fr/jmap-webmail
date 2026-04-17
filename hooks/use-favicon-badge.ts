@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-const SIZE = 32;
+const SIZE = 64;
 
 export function useFaviconBadge(count: number) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -90,7 +90,11 @@ function applyBadge(
 
   ctx.fillStyle = "#ef4444";
   ctx.beginPath();
-  ctx.roundRect(x, y, badgeW, badgeH, 3);
+  if (typeof ctx.roundRect === "function") {
+    ctx.roundRect(x, y, badgeW, badgeH, 3);
+  } else {
+    ctx.rect(x, y, badgeW, badgeH);
+  }
   ctx.fill();
 
   ctx.strokeStyle = "#b91c1c";
