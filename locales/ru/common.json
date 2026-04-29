@@ -522,6 +522,7 @@
     "portuguese": "Português",
     "russian": "Русский",
     "ukrainian": "Українська",
+    "polish": "Polski",
     "select_language": "Выберите язык",
     "switch_to_english": "Сменить язык на английский",
     "switch_to_french": "Сменить язык на французский",
@@ -533,6 +534,7 @@
     "switch_to_portuguese": "Сменить язык на португальский",
     "switch_to_russian": "Сменить язык на русский",
     "switch_to_ukrainian": "Сменить язык на украинский",
+    "switch_to_polish": "Сменить язык на польский",
     "switching": "Меняем язык…"
   },
   "settings": {
