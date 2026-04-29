@@ -849,7 +849,7 @@ export function EmailViewer({
                 title={t('tooltips.reply')}
               >
                 <Reply className="w-4 h-4" />
-                <span className="ml-1.5 hidden lg:inline">Reply</span>
+                <span className="ml-1.5 hidden lg:inline">{t('reply')}</span>
               </Button>
 
               {/* Reply Options Dropdown - hidden on mobile/tablet */}
@@ -868,14 +868,14 @@ export function EmailViewer({
                     className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
                   >
                     <ReplyAll className="w-4 h-4" />
-                    Reply all
+                    {t('reply_all')}
                   </button>
                   <button
                     onClick={onForward}
                     className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
                   >
                     <Forward className="w-4 h-4" />
-                    Forward
+                    {t('forward')}
                   </button>
                 </div>
               </div>
