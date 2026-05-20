@@ -8,6 +8,13 @@ export function getEventEndDate(event: CalendarEvent): Date {
   return new Date(start.getTime() + parseDuration(event.duration) * 60000);
 }
 
+export function getEventLastVisibleDate(event: CalendarEvent): Date {
+  const start = new Date(event.start);
+  const end = getEventEndDate(event);
+  if (end.getTime() <= start.getTime()) return start;
+  return new Date(end.getTime() - 1);
+}
+
 export function layoutOverlappingEvents(
   events: CalendarEvent[],
 ): { event: CalendarEvent; column: number; totalColumns: number }[] {

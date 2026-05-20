@@ -9,6 +9,7 @@ import { X, Trash2, Check, Users, CalendarDays, Copy } from "lucide-react";
 import { format, parseISO, addHours, addDays } from "date-fns";
 import type { CalendarEvent, Calendar, CalendarParticipant } from "@/lib/jmap/types";
 import { parseDuration } from "./event-card";
+import { getEventLastVisibleDate } from "@/lib/calendar-utils";
 import { ParticipantInput } from "./participant-input";
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
 import {
@@ -134,6 +135,7 @@ export function EventModal({
 
   const getInitialEnd = (): Date => {
     if (event?.start) {
+      if (event.showWithoutTime) return getEventLastVisibleDate(event);
       const s = parseISO(event.start);
       const dur = parseDuration(event.duration);
       return new Date(s.getTime() + dur * 60000);

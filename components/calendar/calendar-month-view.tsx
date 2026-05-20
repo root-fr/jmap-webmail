@@ -8,7 +8,7 @@ import {
 } from "date-fns";
 import { cn } from "@/lib/utils";
 import { EventCard } from "./event-card";
-import { getEventEndDate } from "@/lib/calendar-utils";
+import { getEventEndDate, getEventLastVisibleDate } from "@/lib/calendar-utils";
 import type { CalendarEvent, Calendar } from "@/lib/jmap/types";
 import { useAuthStore } from "@/stores/auth-store";
 import { useCalendarStore } from "@/stores/calendar-store";
@@ -57,7 +57,7 @@ export function CalendarMonthView({
     events.forEach((e) => {
       try {
         const start = new Date(e.start);
-        const end = getEventEndDate(e);
+        const end = getEventLastVisibleDate(e);
         const startDay = new Date(start);
         startDay.setHours(0, 0, 0, 0);
         const endDay = new Date(end);

@@ -6,7 +6,7 @@ import { format, isToday, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { EventCard, parseDuration } from "./event-card";
 import { QuickEventInput } from "./quick-event-input";
-import { getEventEndDate, layoutOverlappingEvents, formatSnapTime } from "@/lib/calendar-utils";
+import { getEventLastVisibleDate, layoutOverlappingEvents, formatSnapTime } from "@/lib/calendar-utils";
 import type { CalendarEvent, Calendar } from "@/lib/jmap/types";
 import { useTimeGridInteractions } from "@/hooks/use-time-grid-interactions";
 
@@ -47,7 +47,7 @@ export function CalendarDayView({
     events.forEach((ev) => {
       try {
         const start = new Date(ev.start);
-        const end = getEventEndDate(ev);
+        const end = getEventLastVisibleDate(ev);
         const startDay = new Date(start); startDay.setHours(0, 0, 0, 0);
         const endDay = new Date(end); endDay.setHours(0, 0, 0, 0);
         const selDay = new Date(selectedDate); selDay.setHours(0, 0, 0, 0);

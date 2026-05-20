@@ -6,7 +6,7 @@ import { format, parseISO, isToday, isTomorrow } from "date-fns";
 import { Calendar as CalendarIcon, MapPin, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseDuration, getEventColor } from "./event-card";
-import { getEventEndDate } from "@/lib/calendar-utils";
+import { getEventLastVisibleDate } from "@/lib/calendar-utils";
 import { getParticipantCount } from "@/lib/calendar-participants";
 import type { CalendarEvent, Calendar } from "@/lib/jmap/types";
 
@@ -50,7 +50,7 @@ export function CalendarAgendaView({
     sorted.forEach((ev) => {
       try {
         const start = new Date(ev.start);
-        const end = getEventEndDate(ev);
+        const end = getEventLastVisibleDate(ev);
         const startKey = format(start, "yyyy-MM-dd");
         const endKey = format(end, "yyyy-MM-dd");
 
