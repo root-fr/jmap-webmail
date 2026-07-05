@@ -152,7 +152,7 @@ export function generateScript(rules: FilterRule[]): string {
 
     if (rule.stopProcessing) {
       const lastAction = rule.actions[rule.actions.length - 1];
-      if (!lastAction || !['stop', 'discard', 'reject'].includes(lastAction.type)) {
+      if (!lastAction || !['stop', 'reject'].includes(lastAction.type)) {
         actionLines.push('stop;');
       }
     }
