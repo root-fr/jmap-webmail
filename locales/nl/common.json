@@ -425,7 +425,8 @@
     "validation": {
       "recipient_required": "Voeg een ontvanger toe om te verzenden",
       "subject_required": "Voeg een onderwerp toe",
-      "body_required": "Schrijf een bericht of voeg een bestand toe"
+      "body_required": "Schrijf een bericht of voeg een bestand toe",
+      "attachments_pending": "Wacht tot de bijlagen zijn geüpload"
     },
     "upload_progress": "Uploaden {uploaded} / {total}",
     "upload_cancel": "Upload annuleren",
@@ -537,7 +538,6 @@
     "save_success": "Instellingen succesvol opgeslagen",
     "import_success": "Instellingen succesvol geïmporteerd",
     "import_error": "Kan instellingen niet importeren",
-    "reset_confirm": "Weet je zeker dat je alle instellingen wilt resetten naar de standaardwaarden?",
     "tabs": {
       "appearance": "Uiterlijk",
       "language": "Taal & Regio",
@@ -584,35 +584,6 @@
       "animations": {
         "label": "Animaties inschakelen",
         "description": "Vloeiende overgangen en effecten tonen"
-      }
-    },
-    "language_region": {
-      "title": "Taal & Regio",
-      "description": "Configureer taal- en regiovoorkeuren",
-      "language": {
-        "label": "Taal",
-        "description": "Kies je voorkeurstaal",
-        "english": "English",
-        "french": "Français"
-      },
-      "date_format": {
-        "label": "Datumnotatie",
-        "description": "Hoe datums moeten worden weergegeven",
-        "regional": "Regionaal",
-        "iso": "ISO 8601",
-        "custom": "Aangepast"
-      },
-      "time_format": {
-        "label": "Tijdnotatie",
-        "description": "Kies tussen 12-uurs of 24-uurs klok",
-        "12h": "12-uurs",
-        "24h": "24-uurs"
-      },
-      "first_day": {
-        "label": "Eerste dag van de week",
-        "description": "Begin de week op zondag of maandag",
-        "sunday": "Zondag",
-        "monday": "Maandag"
       }
     },
     "email_behavior": {

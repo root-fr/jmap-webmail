@@ -425,7 +425,8 @@
     "validation": {
       "recipient_required": "Ajoutez un destinataire pour envoyer",
       "subject_required": "Ajoutez un objet",
-      "body_required": "Rédigez un message ou joignez un fichier"
+      "body_required": "Rédigez un message ou joignez un fichier",
+      "attachments_pending": "Attendez la fin de l'envoi des pièces jointes"
     },
     "upload_progress": "Envoi {uploaded} / {total}",
     "upload_cancel": "Annuler l'envoi",
@@ -537,7 +538,6 @@
     "save_success": "Paramètres enregistrés avec succès",
     "import_success": "Paramètres importés avec succès",
     "import_error": "Échec de l'importation des paramètres",
-    "reset_confirm": "Êtes-vous sûr de vouloir réinitialiser tous les paramètres ?",
     "tabs": {
       "appearance": "Apparence",
       "language": "Langue et région",
@@ -584,35 +584,6 @@
       "animations": {
         "label": "Activer les animations",
         "description": "Afficher les transitions et effets fluides"
-      }
-    },
-    "language_region": {
-      "title": "Langue et région",
-      "description": "Configurez vos préférences linguistiques et régionales",
-      "language": {
-        "label": "Langue",
-        "description": "Choisissez votre langue préférée",
-        "english": "English",
-        "french": "Français"
-      },
-      "date_format": {
-        "label": "Format de date",
-        "description": "Comment les dates doivent être affichées",
-        "regional": "Régional",
-        "iso": "ISO 8601",
-        "custom": "Personnalisé"
-      },
-      "time_format": {
-        "label": "Format d'heure",
-        "description": "Choisissez entre 12 heures ou 24 heures",
-        "12h": "12 heures",
-        "24h": "24 heures"
-      },
-      "first_day": {
-        "label": "Premier jour de la semaine",
-        "description": "Commencer la semaine le dimanche ou le lundi",
-        "sunday": "Dimanche",
-        "monday": "Lundi"
       }
     },
     "email_behavior": {

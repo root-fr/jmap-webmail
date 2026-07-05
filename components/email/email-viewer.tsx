@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import DOMPurify from "dompurify";
 import { Email } from "@/lib/jmap/types";
-import { hasRichFormatting, needsIframeRendering, EMAIL_SANITIZE_CONFIG, collapseBlockedImageContainers, plainTextToSafeHtml } from "@/lib/email-sanitization";
+import { hasRichFormatting, needsIframeRendering, buildEmailSanitizeConfig, collapseBlockedImageContainers, plainTextToSafeHtml } from "@/lib/email-sanitization";
 import { SandboxedEmailFrame } from "./sandboxed-email-frame";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -212,7 +212,6 @@ export function EmailViewer({
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
   const [showFullHeaders, setShowFullHeaders] = useState(false);
   const [allowExternalContent, setAllowExternalContent] = useState(false);
-  const [hasBlockedContent, setHasBlockedContent] = useState(false);
   const [quickReplyText, setQuickReplyText] = useState("");
   const [isQuickReplyFocused, setIsQuickReplyFocused] = useState(false);
   const [isSendingQuickReply, setIsSendingQuickReply] = useState(false);
@@ -356,20 +355,14 @@ export function EmailViewer({
     };
   }, [email?.id, email?.attachments, client, isInlineAttachment]);
 
-  useEffect(() => {
-    // Mark as read when email is viewed
-    if (email && !email.keywords?.$seen && onMarkAsRead) {
-      onMarkAsRead(email.id, true);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- email?.id changes when email changes, which is the intended trigger
-  }, [email?.id, email?.keywords?.$seen, onMarkAsRead]);
+  // Mark-as-read is driven by the page-level markAsReadDelay setting
+  // (app/[locale]/page.tsx). The viewer must not force it on display.
 
   // Reset external content permission and quick reply when email changes
   // Initialize allowExternalContent based on externalContentPolicy setting
   useEffect(() => {
     // 'allow' = always allow, 'block' = always block, 'ask' = user decides per email
     setAllowExternalContent(externalContentPolicy === 'allow');
-    setHasBlockedContent(false);
     setQuickReplyText("");
     setIsQuickReplyFocused(false);
     setShowSourceModal(false);
@@ -532,7 +525,7 @@ export function EmailViewer({
 
   // Sanitize and prepare email HTML content
   const emailContent = useMemo(() => {
-    if (!email) return { html: "", isHtml: false };
+    if (!email) return { html: "", isHtml: false, hasBlockedContent: false };
 
     // Check if we have body values
     if (email.bodyValues) {
@@ -552,9 +545,6 @@ export function EmailViewer({
         // Create a custom DOMPurify hook to handle external content
         let blockedExternalContent = false;
 
-        // Use shared sanitization config as base (more secure)
-        const sanitizeConfig = { ...EMAIL_SANITIZE_CONFIG };
-
         // Check if sender is trusted
         const senderEmail = email.from?.[0]?.email?.toLowerCase();
         const senderIsTrusted = senderEmail ? isSenderTrusted(senderEmail) : false;
@@ -566,10 +556,9 @@ export function EmailViewer({
           (externalContentPolicy === 'ask' && !allowExternalContent)
         );
 
-        if (shouldBlockExternal) {
-          sanitizeConfig.FORBID_TAGS.push('link');
-          sanitizeConfig.FORBID_ATTR.push('background');
-        }
+        // Fresh per-render config so blocking external content never mutates
+        // the shared module arrays.
+        const sanitizeConfig = buildEmailSanitizeConfig(shouldBlockExternal);
 
         DOMPurify.addHook('afterSanitizeAttributes', (node) => {
           const htmlNode = node as HTMLElement;
@@ -635,11 +624,6 @@ export function EmailViewer({
           cleanHtml = collapseBlockedImageContainers(cleanHtml);
         }
 
-        // Update blocked content state
-        if (blockedExternalContent && !hasBlockedContent) {
-          setHasBlockedContent(true);
-        }
-
         // Replace cid: references with pre-fetched object URLs
         if (cidUrls.size > 0) {
           cleanHtml = cleanHtml.replace(/src="cid:([^"]+)"/gi, (match, cid) => {
@@ -652,6 +636,7 @@ export function EmailViewer({
           html: cleanHtml,
           isHtml: true,
           useIframe: needsIframeRendering(htmlContent),
+          hasBlockedContent: blockedExternalContent,
         };
       }
 
@@ -661,7 +646,8 @@ export function EmailViewer({
 
         return {
           html: plainTextToSafeHtml(textContent),
-          isHtml: false
+          isHtml: false,
+          hasBlockedContent: false,
         };
       }
     }
@@ -678,15 +664,19 @@ export function EmailViewer({
 
       return {
         html: `<div style="color: var(--color-muted-foreground); font-style: italic;">${previewHtml}</div>`,
-        isHtml: false
+        isHtml: false,
+        hasBlockedContent: false,
       };
     }
 
     return {
       html: '<p style="color: var(--color-muted-foreground);">No content available</p>',
-      isHtml: false
+      isHtml: false,
+      hasBlockedContent: false,
     };
-  }, [email, allowExternalContent, hasBlockedContent, externalContentPolicy, isSenderTrusted, resolvedTheme, cidUrls]);
+  }, [email, allowExternalContent, externalContentPolicy, isSenderTrusted, resolvedTheme, cidUrls]);
+
+  const hasBlockedContent = emailContent.hasBlockedContent;
 
   // Detect List-Unsubscribe header for newsletter banners
   const listHeaders = useMemo(() => {

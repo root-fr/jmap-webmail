@@ -24,6 +24,25 @@ export const EMAIL_SANITIZE_CONFIG = {
 };
 
 /**
+ * Build a per-render DOMPurify config with FRESH FORBID_TAGS/FORBID_ATTR arrays.
+ * Callers that block external content append to these arrays; copying by value
+ * here prevents mutation of the shared module-level EMAIL_SANITIZE_CONFIG (which
+ * would leak the untrusted-sender policy into all other sanitize calls and grow
+ * the arrays without bound).
+ */
+export function buildEmailSanitizeConfig(blockExternal: boolean) {
+  return {
+    ...EMAIL_SANITIZE_CONFIG,
+    FORBID_TAGS: blockExternal
+      ? [...EMAIL_SANITIZE_CONFIG.FORBID_TAGS, 'link']
+      : [...EMAIL_SANITIZE_CONFIG.FORBID_TAGS],
+    FORBID_ATTR: blockExternal
+      ? [...EMAIL_SANITIZE_CONFIG.FORBID_ATTR, 'background']
+      : [...EMAIL_SANITIZE_CONFIG.FORBID_ATTR],
+  };
+}
+
+/**
  * Sanitize email HTML content
  * @param html - Raw HTML content from email
  * @returns Sanitized HTML safe for rendering

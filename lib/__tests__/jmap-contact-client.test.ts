@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { JMAPClient } from '../jmap/client';
+import { createTestClient as createClient, mockFetch, mockFetchOnce } from './jmap-test-helpers';
 
 const mockContact = {
   id: 'contact-1',
@@ -13,34 +13,6 @@ const mockAddressBook = {
   name: 'Default',
   isDefault: true,
 };
-
-function createClient(): JMAPClient {
-  const client = new JMAPClient('https://jmap.example.com', 'user', 'pass');
-  Object.assign(client, {
-    apiUrl: 'https://jmap.example.com/api',
-    accountId: 'account-1',
-  });
-  return client;
-}
-
-function mockFetch(response: object, ok = true, status = 200) {
-  return vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-    ok,
-    status,
-    text: () => Promise.resolve(JSON.stringify(response)),
-    json: () => Promise.resolve(response),
-  } as Response);
-}
-
-function mockFetchOnce(spy: ReturnType<typeof vi.spyOn>, response: object) {
-  spy.mockResolvedValueOnce({
-    ok: true,
-    status: 200,
-    text: () => Promise.resolve(JSON.stringify(response)),
-    json: () => Promise.resolve(response),
-  } as Response);
-  return spy;
-}
 
 describe('JMAPClient contact methods', () => {
   beforeEach(() => {
@@ -269,6 +241,41 @@ describe('JMAPClient contact methods', () => {
       const body = JSON.parse(fetchSpy.mock.calls[1][1]?.body as string);
       expect(body.methodCalls[0][1].ids).toEqual(['contact-1']);
       expect(body.methodCalls[0][1]['#ids']).toBeUndefined();
+    });
+
+    it('warns when the contact list is truncated by the server total', async () => {
+      const client = setupClientWithMaxObjects(500);
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/query', { ids: ['c-1', 'c-2'], total: 1500 }, '0']],
+      });
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/get', { list: [mockContact] }, '0']],
+      });
+
+      await client.getContacts();
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('1500');
+    });
+
+    it('does not warn when the server total matches the returned ids', async () => {
+      const client = setupClientWithMaxObjects(500);
+      const fetchSpy = vi.spyOn(globalThis, 'fetch');
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/query', { ids: ['c-1'], total: 1 }, '0']],
+      });
+      mockFetchOnce(fetchSpy, {
+        methodResponses: [['ContactCard/get', { list: [mockContact] }, '0']],
+      });
+
+      await client.getContacts();
+
+      expect(warnSpy).not.toHaveBeenCalled();
     });
   });
 

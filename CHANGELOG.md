@@ -1,5 +1,83 @@
 # Changelog
 
+## 1.5.3 (2026-07-05)
+
+A stability release: fifteen bug fixes across sending, filters, shared
+mailboxes and the reading pane, several of them long-standing. No new
+features, but two of the fixes change behaviour you may notice, both
+for the better.
+
+### Security
+
+- **The Content Security Policy is now enforced**. Earlier releases
+  sent the policy in report-only mode, which browsers log but never
+  act on, so the nonce-based script restrictions did not actually
+  apply. The policy now ships under the enforcing header: only
+  scripts carrying the per-request nonce can run, plugins and framing
+  are blocked, and inline images from email attachments keep working
+  through an explicit `blob:` allowance. If you run behind a reverse
+  proxy that rewrites headers, check that it passes
+  `Content-Security-Policy` through untouched.
+- **Filter scripts now escape every user-supplied value**. A rule
+  name, custom header name or size value containing Sieve syntax
+  could break out of its quoted string or comment and add its own
+  commands to the uploaded script, up to redirecting or discarding
+  incoming mail. This also applied to imported filter sets. All
+  fields are sanitised before the script is generated.
+- **dompurify upgraded to 3.4.11** (eight advisories since 3.4.0,
+  including sanitizer bypasses; this project sanitises untrusted
+  email HTML, so these mattered) and **Next.js to 16.2.10** for the
+  June security backports.
+- **Remote images loaded through the `background` attribute are now
+  blocked in the conversation view** when external content blocking
+  is on, matching what the single-message view already did.
+
+### Fixes
+
+- **Failed sends are reported instead of pretending to succeed**: a
+  wrong error check meant the composer closed normally while the
+  message stayed in Drafts, unsent, with no warning. Server-side
+  errors on send and on filter validation now surface properly.
+- **Right-click actions target the message you clicked**: Delete,
+  Archive and Mark as spam from the list context menu could act on
+  the message open in the reading pane instead.
+- **Archiving a conversation leaves your own copies alone**: it used
+  to pull your sent replies out of Sent and draft replies out of
+  Drafts along with the rest of the thread.
+- **"Stop processing further rules" works after Discard and Reject**
+  (#67, thanks @travier for the report and the fix).
+- **Live updates survive folder changes**: creating or deleting a
+  folder silently stopped background mail refresh for the rest of
+  the session, while the connection indicator stayed green.
+- **Bulk actions work in shared mailboxes**: multi-select mark as
+  read, move and delete ran against the wrong account there, and
+  changes the server refused were shown as successful, only to be
+  undone by the next refresh. Failures are now reported honestly.
+- **The "mark as read" setting is honoured**: opening a message
+  marked it read immediately even with a delay or "never" configured.
+- **Sending waits for attachments**: sending while a file was still
+  uploading, or after its upload had failed, silently sent the
+  message without the attachment.
+- **Deleting from Trash actually deletes**: with the default
+  "move to trash" setting, deleting an already-trashed message did
+  nothing server-side, so it reappeared after the next refresh.
+- **Search results and scroll position survive background
+  refreshes**, and the new-mail sound only plays for mail that is
+  genuinely newer, not when the top of the list changes for other
+  reasons.
+- **Large address books warn instead of truncating silently** when
+  they exceed the 1000-contact query limit.
+- **The unread-count favicon badge now renders on Firefox**: the
+  legacy `favicon.ico` shipped alongside the SVG icon and Firefox
+  picked the wrong one (thanks @jabiinfante for the diagnosis).
+
+### Internal
+
+- Duplicate helpers removed, one unused dependency dropped, dead
+  translation keys cleaned out of all ten locales, and about two
+  dozen unit tests added around the fixed code paths (the suite now
+  counts 745).
+
 ## 1.5.2 (2026-05-14)
 
 ### Security

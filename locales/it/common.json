@@ -425,7 +425,8 @@
     "validation": {
       "recipient_required": "Aggiungi un destinatario per inviare",
       "subject_required": "Aggiungi un oggetto",
-      "body_required": "Scrivi un messaggio o allega un file"
+      "body_required": "Scrivi un messaggio o allega un file",
+      "attachments_pending": "Attendi il completamento del caricamento degli allegati"
     },
     "upload_progress": "Caricamento {uploaded} / {total}",
     "upload_cancel": "Annulla caricamento",
@@ -537,7 +538,6 @@
     "save_success": "Impostazioni salvate con successo",
     "import_success": "Impostazioni importate con successo",
     "import_error": "Impossibile importare le impostazioni",
-    "reset_confirm": "Sei sicuro di voler ripristinare tutte le impostazioni ai valori predefiniti?",
     "tabs": {
       "appearance": "Aspetto",
       "language": "Lingua e regione",
@@ -584,35 +584,6 @@
       "animations": {
         "label": "Abilita animazioni",
         "description": "Mostra transizioni ed effetti fluidi"
-      }
-    },
-    "language_region": {
-      "title": "Lingua e regione",
-      "description": "Configura le preferenze di lingua e regionali",
-      "language": {
-        "label": "Lingua",
-        "description": "Scegli la tua lingua preferita",
-        "english": "English",
-        "french": "Français"
-      },
-      "date_format": {
-        "label": "Formato data",
-        "description": "Come devono essere visualizzate le date",
-        "regional": "Regionale",
-        "iso": "ISO 8601",
-        "custom": "Personalizzato"
-      },
-      "time_format": {
-        "label": "Formato ora",
-        "description": "Scegli tra formato 12 o 24 ore",
-        "12h": "12 ore",
-        "24h": "24 ore"
-      },
-      "first_day": {
-        "label": "Primo giorno della settimana",
-        "description": "Inizia la settimana di domenica o lunedì",
-        "sunday": "Domenica",
-        "monday": "Lunedì"
       }
     },
     "email_behavior": {

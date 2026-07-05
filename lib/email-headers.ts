@@ -80,52 +80,6 @@ export function parseSpamScore(header: string): { score: number; status: string 
 }
 
 /**
- * Parse Received headers to extract mail routing path
- */
-interface ReceivedHeaderInfo {
-  from: string;
-  by: string;
-  timestamp?: string;
-  protocol?: string;
-  id?: string;
-}
-
-export function parseReceivedHeaders(headers: string[]): ReceivedHeaderInfo[] {
-  const path: ReceivedHeaderInfo[] = [];
-
-  for (const header of headers) {
-    const fromMatch = header.match(/from\s+([^\s]+)(?:\s+\([^)]+\))?/);
-    const byMatch = header.match(/by\s+([^\s]+)/);
-    const dateMatch = header.match(/;\s+(.+)$/);
-    const protoMatch = header.match(/with\s+(\w+)/);
-    const idMatch = header.match(/id\s+([^\s;]+)/);
-
-    if (fromMatch || byMatch) {
-      path.push({
-        from: fromMatch?.[1] || 'unknown',
-        by: byMatch?.[1] || 'unknown',
-        timestamp: dateMatch?.[1],
-        protocol: protoMatch?.[1],
-        id: idMatch?.[1]
-      });
-    }
-  }
-
-  return path;
-}
-
-/**
- * Format bytes to human readable size
- */
-export function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
-}
-
-/**
  * Get security status color and icon based on result
  */
 export function getSecurityStatus(result?: string): {

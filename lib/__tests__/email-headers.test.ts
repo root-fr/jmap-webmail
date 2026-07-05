@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   parseAuthenticationResults,
   parseSpamScore,
-  parseReceivedHeaders,
-  formatBytes,
   getSecurityStatus,
   parseSpamLLM,
   extractListHeaders,
@@ -73,56 +71,6 @@ describe('parseSpamScore', () => {
 
   it('returns null for unrecognized format', () => {
     expect(parseSpamScore('nothing useful here')).toBeNull();
-  });
-});
-
-describe('parseReceivedHeaders', () => {
-  it('parses a single received header', () => {
-    const headers = ['from mail.example.com by mx.example.com with SMTP id abc123; Mon, 15 Jan 2024 10:00:00 +0000'];
-    const result = parseReceivedHeaders(headers);
-    expect(result).toHaveLength(1);
-    expect(result[0].from).toBe('mail.example.com');
-    expect(result[0].by).toBe('mx.example.com');
-    expect(result[0].protocol).toBe('SMTP');
-    expect(result[0].id).toBe('abc123');
-    expect(result[0].timestamp).toBe('Mon, 15 Jan 2024 10:00:00 +0000');
-  });
-
-  it('handles missing fields gracefully', () => {
-    const result = parseReceivedHeaders(['from sender.example.com']);
-    expect(result).toHaveLength(1);
-    expect(result[0].from).toBe('sender.example.com');
-    expect(result[0].by).toBe('unknown');
-  });
-
-  it('returns empty array for empty input', () => {
-    expect(parseReceivedHeaders([])).toEqual([]);
-  });
-
-  it('skips headers with no from or by', () => {
-    expect(parseReceivedHeaders(['random text without routing info'])).toEqual([]);
-  });
-});
-
-describe('formatBytes', () => {
-  it('formats 0 bytes', () => {
-    expect(formatBytes(0)).toBe('0 B');
-  });
-
-  it('formats bytes', () => {
-    expect(formatBytes(512)).toBe('512.0 B');
-  });
-
-  it('formats kilobytes', () => {
-    expect(formatBytes(1024)).toBe('1.0 KB');
-  });
-
-  it('formats megabytes', () => {
-    expect(formatBytes(1048576)).toBe('1.0 MB');
-  });
-
-  it('formats gigabytes', () => {
-    expect(formatBytes(1073741824)).toBe('1.0 GB');
   });
 });
 

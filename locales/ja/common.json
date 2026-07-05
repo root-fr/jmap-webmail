@@ -425,7 +425,8 @@
     "validation": {
       "recipient_required": "送信するには宛先を追加してください",
       "subject_required": "件名を追加してください",
-      "body_required": "メッセージを入力するかファイルを添付してください"
+      "body_required": "メッセージを入力するかファイルを添付してください",
+      "attachments_pending": "添付ファイルのアップロードが完了するまでお待ちください"
     },
     "upload_progress": "アップロード中 {uploaded} / {total}",
     "upload_cancel": "アップロードをキャンセル",
@@ -537,7 +538,6 @@
     "save_success": "設定を保存しました",
     "import_success": "設定をインポートしました",
     "import_error": "設定のインポートに失敗しました",
-    "reset_confirm": "すべての設定をデフォルトにリセットしてもよろしいですか？",
     "tabs": {
       "appearance": "外観",
       "language": "言語と地域",
@@ -584,35 +584,6 @@
       "animations": {
         "label": "アニメーションを有効にする",
         "description": "スムーズな遷移とエフェクトを表示"
-      }
-    },
-    "language_region": {
-      "title": "言語と地域",
-      "description": "言語と地域の設定を構成",
-      "language": {
-        "label": "言語",
-        "description": "お好みの言語を選択",
-        "english": "English",
-        "french": "Français"
-      },
-      "date_format": {
-        "label": "日付形式",
-        "description": "日付の表示形式",
-        "regional": "地域設定",
-        "iso": "ISO 8601",
-        "custom": "カスタム"
-      },
-      "time_format": {
-        "label": "時刻形式",
-        "description": "12時間制または24時間制を選択",
-        "12h": "12時間制",
-        "24h": "24時間制"
-      },
-      "first_day": {
-        "label": "週の開始日",
-        "description": "日曜日または月曜日から開始",
-        "sunday": "日曜日",
-        "monday": "月曜日"
       }
     },
     "email_behavior": {

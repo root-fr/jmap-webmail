@@ -12,12 +12,29 @@ function escapeString(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
+// Rule names are user-controlled; a raw newline would break out of the
+// single-line `# Rule:` comment and inject live Sieve commands.
+function stripNewlines(value: string): string {
+  return value.replace(/[\r\n]+/g, ' ');
+}
+
+// Header field names per RFC 5322: keep only the safe field-name charset so a
+// crafted name (e.g. containing a quote) cannot close the quoted Sieve string.
+function sanitizeHeaderName(name: string): string {
+  const cleaned = name.replace(/[^A-Za-z0-9-]/g, '');
+  return cleaned || 'X-Unknown';
+}
+
 function generateCondition(condition: FilterCondition): string {
   const { field, comparator, value } = condition;
 
   if (field === 'size') {
     const op = comparator === 'greater_than' ? ':over' : ':under';
-    return `size ${op} ${value}`;
+    // Size is user input like every other condition value: keep only a
+    // number with an optional K/M/G suffix so it cannot carry Sieve syntax.
+    const match = value.trim().match(/^(\d+)\s*([KMG])?/i);
+    const size = match ? `${match[1]}${(match[2] || '').toUpperCase()}` : '0';
+    return `size ${op} ${size}`;
   }
 
   if (field === 'body') {
@@ -26,7 +43,7 @@ function generateCondition(condition: FilterCondition): string {
   }
 
   const headerName = field === 'header'
-    ? (condition.headerName || 'X-Unknown')
+    ? sanitizeHeaderName(condition.headerName || 'X-Unknown')
     : HEADER_MAP[field];
 
   const escaped = escapeString(value);
@@ -112,7 +129,10 @@ function computeRequires(rules: FilterRule[]): string[] {
 
 export function generateScript(rules: FilterRule[]): string {
   const metadata: FilterMetadata = { version: 1, rules };
-  const metadataJson = JSON.stringify(metadata);
+  // Neutralise any `*/` in user fields (e.g. rule names) that would otherwise
+  // terminate the metadata block comment early. `\/` is valid JSON and parses
+  // back to `/`, so the generate -> parse round-trip is preserved.
+  const metadataJson = JSON.stringify(metadata).replace(/\*\//g, '*\\/');
   const lines: string[] = [];
 
   lines.push('/* @metadata:begin');
@@ -134,7 +154,7 @@ export function generateScript(rules: FilterRule[]): string {
     }
 
     lines.push('');
-    lines.push(`# Rule: ${rule.name}`);
+    lines.push(`# Rule: ${stripNewlines(rule.name)}`);
 
     const conditions = rule.conditions.map(generateCondition);
     let conditionStr: string;
@@ -152,7 +172,7 @@ export function generateScript(rules: FilterRule[]): string {
 
     if (rule.stopProcessing) {
       const lastAction = rule.actions[rule.actions.length - 1];
-      if (!lastAction || !['stop', 'reject'].includes(lastAction.type)) {
+      if (!lastAction || lastAction.type !== 'stop') {
         actionLines.push('stop;');
       }
     }

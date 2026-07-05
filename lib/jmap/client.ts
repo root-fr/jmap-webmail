@@ -650,13 +650,34 @@ export class JMAPClient {
     ]);
   }
 
-  async batchMarkAsRead(emailIds: string[], read: boolean = true): Promise<void> {
+  /**
+   * JMAP Email/set reports per-id failures in notUpdated/notDestroyed maps and
+   * still returns HTTP 200, so request() will not throw. A batch set against the
+   * wrong account (e.g. a shared mailbox run against the primary accountId) lands
+   * every id in these maps; without this check the store would optimistically
+   * mutate rows the server never touched and the next poll resurrects them.
+   */
+  private assertNoBatchFailures(response: JMAPResponse, kind: "update" | "destroy"): void {
+    const result = response.methodResponses?.[0]?.[1];
+    const failed: Record<string, { type?: string; description?: string }> | undefined =
+      kind === "update" ? result?.notUpdated : result?.notDestroyed;
+    if (!failed) return;
+    const ids = Object.keys(failed);
+    if (ids.length > 0) {
+      const first = failed[ids[0]];
+      throw new JMAPSetError(first?.type || "unknown", first?.description || `Email/set failed to ${kind} ${ids.length} email(s)`);
+    }
+  }
+
+  async batchMarkAsRead(emailIds: string[], read: boolean = true, accountId?: string): Promise<void> {
     if (emailIds.length === 0) return;
 
+    const targetAccountId = accountId || this.accountId;
     const updates = Object.fromEntries(emailIds.map(id => [id, { "keywords/$seen": read }]));
-    await this.request([
-      ["Email/set", { accountId: this.accountId, update: updates }, "0"],
+    const response = await this.request([
+      ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
     ]);
+    this.assertNoBatchFailures(response, "update");
   }
 
   async toggleStar(emailId: string, starred: boolean): Promise<void> {
@@ -685,10 +706,10 @@ export class JMAPClient {
     ]);
   }
 
-  async deleteEmail(emailId: string): Promise<void> {
+  async deleteEmail(emailId: string, accountId?: string): Promise<void> {
     await this.request([
       ["Email/set", {
-        accountId: this.accountId,
+        accountId: accountId || this.accountId,
         destroy: [emailId],
       }, "0"],
     ]);
@@ -708,15 +729,17 @@ export class JMAPClient {
     ]);
   }
 
-  async batchDeleteEmails(emailIds: string[]): Promise<void> {
+  async batchDeleteEmails(emailIds: string[], accountId?: string): Promise<void> {
     if (emailIds.length === 0) return;
 
-    await this.request([
+    const targetAccountId = accountId || this.accountId;
+    const response = await this.request([
       ["Email/set", {
-        accountId: this.accountId,
+        accountId: targetAccountId,
         destroy: emailIds,
       }, "0"],
     ]);
+    this.assertNoBatchFailures(response, "destroy");
   }
 
   async queryTagCounts(tags: string[]): Promise<Record<string, number>> {
@@ -769,28 +792,48 @@ export class JMAPClient {
 
     const targetAccountId = accountId || this.accountId;
     const updates = Object.fromEntries(emailIds.map(id => [id, { mailboxIds: { [toMailboxId]: true } }]));
-    await this.request([
+    const response = await this.request([
       ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
     ]);
+    this.assertNoBatchFailures(response, "update");
   }
 
   /**
-   * Move every email in a thread to a single destination mailbox. Resolves
-   * the thread's emailIds first (one round-trip), then batches a single
-   * Email/set to update them all in one JMAP request. Returns the ids
-   * that were moved so the caller can reconcile local state.
+   * Move a thread's messages from a source mailbox to a destination mailbox.
+   * Thread/get spans every mailbox the conversation touches, so a full
+   * mailboxIds replacement would yank the user's own replies out of Sent and
+   * drafts out of Drafts. Instead, fetch current membership and emit JMAP
+   * patch pointers that detach only the source mailbox, skipping messages
+   * that aren't in the source mailbox. Returns the ids that were moved so the
+   * caller can reconcile local state.
    */
-  async moveThreadToMailbox(threadId: string, toMailboxId: string, accountId?: string): Promise<string[]> {
+  async moveThreadToMailbox(threadId: string, toMailboxId: string, fromMailboxId: string, accountId?: string): Promise<string[]> {
     const targetAccountId = accountId || this.accountId;
     const thread = await this.getThread(threadId, accountId);
     const ids = thread?.emailIds ?? [];
     if (ids.length === 0) return [];
 
-    const updates = Object.fromEntries(ids.map(id => [id, { mailboxIds: { [toMailboxId]: true } }]));
-    await this.request([
-      ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
+    const membership = await this.request([
+      ["Email/get", { accountId: targetAccountId, ids, properties: ["mailboxIds"] }, "0"],
     ]);
-    return ids;
+    const emails = membership.methodResponses?.[0]?.[1]?.list ?? [];
+
+    const update: Record<string, Record<string, unknown>> = {};
+    const moved: string[] = [];
+    for (const e of emails) {
+      if (!e.mailboxIds?.[fromMailboxId]) continue;
+      update[e.id] = {
+        [`mailboxIds/${fromMailboxId}`]: null,
+        [`mailboxIds/${toMailboxId}`]: true,
+      };
+      moved.push(e.id);
+    }
+    if (moved.length === 0) return [];
+
+    await this.request([
+      ["Email/set", { accountId: targetAccountId, update }, "0"],
+    ]);
+    return moved;
   }
 
   async createMailbox(name: string, parentId?: string): Promise<string> {
@@ -1406,7 +1449,7 @@ export class JMAPClient {
 
     if (response.methodResponses) {
       for (const [methodName, result] of response.methodResponses) {
-        if (methodName.endsWith('/error')) {
+        if (methodName === 'error') {
           throw new Error(result.description || `Failed to send email: ${result.type}`);
         }
 
@@ -1765,7 +1808,7 @@ export class JMAPClient {
       return { isValid: true };
     }
 
-    if (response.methodResponses?.[0]?.[0]?.endsWith('/error')) {
+    if (response.methodResponses?.[0]?.[0] === 'error') {
       const error = response.methodResponses[0][1];
       return { isValid: false, errors: [error.description || "Validation failed"] };
     }
@@ -1811,8 +1854,12 @@ export class JMAPClient {
     try {
       const accountId = this.getContactsAccountId();
       const maxBatchSize = this.getMaxObjectsInGet();
-      // TODO: paginate query for >1000 contacts (limit caps results silently)
-      const queryArgs: Record<string, unknown> = { accountId, limit: 1000 };
+      const CONTACTS_QUERY_LIMIT = 1000;
+      const queryArgs: Record<string, unknown> = {
+        accountId,
+        limit: CONTACTS_QUERY_LIMIT,
+        calculateTotal: true,
+      };
       if (addressBookId) {
         queryArgs.filter = { inAddressBook: addressBookId };
       }
@@ -1825,7 +1872,14 @@ export class JMAPClient {
         return [];
       }
 
-      const allIds = (queryResponse.methodResponses[0][1].ids || []) as string[];
+      const queryResult = queryResponse.methodResponses[0][1];
+      const allIds = (queryResult.ids || []) as string[];
+      const total = typeof queryResult.total === "number" ? queryResult.total : allIds.length;
+      if (total > allIds.length) {
+        console.warn(
+          `[JMAP] Contact list truncated: loaded ${allIds.length} of ${total} contacts (query limit ${CONTACTS_QUERY_LIMIT}).`
+        );
+      }
       if (allIds.length === 0) {
         return [];
       }
@@ -2324,6 +2378,10 @@ export class JMAPClient {
 
   // Polling-based push since EventSource cannot send Authorization headers
   setupPushNotifications(): boolean {
+    // Guard against stacking intervals if setup runs more than once (effect re-run)
+    if (this.pollingInterval) {
+      return true;
+    }
     this.fetchCurrentStates();
     this.pollingInterval = setInterval(() => {
       this.checkForStateChanges();

@@ -426,7 +426,8 @@
     "validation": {
       "recipient_required": "Add a recipient to send",
       "subject_required": "Add a subject",
-      "body_required": "Write a message or attach a file"
+      "body_required": "Write a message or attach a file",
+      "attachments_pending": "Wait for attachments to finish uploading"
     },
     "upload_progress": "Uploading {uploaded} / {total}",
     "upload_cancel": "Cancel upload",
@@ -541,7 +542,6 @@
     "save_success": "Settings saved successfully",
     "import_success": "Settings imported successfully",
     "import_error": "Failed to import settings",
-    "reset_confirm": "Are you sure you want to reset all settings to defaults?",
     "unsaved_changes": "You have unsaved changes",
     "discard_changes": "Discard unsaved changes?",
     "discard": "Discard",
@@ -592,35 +592,6 @@
       "animations": {
         "label": "Enable Animations",
         "description": "Show smooth transitions and effects"
-      }
-    },
-    "language_region": {
-      "title": "Language & Region",
-      "description": "Configure language and regional preferences",
-      "language": {
-        "label": "Language",
-        "description": "Choose your preferred language",
-        "english": "English",
-        "french": "Français"
-      },
-      "date_format": {
-        "label": "Date Format",
-        "description": "How dates should be displayed",
-        "regional": "Regional",
-        "iso": "ISO 8601",
-        "custom": "Custom"
-      },
-      "time_format": {
-        "label": "Time Format",
-        "description": "Choose between 12-hour or 24-hour clock",
-        "12h": "12-hour",
-        "24h": "24-hour"
-      },
-      "first_day": {
-        "label": "First Day of Week",
-        "description": "Start week on Sunday or Monday",
-        "sunday": "Sunday",
-        "monday": "Monday"
       }
     },
     "email_behavior": {

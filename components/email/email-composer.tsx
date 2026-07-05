@@ -424,13 +424,15 @@ export function EmailComposer({
 
   const toAddresses = to.split(",").map(e => e.trim()).filter(Boolean);
   const hasContent = body || attachments.some(att => att.blobId && !att.uploading);
-  const canSend = toAddresses.length > 0 && !!subject && hasContent;
+  const attachmentsBusy = attachments.some(att => att.uploading || att.error);
+  const canSend = toAddresses.length > 0 && !!subject && hasContent && !attachmentsBusy;
 
   const getSendTooltip = (): string | undefined => {
     if (canSend) return undefined;
     if (toAddresses.length === 0) return t('validation.recipient_required');
     if (!subject) return t('validation.subject_required');
     if (!hasContent) return t('validation.body_required');
+    if (attachmentsBusy) return t('validation.attachments_pending');
     return undefined;
   };
 

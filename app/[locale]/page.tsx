@@ -273,39 +273,40 @@ export default function Home() {
 
           // Fetch tag counts in the background
           fetchTagCounts(client);
-
-          // Setup push notifications after successful data load
-          try {
-            // Register state change callback
-            client.onStateChange((change) => handleStateChange(change, client));
-
-            // Start receiving push notifications
-            const pushEnabled = client.setupPushNotifications();
-
-            if (pushEnabled) {
-              setPushConnected(true);
-              debug.log('[Push] Push notifications successfully enabled');
-            } else {
-              debug.log('[Push] Push notifications not available on this server');
-            }
-          } catch (error) {
-            // Push notifications are optional - don't break the app if they fail
-            debug.log('[Push] Failed to setup push notifications:', error);
-          }
         } catch {
           return;
         }
       };
       loadData();
     }
+  }, [isAuthenticated, client, mailboxes.length, fetchMailboxes, fetchEmails, fetchQuota, fetchTagCounts]);
 
-    // Cleanup push notifications on unmount
-    return () => {
-      if (client) {
-        client.closePushNotifications();
+  // Push notifications are keyed only on the authenticated client, so they survive
+  // mailbox count changes (folder create/delete) that re-run the data-load effect.
+  useEffect(() => {
+    if (!isAuthenticated || !client) {
+      return;
+    }
+
+    try {
+      client.onStateChange((change) => handleStateChange(change, client));
+      const pushEnabled = client.setupPushNotifications();
+      if (pushEnabled) {
+        setPushConnected(true);
+        debug.log('[Push] Push notifications successfully enabled');
+      } else {
+        debug.log('[Push] Push notifications not available on this server');
       }
+    } catch (error) {
+      // Push notifications are optional - don't break the app if they fail
+      debug.log('[Push] Failed to setup push notifications:', error);
+    }
+
+    return () => {
+      client.closePushNotifications();
+      setPushConnected(false);
     };
-  }, [isAuthenticated, client, mailboxes.length, fetchMailboxes, fetchEmails, fetchQuota, fetchTagCounts, handleStateChange, setPushConnected]);
+  }, [isAuthenticated, client, handleStateChange, setPushConnected]);
 
   // Handle mark-as-read with delay based on settings
   useEffect(() => {
@@ -437,19 +438,19 @@ export default function Home() {
     if (isTablet) setTabletListVisible(true);
   };
 
-  const handleDelete = async () => {
-    if (!client || !selectedEmail) return;
+  const handleDelete = async (email: Email | null = selectedEmail) => {
+    if (!client || !email) return;
 
     try {
-      await deleteEmail(client, selectedEmail.id);
-      dismissViewer();
+      await deleteEmail(client, email.id);
+      if (email.id === selectedEmail?.id) dismissViewer();
     } catch {
       return;
     }
   };
 
-  const handleArchive = async () => {
-    if (!client || !selectedEmail) return;
+  const handleArchive = async (email: Email | null = selectedEmail) => {
+    if (!client || !email) return;
 
     // Find archive mailbox
     const archiveMailbox = mailboxes.find(m => m.role === "archive" || m.name.toLowerCase() === "archive");
@@ -459,12 +460,12 @@ export default function Home() {
       // Archive the entire thread when the message belongs to one. Matches
       // Gmail / Apple Mail behavior — otherwise the rest of the conversation
       // is left orphaned in the inbox.
-      if (selectedEmail.threadId) {
-        await moveThreadToMailbox(client, selectedEmail.threadId, archiveMailbox.id);
+      if (email.threadId) {
+        await moveThreadToMailbox(client, email.threadId, archiveMailbox.id);
       } else {
-        await moveToMailbox(client, selectedEmail.id, archiveMailbox.id);
+        await moveToMailbox(client, email.id, archiveMailbox.id);
       }
-      dismissViewer();
+      if (email.id === selectedEmail?.id) dismissViewer();
     } catch {
       return;
     }
@@ -480,10 +481,10 @@ export default function Home() {
     }
   };
 
-  const handleMarkAsSpam = async () => {
-    if (!client || !selectedEmail) return;
+  const handleMarkAsSpam = async (email: Email | null = selectedEmail) => {
+    if (!client || !email) return;
 
-    const emailId = selectedEmail.id;
+    const emailId = email.id;
 
     try {
       await markAsSpam(client, emailId);
@@ -509,17 +510,17 @@ export default function Home() {
     }
   };
 
-  const handleUndoSpam = async () => {
-    if (!client || !selectedEmail) return;
+  const handleUndoSpam = async (email: Email | null = selectedEmail) => {
+    if (!client || !email) return;
 
     try {
-      await undoSpam(client, selectedEmail.id);
+      await undoSpam(client, email.id);
 
       const toastInstance = (await import('sonner')).toast;
       toastInstance.success(t('email_viewer.spam.toast_not_spam_success'));
 
       // Deselect email after moving it out of junk
-      selectEmail(null);
+      if (email.id === selectedEmail?.id) selectEmail(null);
     } catch {
       const toastInstance = (await import('sonner')).toast;
       toastInstance.error(t('email_viewer.spam.error_not_spam'));
@@ -869,14 +870,8 @@ export default function Home() {
                     await toggleStar(client, email.id);
                   }
                 }}
-                onDelete={async (email) => {
-                  selectEmail(email);
-                  await handleDelete();
-                }}
-                onArchive={async (email) => {
-                  selectEmail(email);
-                  await handleArchive();
-                }}
+                onDelete={handleDelete}
+                onArchive={handleArchive}
                 onSetColorTag={(emailId, color) => {
                   handleSetColorTag(emailId, color);
                 }}
@@ -885,14 +880,8 @@ export default function Home() {
                     await moveToMailbox(client, emailId, mailboxId);
                   }
                 }}
-                onMarkAsSpam={async (email) => {
-                  selectEmail(email);
-                  await handleMarkAsSpam();
-                }}
-                onUndoSpam={async (email) => {
-                  selectEmail(email);
-                  await handleUndoSpam();
-                }}
+                onMarkAsSpam={handleMarkAsSpam}
+                onUndoSpam={handleUndoSpam}
                 className="flex-1"
               />
             </ErrorBoundary>
@@ -945,12 +934,12 @@ export default function Home() {
                     onReply={handleReply}
                     onReplyAll={handleReplyAll}
                     onForward={handleForward}
-                    onDelete={handleDelete}
-                    onArchive={handleArchive}
+                    onDelete={() => handleDelete()}
+                    onArchive={() => handleArchive()}
                     onToggleStar={handleToggleStar}
                     onSetColorTag={handleSetColorTag}
-                    onMarkAsSpam={handleMarkAsSpam}
-                    onUndoSpam={handleUndoSpam}
+                    onMarkAsSpam={() => handleMarkAsSpam()}
+                    onUndoSpam={() => handleUndoSpam()}
                     onMarkAsRead={async (emailId, read) => {
                       if (client) {
                         await markAsRead(client, emailId, read);

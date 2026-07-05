@@ -109,6 +109,16 @@ interface EmailStore {
   loadMockData: () => void;
 }
 
+// JMAP calls against a shared mailbox must target the owning account,
+// not the primary accountId the client was initialised with.
+function resolveMailboxAccount(mailboxes: Mailbox[], mailboxId: string) {
+  const currentMailbox = mailboxes.find(mb => mb.id === mailboxId);
+  return {
+    currentMailbox,
+    accountId: currentMailbox?.isShared ? currentMailbox.accountId : undefined,
+  };
+}
+
 export const useEmailStore = create<EmailStore>((set, get) => ({
   emails: [],
   mailboxes: [],
@@ -407,11 +417,8 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       // Get delete action preference from settings
       const deleteAction = useSettingsStore.getState().deleteAction;
 
-      // Determine accountId for shared folders
-      const selectedMailboxId = get().selectedMailbox;
       const mailboxes = get().mailboxes;
-      const currentMailbox = mailboxes.find(mb => mb.id === selectedMailboxId);
-      const accountId = currentMailbox?.isShared ? currentMailbox.accountId : undefined;
+      const { accountId } = resolveMailboxAccount(mailboxes, get().selectedMailbox);
 
       // If deleteAction is 'trash', try to move to trash mailbox
       if (deleteAction === 'trash') {
@@ -425,7 +432,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
           return mb.role === 'trash' && !mb.isShared;
         });
 
-        if (trashMailbox) {
+        if (trashMailbox && !email.mailboxIds?.[trashMailbox.id]) {
           // Use originalId for shared mailboxes if available
           const trashId = trashMailbox.originalId || trashMailbox.id;
           await client.moveToTrash(emailId, trashId, accountId);
@@ -472,7 +479,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       }
 
       // Permanent delete
-      await client.deleteEmail(emailId);
+      await client.deleteEmail(emailId, accountId);
 
       // Remove from local state and update mailbox counters if needed
       set((state) => {
@@ -609,12 +616,14 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   moveThreadToMailbox: async (client, threadId, destinationMailboxId) => {
     try {
       const { mailboxes, selectedMailbox, emails } = get();
-      const currentMailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-      const accountId = currentMailbox?.isShared ? currentMailbox.accountId : undefined;
+      const { currentMailbox, accountId } = resolveMailboxAccount(mailboxes, selectedMailbox);
       const destMailbox = mailboxes.find(mb => mb.id === destinationMailboxId);
       const jmapDestId = destMailbox?.originalId || destinationMailboxId;
+      // Detach the conversation from the mailbox the user is viewing (e.g. Inbox),
+      // leaving its Sent/Drafts copies in place. Shared mailboxes use namespaced ids.
+      const jmapSourceId = currentMailbox?.originalId || selectedMailbox;
 
-      const movedIds = await client.moveThreadToMailbox(threadId, jmapDestId, accountId);
+      const movedIds = await client.moveThreadToMailbox(threadId, jmapDestId, jmapSourceId, accountId);
       if (movedIds.length === 0) return;
 
       const movedSet = new Set(movedIds);
@@ -683,8 +692,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       const currentMailboxIds = email.mailboxIds ? Object.keys(email.mailboxIds) : [];
 
       const { selectedMailbox, mailboxes } = get();
-      const currentMailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-      const accountId = currentMailbox?.isShared ? currentMailbox.accountId : undefined;
+      const { accountId } = resolveMailboxAccount(mailboxes, selectedMailbox);
 
       const destMailbox = mailboxes.find(mb => mb.id === destinationMailboxId);
       const jmapDestId = destMailbox?.originalId || destinationMailboxId;
@@ -849,13 +857,14 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
   // Batch operations
   batchMarkAsRead: async (client, read) => {
-    const { selectedEmailIds, emails, mailboxes } = get();
+    const { selectedEmailIds, emails, mailboxes, selectedMailbox } = get();
     if (selectedEmailIds.size === 0) return;
 
     set({ error: null });
     try {
       const emailIdsArray = Array.from(selectedEmailIds);
-      await client.batchMarkAsRead(emailIdsArray, read);
+      const { accountId } = resolveMailboxAccount(mailboxes, selectedMailbox);
+      await client.batchMarkAsRead(emailIdsArray, read, accountId);
 
       // Update local state
       const updatedEmails = emails.map(email =>
@@ -906,8 +915,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       const deletedEmails = emails.filter(e => selectedEmailIds.has(e.id));
 
       const deleteAction = useSettingsStore.getState().deleteAction;
-      const currentMailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-      const accountId = currentMailbox?.isShared ? currentMailbox.accountId : undefined;
+      const { accountId } = resolveMailboxAccount(mailboxes, selectedMailbox);
 
       let trashMailbox: typeof mailboxes[number] | undefined;
       if (deleteAction === 'trash') {
@@ -919,9 +927,16 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
       if (trashMailbox) {
         const trashId = trashMailbox.originalId || trashMailbox.id;
-        await client.batchMoveEmails(emailIdsArray, trashId, accountId);
+        const trashViewId = trashMailbox.id;
+        const alreadyInTrash = new Set(
+          deletedEmails.filter(e => e.mailboxIds?.[trashViewId]).map(e => e.id)
+        );
+        const toDestroy = emailIdsArray.filter(id => alreadyInTrash.has(id));
+        const toMove = emailIdsArray.filter(id => !alreadyInTrash.has(id));
+        if (toMove.length > 0) await client.batchMoveEmails(toMove, trashId, accountId);
+        if (toDestroy.length > 0) await client.batchDeleteEmails(toDestroy, accountId);
       } else {
-        await client.batchDeleteEmails(emailIdsArray);
+        await client.batchDeleteEmails(emailIdsArray, accountId);
       }
 
       const remainingEmails = emails.filter(e => !selectedEmailIds.has(e.id));
@@ -968,13 +983,14 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   batchMoveToMailbox: async (client, toMailboxId) => {
-    const { selectedEmailIds, emails } = get();
+    const { selectedEmailIds, emails, mailboxes, selectedMailbox } = get();
     if (selectedEmailIds.size === 0) return;
 
     set({ error: null });
     try {
       const emailIdsArray = Array.from(selectedEmailIds);
-      await client.batchMoveEmails(emailIdsArray, toMailboxId);
+      const { accountId } = resolveMailboxAccount(mailboxes, selectedMailbox);
+      await client.batchMoveEmails(emailIdsArray, toMailboxId, accountId);
 
       // Update local state - remove from current view since they moved
       const remainingEmails = emails.filter(e => !selectedEmailIds.has(e.id));
@@ -1159,7 +1175,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   refreshCurrentMailbox: async (client) => {
-    const { selectedMailbox } = get();
+    const { selectedMailbox, searchQuery, searchFilters } = get();
 
     // Only refresh if a mailbox is currently selected
     if (!selectedMailbox) return;
@@ -1175,17 +1191,36 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       // Get emails per page from settings
       const emailsPerPage = useSettingsStore.getState().emailsPerPage;
 
-      const result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, 0);
-
       const currentEmails = get().emails;
+      // Refetch as many rows as are currently loaded so a background refresh
+      // doesn't collapse deep pagination back to the first page.
+      const limit = Math.max(currentEmails.length, emailsPerPage);
 
-      // Check if there are new emails by comparing the first email ID
-      const currentFirstEmailId = currentEmails[0]?.id;
-      const newFirstEmailId = result.emails[0]?.id;
+      // Preserve the active search/filter instead of replacing the visible
+      // results with an unrelated plain-mailbox page.
+      const hasFilters = !isFilterEmpty(searchFilters);
+      let result;
+      if (hasFilters) {
+        const filter = buildJMAPFilter(searchQuery, searchFilters, jmapMailboxId);
+        result = await client.advancedSearchEmails(filter, accountId, limit, 0);
+      } else if (searchQuery) {
+        result = await client.searchEmails(searchQuery, jmapMailboxId, accountId, limit, 0);
+      } else {
+        result = await client.getEmails(jmapMailboxId, accountId, limit, 0);
+      }
 
-      // If the first email changed, we have a new email - trigger notification
-      if (currentFirstEmailId !== newFirstEmailId && result.emails[0]) {
-        get().handleNewEmailNotification(result.emails[0]);
+      // Only chime for genuinely newer mail: a later receivedAt than the
+      // previous newest AND an id we hadn't already loaded. This avoids a
+      // false chime when a remote delete/move promotes an older email.
+      const prevNewest = currentEmails[0];
+      const newest = result.emails[0];
+      if (
+        newest &&
+        (!prevNewest ||
+          (new Date(newest.receivedAt).getTime() > new Date(prevNewest.receivedAt).getTime() &&
+            !currentEmails.some(e => e.id === newest.id)))
+      ) {
+        get().handleNewEmailNotification(newest);
       }
 
       // Skip state update if emails haven't actually changed to avoid
@@ -1461,13 +1496,19 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         const jmapId = mb.originalId || mb.id;
 
         if (trashId && mb.totalEmails > 0) {
-          let position = 0;
+          let guardId: string | null = null;
           while (true) {
-            const batch = await client.queryMailboxEmailIds(jmapId, 500, position);
+            const batch = await client.queryMailboxEmailIds(jmapId, 500, 0);
             if (batch.ids.length === 0) break;
+            // If the same page keeps coming back the mailbox is not draining
+            // (e.g. a shared-mailbox move that the server rejected); abort
+            // instead of spinning forever.
+            if (batch.ids[0] === guardId) {
+              throw new Error(`Mailbox ${jmapId} did not drain; aborting to avoid an infinite loop`);
+            }
+            guardId = batch.ids[0];
             await client.batchMoveEmails(batch.ids, trashId);
             if (batch.ids.length < 500) break;
-            position = 0;
           }
         }
 

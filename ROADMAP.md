@@ -281,21 +281,42 @@ This document tracks the development status and planned features for JMAP Webmai
 - [x] Bulk delete honours the "delete to trash" setting instead of always hard-deleting
 - [x] Favicon unread badge clears on the zero transition instead of sticking until the next refresh
 
+### Release 1.5.3 (2026-07-05)
+- [x] Stability release: fifteen bug fixes, several long-standing (see CHANGELOG)
+- [x] Content Security Policy enforced (was report-only)
+- [x] Sieve filter generation hardened against script injection from rule fields
+- [x] Failed sends, shared-mailbox bulk actions and trash deletion report honestly instead of silently failing
+- [x] "Stop processing" honoured after Discard/Reject (#67, thanks @travier)
+- [x] dompurify 3.4.11 and Next.js 16.2.10 security updates
+
 ## Planned Features
 
-### Real-time and PWA (1.6.0)
+The next two releases focus on the most requested items from the issue
+tracker: search that covers the whole account (#75, #71) and a unified
+view across accounts (#53, #73). PWA and push work follows.
+
+### Search and list correctness (1.6.0)
+- [ ] Global cross-folder search with a folder/everywhere scope toggle (#75)
+- [ ] Fix large mailboxes where some mail is only reachable via search (#71)
+- [ ] Stable pagination on big folders (anchor-based paging, no drift)
+- [ ] Sort options beyond date, applied server-side
+
+### Multi-account and unified inbox (1.7.0)
+- [ ] "All accounts" unified inbox across every account the session exposes (#53, #73)
+- [ ] Per-account sections and badges in the sidebar
+- [ ] Compose picks the right identity for the account you are replying from
+
+### Real-time and PWA (1.8.0)
 - [ ] JMAP WebSocket push transport (RFC 8887), replacing polling fallback
 - [ ] PWA manifest, service worker, maskable icons, installable app
+- [ ] Web Push notifications with VAPID
 - [ ] Browser badge API for installed-app unread count
 
-### Push notifications and mobile polish (1.7.0)
-- [ ] Web Push notifications with VAPID
+### Mobile polish and composer (later)
 - [ ] Pull-to-refresh on mobile
 - [ ] Configurable swipe actions (archive, delete, mark read)
 - [ ] Haptic feedback on destructive actions and long-press
 - [ ] Web Share target (receive URLs/text from OS share sheet)
-
-### Rich-text composer (1.8.0)
 - [ ] WYSIWYG composer with multipart `text/plain` + `text/html` sending
 
 ### Advanced features

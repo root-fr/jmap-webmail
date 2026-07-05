@@ -6,6 +6,8 @@ import {
   hasRichFormatting,
   needsIframeRendering,
   plainTextToSafeHtml,
+  buildEmailSanitizeConfig,
+  EMAIL_SANITIZE_CONFIG,
 } from '../email-sanitization';
 
 describe('email-sanitization', () => {
@@ -305,5 +307,36 @@ describe('email-sanitization', () => {
       const html = plainTextToSafeHtml('A & B');
       expect(html).toBe('A &amp; B');
     });
+  });
+});
+
+describe('buildEmailSanitizeConfig', () => {
+  it('does not mutate the shared EMAIL_SANITIZE_CONFIG arrays when blocking external content', () => {
+    const tagsBefore = EMAIL_SANITIZE_CONFIG.FORBID_TAGS.length;
+    const attrsBefore = EMAIL_SANITIZE_CONFIG.FORBID_ATTR.length;
+
+    // Simulate many blocked-content emails in a row
+    for (let i = 0; i < 5; i++) {
+      const cfg = buildEmailSanitizeConfig(true);
+      // 'background' is NOT in the base FORBID_ATTR, so it is a clean marker
+      // for the appended untrusted-sender policy.
+      expect(cfg.FORBID_ATTR).toContain('background');
+      expect(cfg.FORBID_TAGS.length).toBe(tagsBefore + 1);
+      expect(cfg.FORBID_ATTR.length).toBe(attrsBefore + 1);
+    }
+
+    // Shared module arrays must be untouched (no unbounded growth, no leaked policy)
+    expect(EMAIL_SANITIZE_CONFIG.FORBID_TAGS.length).toBe(tagsBefore);
+    expect(EMAIL_SANITIZE_CONFIG.FORBID_ATTR.length).toBe(attrsBefore);
+    expect(EMAIL_SANITIZE_CONFIG.FORBID_ATTR).not.toContain('background');
+  });
+
+  it('returns fresh array instances, not references to the shared config', () => {
+    const cfg = buildEmailSanitizeConfig(false);
+    expect(cfg.FORBID_TAGS).not.toBe(EMAIL_SANITIZE_CONFIG.FORBID_TAGS);
+    expect(cfg.FORBID_ATTR).not.toBe(EMAIL_SANITIZE_CONFIG.FORBID_ATTR);
+    // blockExternal=false must NOT append the untrusted-sender policy
+    expect(cfg.FORBID_ATTR).not.toContain('background');
+    expect(cfg.FORBID_TAGS.length).toBe(EMAIL_SANITIZE_CONFIG.FORBID_TAGS.length);
   });
 });
