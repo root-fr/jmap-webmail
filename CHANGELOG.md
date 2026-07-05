@@ -1,5 +1,59 @@
 # Changelog
 
+## 1.6.0 (2026-07-05)
+
+Search now covers your whole account by default, big mailboxes paginate
+without hiding mail, and you can sort the list by more than just date.
+Polish joins as the eleventh language.
+
+### Search
+
+- **Search covers every folder by default.** Typing in the search box
+  used to only look inside the folder you were viewing, so mail in
+  Archive or Sent stayed hidden unless you switched folders first.
+  Search is now account-wide, with chips to narrow it back to the
+  current folder or to pull in Trash and Junk when you want them. Each
+  result shows which folder it lives in. (#75)
+- **Fixed large mailboxes where some mail was only reachable through
+  search.** On big folders the list used offset paging that drifted
+  when new mail arrived mid-scroll, so infinite scroll could loop at a
+  fixed point and leave older or newer messages unreachable except by
+  searching for them. Paging now anchors to the last message you have
+  loaded, so it stays put. (#71)
+
+### Sorting
+
+- **Sort the list by date, sender, subject or size**, ascending or
+  descending, from a menu in the list header. Sorting runs on the
+  server, so it orders the whole mailbox rather than only the rows
+  already loaded.
+
+### Internationalization
+
+- **Polish added** as the eleventh language, with a full translation.
+  Thanks to @priard for the contribution.
+- **The browser's language is respected on first visit.** A returning
+  detail meant the stored preference always won even before you had
+  set one, so the interface could show English when your browser asked
+  for something else. It now follows the browser until you choose a
+  language yourself. (#70)
+
+### Accessibility
+
+- **Menus are fully keyboard-operable.** The right-click menu, the
+  selection dropdown and the trusted-senders dialog now support arrow
+  keys, Home and End, Escape to close, and return focus to where you
+  opened them. Submenus are reachable without a mouse. (#94)
+
+### Under the hood
+
+- Every list view (browse, search, sort, load-more, background
+  refresh) now runs through one query builder, so scope, sort and
+  paging can no longer disagree with each other. Large multi-select
+  and whole-thread actions are split into server-sized batches, and
+  deleting from Trash only permanently removes mail when you are
+  actually viewing Trash.
+
 ## 1.5.3 (2026-07-05)
 
 A stability release: fifteen bug fixes across sending, filters, shared

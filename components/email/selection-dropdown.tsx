@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useMenuKeyboard } from "@/hooks/use-menu-keyboard";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,10 @@ export function SelectionDropdown({ hasSelection, allSelected, onSelectByFilter,
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const close = useCallback(() => setIsOpen(false), []);
+
+  useMenuKeyboard({ isOpen, containerRef: menuRef, onClose: close });
+
   useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -32,14 +37,9 @@ export function SelectionDropdown({ hasSelection, allSelected, onSelectByFilter,
         setIsOpen(false);
       }
     };
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
-    };
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
 

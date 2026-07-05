@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { X, ShieldCheck, Search, Trash2, Plus } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -14,7 +15,6 @@ interface TrustedSendersModalProps {
 
 export function TrustedSendersModal({ isOpen, onClose }: TrustedSendersModalProps) {
   const t = useTranslations("settings.email_behavior.trusted_senders");
-  const modalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { trustedSenders, addTrustedSender, removeTrustedSender } = useSettingsStore();
@@ -34,25 +34,17 @@ export function TrustedSendersModal({ isOpen, onClose }: TrustedSendersModalProp
   // Show search only when 5+ senders
   const showSearch = trustedSenders.length >= 5;
 
-  // Close on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (isAdding) {
-          setIsAdding(false);
-          setNewEmail("");
-          setEmailError("");
-        } else {
-          onClose();
-        }
-      }
-    };
-
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
+  const handleEscape = useCallback(() => {
+    if (isAdding) {
+      setIsAdding(false);
+      setNewEmail("");
+      setEmailError("");
+    } else {
+      onClose();
     }
-  }, [isOpen, isAdding, onClose]);
+  }, [isAdding, onClose]);
+
+  const modalRef = useFocusTrap({ isActive: isOpen, onEscape: handleEscape });
 
   // Close on click outside
   useEffect(() => {
@@ -66,7 +58,7 @@ export function TrustedSendersModal({ isOpen, onClose }: TrustedSendersModalProp
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, modalRef]);
 
   // Focus input when adding mode is enabled
   useEffect(() => {

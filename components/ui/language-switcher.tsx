@@ -13,6 +13,7 @@ const NATIVE_LANGUAGE_LABELS: Record<Locale, string> = {
   it: 'Italiano',
   ja: '日本語',
   nl: 'Nederlands',
+  pl: 'Polski',
   pt: 'Português',
   ru: 'Русский',
   uk: 'Українська',

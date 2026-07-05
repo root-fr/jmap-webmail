@@ -4,6 +4,7 @@ import { forwardRef, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
+import { useMenuKeyboard } from "@/hooks/use-menu-keyboard";
 
 interface Position {
   x: number;
@@ -18,18 +19,25 @@ interface ContextMenuProps {
 }
 
 export const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps>(
-  ({ isOpen, position, onClose: _onClose, children }, ref) => {
+  ({ isOpen, position, onClose, children }, ref) => {
     const [mounted, setMounted] = useState(false);
+    const innerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
       setMounted(true);
     }, []);
 
+    useMenuKeyboard({ isOpen: isOpen && mounted, containerRef: innerRef, onClose });
+
     if (!mounted || !isOpen) return null;
 
     return createPortal(
       <div
-        ref={ref}
+        ref={(node) => {
+          innerRef.current = node;
+          if (typeof ref === "function") ref(node);
+          else if (ref) ref.current = node;
+        }}
         className={cn(
           "fixed z-50 min-w-[200px] bg-background rounded-md shadow-lg border border-border",
           "animate-in fade-in-0 zoom-in-95 duration-100"
@@ -175,12 +183,23 @@ export function ContextMenuSubMenu({
         className={cn(
           "w-full px-3 py-2 text-sm flex items-center gap-2",
           "transition-colors duration-100 cursor-pointer",
-          "hover:bg-muted"
+          "hover:bg-muted focus:outline-none focus:bg-muted"
         )}
         role="menuitem"
+        tabIndex={0}
         aria-haspopup="true"
         aria-expanded={isOpen}
         onClick={handleClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsOpen(true);
+          } else if (e.key === "ArrowLeft") {
+            e.stopPropagation();
+            setIsOpen(false);
+          }
+        }}
       >
         {Icon && <Icon className="w-4 h-4 flex-shrink-0" />}
         <span className="flex-1">{label}</span>

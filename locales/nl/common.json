@@ -134,6 +134,14 @@
       "move_to_top_level": "Hoogste niveau"
     }
   },
+  "sort": {
+    "by_date": "Datum",
+    "by_sender": "Afzender",
+    "by_subject": "Onderwerp",
+    "by_size": "Grootte",
+    "ascending": "Oplopend",
+    "descending": "Aflopend"
+  },
   "email_list": {
     "no_emails": "Geen e-mails",
     "no_emails_description": "Begin met het opstellen van een nieuw bericht",
@@ -519,6 +527,7 @@
     "portuguese": "Português",
     "russian": "Русский",
     "ukrainian": "Українська",
+    "polish": "Polski",
     "select_language": "Selecteer taal",
     "switch_to_english": "Overschakelen naar Engels",
     "switch_to_french": "Overschakelen naar Frans",
@@ -530,6 +539,7 @@
     "switch_to_portuguese": "Overschakelen naar Portugees",
     "switch_to_russian": "Overschakelen naar Russisch",
     "switch_to_ukrainian": "Overschakelen naar Oekraïens",
+    "switch_to_polish": "Overschakelen naar Pools",
     "switching": "Taal wijzigen..."
   },
   "settings": {
@@ -1472,5 +1482,10 @@
     "tip_settings": "Pas uw ervaring aan in Instellingen",
     "got_it": "Begrepen",
     "dismiss": "Sluiten"
+  },
+  "search": {
+    "scope_everywhere": "Overal",
+    "scope_this_folder": "Deze map",
+    "include_trash_junk": "+ Prullenbak & Spam"
   }
 }

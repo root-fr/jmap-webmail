@@ -127,3 +127,87 @@ export function activeFilterCount(filters: SearchFilters): number {
   if (filters.isStarred !== null) count++;
   return count;
 }
+
+export type EmailScope =
+  | { kind: "folder"; mailboxId: string }
+  | { kind: "all"; includeTrashJunk: boolean };
+
+export type EmailSort = {
+  by: "receivedAt" | "from" | "subject" | "size";
+  ascending: boolean;
+};
+
+export interface EmailQuery {
+  text?: string;
+  filters?: SearchFilters;
+  scope: EmailScope;
+  sort: EmailSort;
+}
+
+export interface EmailPage {
+  limit: number;
+  anchor?: string;
+  anchorOffset?: number;
+}
+
+export interface QueryRequest {
+  filter: Record<string, unknown>;
+  sort: { property: string; isAscending: boolean }[];
+  anchor?: string;
+  anchorOffset?: number;
+  position?: number;
+  limit: number;
+  calculateTotal: boolean;
+}
+
+export function buildQueryRequest(
+  query: EmailQuery,
+  page: EmailPage,
+  ctx: { trashId?: string; junkId?: string }
+): QueryRequest {
+  const mailboxId =
+    query.scope.kind === "folder" ? query.scope.mailboxId : undefined;
+  const base = buildJMAPFilter(
+    query.text ?? "",
+    query.filters ?? DEFAULT_SEARCH_FILTERS,
+    mailboxId
+  );
+
+  let filter: Record<string, unknown> = base;
+  if (query.scope.kind === "all" && !query.scope.includeTrashJunk) {
+    const excludeIds = [ctx.trashId, ctx.junkId].filter(
+      (id): id is string => Boolean(id)
+    );
+    if (excludeIds.length > 0) {
+      const notClause: Record<string, unknown> = {
+        operator: "NOT",
+        conditions: excludeIds.map((id) => ({ inMailbox: id })),
+      };
+      filter =
+        Object.keys(base).length === 0
+          ? notClause
+          : { operator: "AND", conditions: [base, notClause] };
+    }
+  }
+
+  const sort = [{ property: query.sort.by, isAscending: query.sort.ascending }];
+
+  if (page.anchor) {
+    return {
+      filter,
+      sort,
+      anchor: page.anchor,
+      anchorOffset: page.anchorOffset ?? 1,
+      limit: page.limit,
+      calculateTotal: false,
+    };
+  }
+
+  return {
+    filter,
+    sort,
+    position: 0,
+    limit: page.limit,
+    calculateTotal: true,
+  };
+}

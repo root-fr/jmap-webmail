@@ -134,6 +134,14 @@
       "move_to_top_level": "Nivel superior"
     }
   },
+  "sort": {
+    "by_date": "Fecha",
+    "by_sender": "Remitente",
+    "by_subject": "Asunto",
+    "by_size": "Tamaño",
+    "ascending": "Ascendente",
+    "descending": "Descendente"
+  },
   "email_list": {
     "no_emails": "Sin correos",
     "no_emails_description": "Comience redactando un nuevo correo",
@@ -519,6 +527,7 @@
     "portuguese": "Português",
     "russian": "Русский",
     "ukrainian": "Українська",
+    "polish": "Polski",
     "select_language": "Seleccionar idioma",
     "switch_to_english": "Cambiar a inglés",
     "switch_to_french": "Cambiar a francés",
@@ -530,6 +539,7 @@
     "switch_to_portuguese": "Cambiar a portugués",
     "switch_to_russian": "Cambiar a ruso",
     "switch_to_ukrainian": "Cambiar a ucraniano",
+    "switch_to_polish": "Cambiar a polaco",
     "switching": "Cambiando idioma..."
   },
   "settings": {
@@ -1472,5 +1482,10 @@
     "tip_settings": "Personaliza tu experiencia en Ajustes",
     "got_it": "Entendido",
     "dismiss": "Cerrar"
+  },
+  "search": {
+    "scope_everywhere": "En todas partes",
+    "scope_this_folder": "Esta carpeta",
+    "include_trash_junk": "+ Papelera y Spam"
   }
 }

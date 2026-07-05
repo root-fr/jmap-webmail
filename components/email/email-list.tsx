@@ -17,9 +17,11 @@ import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
 import { useTranslations } from "next-intl";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { SearchChips } from "@/components/search/search-chips";
+import { SearchScopeChips } from "@/components/search/search-scope-chips";
 import { isFilterEmpty, DEFAULT_SEARCH_FILTERS } from "@/lib/jmap/search-utils";
 import { SelectionDropdown } from "./selection-dropdown";
 import { MoveToPopover } from "./move-to-popover";
+import { SortMenu } from "./sort-menu";
 
 interface EmailListProps {
   emails: Email[];
@@ -86,10 +88,13 @@ export function EmailList({
     isLoadingThread,
     toggleThreadExpansion,
     fetchThreadEmails,
+    searchQuery,
     searchFilters,
     setSearchFilters,
     clearSearchFilters,
     advancedSearch,
+    currentQuery,
+    setScope,
   } = useEmailStore();
 
   const [showRefreshOverlay, setShowRefreshOverlay] = useState(false);
@@ -355,6 +360,19 @@ export function EmailList({
         </div>
       </div>
 
+      {/* Search Scope Chips (only while a search or advanced search is active) */}
+      {(searchQuery.trim().length > 0 || !isFilterEmpty(searchFilters)) && (
+        <SearchScopeChips
+          scope={currentQuery.scope}
+          folderMailboxId={
+            mailboxes.find((mb) => mb.id === selectedMailbox)?.originalId || selectedMailbox
+          }
+          onScopeChange={(scope) => {
+            if (client) setScope(client, scope);
+          }}
+        />
+      )}
+
       {/* Advanced Search Filter Chips */}
       {!isFilterEmpty(searchFilters) && (
         <SearchChips
@@ -390,6 +408,7 @@ export function EmailList({
               : t('no_conversations')}
           </h2>
         </div>
+        <SortMenu />
       </div>
 
       {/* Email List */}

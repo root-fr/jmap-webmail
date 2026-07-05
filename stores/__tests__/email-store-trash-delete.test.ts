@@ -97,4 +97,21 @@ describe('delete of an email already in Trash', () => {
     expect(client.batchDeleteEmails).toHaveBeenCalledWith(['e1', 'e2'], 'shared-acc');
     expect(client.batchMoveEmails).not.toHaveBeenCalled();
   });
+
+  it('moves to Trash (never destroys) when the viewed mailbox is not Trash, even if an email is also a Trash member (leftover b)', async () => {
+    const inbox = makeMailbox({ id: 'inbox-1', role: 'inbox' });
+    const trash = makeMailbox({ id: 'trash-1', role: 'trash' });
+    // e1 is a member of BOTH Inbox and Trash, but we are viewing the Inbox.
+    const e1 = makeEmail({ id: 'e1', mailboxIds: { 'inbox-1': true, 'trash-1': true } });
+    const e2 = makeEmail({ id: 'e2', mailboxIds: { 'inbox-1': true } });
+    useEmailStore.setState({
+      mailboxes: [inbox, trash], selectedMailbox: 'inbox-1', emails: [e1, e2],
+      selectedEmailIds: new Set(['e1', 'e2']),
+    });
+
+    await useEmailStore.getState().batchDelete(client);
+
+    expect(client.batchMoveEmails).toHaveBeenCalledWith(['e1', 'e2'], 'trash-1', undefined);
+    expect(client.batchDeleteEmails).not.toHaveBeenCalled();
+  });
 });

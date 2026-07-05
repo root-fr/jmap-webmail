@@ -134,6 +134,14 @@
       "move_to_top_level": "Nível superior"
     }
   },
+  "sort": {
+    "by_date": "Data",
+    "by_sender": "Remetente",
+    "by_subject": "Assunto",
+    "by_size": "Tamanho",
+    "ascending": "Crescente",
+    "descending": "Decrescente"
+  },
   "email_list": {
     "no_emails": "Nenhum e-mail",
     "no_emails_description": "Comece escrevendo um novo e-mail",
@@ -519,6 +527,7 @@
     "portuguese": "Português",
     "russian": "Русский",
     "ukrainian": "Українська",
+    "polish": "Polski",
     "select_language": "Selecionar idioma",
     "switch_to_english": "Mudar para Inglês",
     "switch_to_french": "Mudar para Francês",
@@ -530,6 +539,7 @@
     "switch_to_portuguese": "Mudar para Português",
     "switch_to_russian": "Mudar para Russo",
     "switch_to_ukrainian": "Mudar para Ucraniano",
+    "switch_to_polish": "Mudar para Polonês",
     "switching": "Alterando idioma..."
   },
   "settings": {
@@ -1472,5 +1482,10 @@
     "tip_settings": "Personalize sua experiência nas Configurações",
     "got_it": "Entendi",
     "dismiss": "Fechar"
+  },
+  "search": {
+    "scope_everywhere": "Em todo o lado",
+    "scope_this_folder": "Esta pasta",
+    "include_trash_junk": "+ Lixo e Spam"
   }
 }

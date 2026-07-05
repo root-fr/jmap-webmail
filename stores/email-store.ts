@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { Email, Mailbox, StateChange, ThreadGroup } from "@/lib/jmap/types";
-import { JMAPClient } from "@/lib/jmap/client";
+import { JMAPClient, AnchorNotFoundError } from "@/lib/jmap/client";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useCalendarStore } from "@/stores/calendar-store";
-import { SearchFilters, DEFAULT_SEARCH_FILTERS, buildJMAPFilter, isFilterEmpty } from "@/lib/jmap/search-utils";
+import { SearchFilters, EmailQuery, EmailScope, EmailSort, DEFAULT_SEARCH_FILTERS, isFilterEmpty } from "@/lib/jmap/search-utils";
 
 interface EmailStore {
   emails: Email[];
@@ -21,6 +21,7 @@ interface EmailStore {
   lastSelectedIndex: number | null;
   hasMoreEmails: boolean; // Track if more emails are available to load
   totalEmails: number; // Total number of emails in the current mailbox/query
+  currentQuery: EmailQuery; // Single descriptor: browse/search/advanced-search/sort all derive from this
   isPushConnected: boolean; // Track if push notifications are connected
   lastPushUpdate: number | null; // Timestamp of last push update
   newEmailNotification: Email | null; // New email notification for toast
@@ -63,6 +64,8 @@ interface EmailStore {
   moveThreadToMailbox: (client: JMAPClient, threadId: string, mailboxId: string) => Promise<void>;
   searchEmails: (client: JMAPClient, query: string) => Promise<void>;
   advancedSearch: (client: JMAPClient) => Promise<void>;
+  setSort: (client: JMAPClient, sort: EmailSort) => Promise<void>;
+  setScope: (client: JMAPClient, scope: EmailScope) => Promise<void>;
   setSearchFilters: (filters: Partial<SearchFilters>) => void;
   clearSearchFilters: () => void;
   toggleAdvancedSearch: () => void;
@@ -119,6 +122,54 @@ function resolveMailboxAccount(mailboxes: Mailbox[], mailboxId: string) {
   };
 }
 
+// Global-scope queries run against the primary account; folder scope resolves
+// the owning account for shared mailboxes.
+function accountIdForScope(
+  scope: EmailScope,
+  mailboxes: Mailbox[],
+  selectedMailbox: string,
+): string | undefined {
+  return scope.kind === "folder"
+    ? resolveMailboxAccount(mailboxes, selectedMailbox).accountId
+    : undefined;
+}
+
+// Single query path: browse/search/advanced-search/sort all build one
+// EmailQuery descriptor and run it through client.queryEmails from the first page.
+async function runQuery(
+  set: (partial: Partial<EmailStore>) => void,
+  get: () => EmailStore,
+  client: JMAPClient,
+  query: EmailQuery,
+  accountId?: string,
+  controller?: AbortController,
+): Promise<void> {
+  const emailsPerPage = useSettingsStore.getState().emailsPerPage;
+  try {
+    const result = await client.queryEmails(query, { limit: emailsPerPage }, accountId);
+    if (controller?.signal.aborted) return;
+    set({
+      currentQuery: query,
+      emails: result.emails,
+      hasMoreEmails: result.hasMore,
+      totalEmails: result.total,
+      isLoading: false,
+      ...(controller ? { searchAbortController: null } : {}),
+    });
+  } catch (error) {
+    if (controller?.signal.aborted) return;
+    set({
+      currentQuery: query,
+      error: error instanceof Error ? error.message : "Failed to fetch emails",
+      isLoading: false,
+      emails: [],
+      hasMoreEmails: false,
+      totalEmails: 0,
+      ...(controller ? { searchAbortController: null } : {}),
+    });
+  }
+}
+
 export const useEmailStore = create<EmailStore>((set, get) => ({
   emails: [],
   mailboxes: [],
@@ -135,6 +186,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   lastSelectedIndex: null,
   hasMoreEmails: false,
   totalEmails: 0,
+  currentQuery: { scope: { kind: "folder", mailboxId: "" }, sort: { by: "receivedAt", ascending: false } },
   isPushConnected: false,
   lastPushUpdate: null,
   newEmailNotification: null,
@@ -274,90 +326,85 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
   fetchEmails: async (client, mailboxId) => {
     set({ isLoading: true, error: null }); // Keep previous emails visible during transition
-    try {
-      const targetMailboxId = mailboxId || get().selectedMailbox;
+    const targetMailboxId = mailboxId || get().selectedMailbox;
 
-      // Find the mailbox to get its accountId (for shared folder support)
-      const mailboxes = get().mailboxes;
-      const mailbox = mailboxes.find(mb => mb.id === targetMailboxId);
-      // Only pass accountId for shared mailboxes, not for primary account
-      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
-      // Use originalId for JMAP queries (shared mailboxes use namespaced IDs in the store)
-      const jmapMailboxId = mailbox?.originalId || targetMailboxId;
+    const { currentMailbox, accountId } = resolveMailboxAccount(get().mailboxes, targetMailboxId);
+    // Use originalId for JMAP queries (shared mailboxes use namespaced IDs in the store)
+    const jmapMailboxId = currentMailbox?.originalId || targetMailboxId;
 
-      // Get emails per page from settings
-      const emailsPerPage = useSettingsStore.getState().emailsPerPage;
-
-      const result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, 0);
-      set({
-        emails: result.emails,
-        hasMoreEmails: result.hasMore,
-        totalEmails: result.total,
-        isLoading: false
-      });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to fetch emails",
-        isLoading: false,
-        emails: [],
-        hasMoreEmails: false,
-        totalEmails: 0
-      });
-    }
+    const query: EmailQuery = {
+      scope: { kind: "folder", mailboxId: jmapMailboxId },
+      sort: get().currentQuery.sort,
+    };
+    await runQuery(set, get, client, query, accountId);
   },
 
   loadMoreEmails: async (client) => {
-    const { isLoadingMore, hasMoreEmails, emails, selectedMailbox, searchQuery } = get();
+    const { isLoadingMore, hasMoreEmails, emails, currentQuery, mailboxes, selectedMailbox, totalEmails } = get();
 
-    // Don't load if already loading or no more emails
+    // Don't load if already loading or there are no more emails.
     if (isLoadingMore || !hasMoreEmails) return;
 
+    // Anchor the next page to the last loaded id. Offset paging (position:
+    // emails.length) drifts when a message is inserted/removed between page
+    // loads, duplicating or skipping rows (#71); the anchor is stable.
+    const anchorId = emails[emails.length - 1]?.id;
+    if (!anchorId) return;
+
     set({ isLoadingMore: true, error: null });
+
+    const emailsPerPage = useSettingsStore.getState().emailsPerPage;
+    const accountId = accountIdForScope(currentQuery.scope, mailboxes, selectedMailbox);
+
+    const appendNew = (incoming: Email[]) => {
+      const seen = new Set(emails.map(e => e.id));
+      return [...emails, ...incoming.filter(e => !seen.has(e.id))];
+    };
+
     try {
-      // Get emails per page from settings
-      const emailsPerPage = useSettingsStore.getState().emailsPerPage;
-
-      let result;
-
-      const { searchFilters } = get();
-      const hasFilters = !isFilterEmpty(searchFilters);
-
-      if (searchQuery || hasFilters) {
-        const mailboxes = get().mailboxes;
-        const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-        const jmapMailboxId = mailbox?.originalId || selectedMailbox;
-        const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
-
-        if (hasFilters) {
-          const filter = buildJMAPFilter(searchQuery, searchFilters, jmapMailboxId);
-          result = await client.advancedSearchEmails(filter, accountId, emailsPerPage, emails.length);
-        } else {
-          result = await client.searchEmails(searchQuery, jmapMailboxId, accountId, emailsPerPage, emails.length);
-        }
-      } else {
-        // Load more from mailbox
-        // Find the mailbox to get its accountId (for shared folder support)
-        const mailboxes = get().mailboxes;
-        const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-        // Only pass accountId for shared mailboxes, not for primary account
-        const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
-        // Use originalId for JMAP queries (shared mailboxes use namespaced IDs in the store)
-        const jmapMailboxId = mailbox?.originalId || selectedMailbox;
-
-        result = await client.getEmails(jmapMailboxId, accountId, emailsPerPage, emails.length);
-      }
-
+      const result = await client.queryEmails(
+        currentQuery,
+        { limit: emailsPerPage, anchor: anchorId, anchorOffset: 1 },
+        accountId,
+      );
       set({
-        emails: [...emails, ...result.emails],
+        emails: appendNew(result.emails),
         hasMoreEmails: result.hasMore,
-        totalEmails: result.total,
-        isLoadingMore: false
+        // Anchor pages omit `total`; keep the count from the initial page.
+        totalEmails: result.total || totalEmails,
+        isLoadingMore: false,
       });
     } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to load more emails",
-        isLoadingMore: false
-      });
+      if (error instanceof AnchorNotFoundError) {
+        // The anchor row was deleted/moved between pages. EmailPage has no
+        // positional cursor, so continue once from a fresh top window sized to
+        // the currently loaded rows plus one page instead of looping forever,
+        // and surface a non-fatal notice while keeping the list populated.
+        try {
+          const result = await client.queryEmails(
+            currentQuery,
+            { limit: emails.length + emailsPerPage },
+            accountId,
+          );
+          set({
+            emails: result.emails,
+            hasMoreEmails: result.hasMore,
+            totalEmails: result.total,
+            isLoadingMore: false,
+            error: "Some messages moved while loading; the list was refreshed.",
+          });
+        } catch (fallbackError) {
+          set({
+            error: fallbackError instanceof Error ? fallbackError.message : "Failed to load more emails",
+            isLoadingMore: false,
+          });
+        }
+      } else {
+        set({
+          error: error instanceof Error ? error.message : "Failed to load more emails",
+          isLoadingMore: false,
+        });
+      }
     }
   },
 
@@ -738,38 +785,16 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
 
   searchEmails: async (client, query) => {
     set({ isLoading: true, error: null, searchQuery: query, emails: [], hasMoreEmails: false, totalEmails: 0 }); // Clear emails for loading state
-    try {
-      // Get the current mailbox to scope the search
-      const selectedMailbox = get().selectedMailbox;
-      const mailboxes = get().mailboxes;
-      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-      // Use originalId for shared mailboxes
-      const jmapMailboxId = mailbox?.originalId || selectedMailbox;
-      // Only pass accountId for shared mailboxes, not for primary account
-      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
-
-      // Get emails per page from settings
-      const emailsPerPage = useSettingsStore.getState().emailsPerPage;
-      const result = await client.searchEmails(query, jmapMailboxId, accountId, emailsPerPage, 0);
-      set({
-        emails: result.emails,
-        hasMoreEmails: result.hasMore,
-        totalEmails: result.total,
-        isLoading: false
-      });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "Failed to search emails",
-        isLoading: false,
-        emails: [],
-        hasMoreEmails: false,
-        totalEmails: 0
-      });
-    }
+    const emailQuery: EmailQuery = {
+      text: query,
+      scope: { kind: "all", includeTrashJunk: false },
+      sort: get().currentQuery.sort,
+    };
+    await runQuery(set, get, client, emailQuery);
   },
 
   advancedSearch: async (client) => {
-    const { searchQuery, searchFilters, selectedMailbox, mailboxes, searchAbortController } = get();
+    const { searchQuery, searchFilters, searchAbortController } = get();
 
     if (searchAbortController) {
       searchAbortController.abort();
@@ -785,35 +810,27 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
       searchAbortController: controller,
     });
 
-    try {
-      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-      const jmapMailboxId = mailbox?.originalId || selectedMailbox;
-      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+    const query: EmailQuery = {
+      text: searchQuery || undefined,
+      filters: searchFilters,
+      scope: { kind: "all", includeTrashJunk: false },
+      sort: get().currentQuery.sort,
+    };
+    await runQuery(set, get, client, query, undefined, controller);
+  },
 
-      const filter = buildJMAPFilter(searchQuery, searchFilters, jmapMailboxId);
-      const emailsPerPage = useSettingsStore.getState().emailsPerPage;
-      const result = await client.advancedSearchEmails(filter, accountId, emailsPerPage, 0);
+  setSort: async (client, sort) => {
+    set({ isLoading: true, error: null });
+    const query: EmailQuery = { ...get().currentQuery, sort };
+    const accountId = accountIdForScope(query.scope, get().mailboxes, get().selectedMailbox);
+    await runQuery(set, get, client, query, accountId);
+  },
 
-      if (controller.signal.aborted) return;
-
-      set({
-        emails: result.emails,
-        hasMoreEmails: result.hasMore,
-        totalEmails: result.total,
-        isLoading: false,
-        searchAbortController: null,
-      });
-    } catch (error) {
-      if (controller.signal.aborted) return;
-      set({
-        error: error instanceof Error ? error.message : "Failed to search emails",
-        isLoading: false,
-        emails: [],
-        hasMoreEmails: false,
-        totalEmails: 0,
-        searchAbortController: null,
-      });
-    }
+  setScope: async (client, scope) => {
+    set({ isLoading: true, error: null });
+    const query: EmailQuery = { ...get().currentQuery, scope };
+    const accountId = accountIdForScope(scope, get().mailboxes, get().selectedMailbox);
+    await runQuery(set, get, client, query, accountId);
   },
 
   setSearchFilters: (filters) => {
@@ -925,16 +942,14 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
         });
       }
 
-      if (trashMailbox) {
+      // Permanent destroy only when the user is actually viewing Trash. Mere
+      // Trash membership (a message tagged into several mailboxes) must still
+      // move-to-Trash from any other folder, never destroy irrecoverably.
+      const viewingTrash = mailboxes.find(mb => mb.id === selectedMailbox)?.role === 'trash';
+
+      if (trashMailbox && !viewingTrash) {
         const trashId = trashMailbox.originalId || trashMailbox.id;
-        const trashViewId = trashMailbox.id;
-        const alreadyInTrash = new Set(
-          deletedEmails.filter(e => e.mailboxIds?.[trashViewId]).map(e => e.id)
-        );
-        const toDestroy = emailIdsArray.filter(id => alreadyInTrash.has(id));
-        const toMove = emailIdsArray.filter(id => !alreadyInTrash.has(id));
-        if (toMove.length > 0) await client.batchMoveEmails(toMove, trashId, accountId);
-        if (toDestroy.length > 0) await client.batchDeleteEmails(toDestroy, accountId);
+        await client.batchMoveEmails(emailIdsArray, trashId, accountId);
       } else {
         await client.batchDeleteEmails(emailIdsArray, accountId);
       }
@@ -1175,46 +1190,38 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
   },
 
   refreshCurrentMailbox: async (client) => {
-    const { selectedMailbox, searchQuery, searchFilters } = get();
+    const { selectedMailbox, currentQuery } = get();
 
-    // Only refresh if a mailbox is currently selected
+    // Only refresh when a mailbox is currently selected.
     if (!selectedMailbox) return;
 
     try {
-      // Fetch emails for the current mailbox without clearing the list first
-      // This provides a smoother update experience
       const mailboxes = get().mailboxes;
-      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
-      const jmapMailboxId = mailbox?.originalId || selectedMailbox;
+      const { accountId } = resolveMailboxAccount(mailboxes, selectedMailbox);
 
-      // Get emails per page from settings
       const emailsPerPage = useSettingsStore.getState().emailsPerPage;
-
       const currentEmails = get().emails;
       // Refetch as many rows as are currently loaded so a background refresh
       // doesn't collapse deep pagination back to the first page.
       const limit = Math.max(currentEmails.length, emailsPerPage);
 
-      // Preserve the active search/filter instead of replacing the visible
-      // results with an unrelated plain-mailbox page.
-      const hasFilters = !isFilterEmpty(searchFilters);
-      let result;
-      if (hasFilters) {
-        const filter = buildJMAPFilter(searchQuery, searchFilters, jmapMailboxId);
-        result = await client.advancedSearchEmails(filter, accountId, limit, 0);
-      } else if (searchQuery) {
-        result = await client.searchEmails(searchQuery, jmapMailboxId, accountId, limit, 0);
-      } else {
-        result = await client.getEmails(jmapMailboxId, accountId, limit, 0);
-      }
+      // Re-run the SAME descriptor (folder OR search). Because scope lives in
+      // currentQuery, a background push can never swap a search list for a
+      // folder page.
+      const result = await client.queryEmails(currentQuery, { limit }, accountId);
 
-      // Only chime for genuinely newer mail: a later receivedAt than the
-      // previous newest AND an id we hadn't already loaded. This avoids a
-      // false chime when a remote delete/move promotes an older email.
+      // Chime only for a plain folder browse — never mid-search — and only for
+      // genuinely newer mail: a later receivedAt than the previous newest AND
+      // an id we hadn't already loaded (avoids a false chime when a remote
+      // delete/move promotes an older email).
+      const isFolderBrowse =
+        currentQuery.scope.kind === 'folder' &&
+        !currentQuery.text &&
+        isFilterEmpty(currentQuery.filters ?? DEFAULT_SEARCH_FILTERS);
       const prevNewest = currentEmails[0];
       const newest = result.emails[0];
       if (
+        isFolderBrowse &&
         newest &&
         (!prevNewest ||
           (new Date(newest.receivedAt).getTime() > new Date(prevNewest.receivedAt).getTime() &&
@@ -1243,7 +1250,7 @@ export const useEmailStore = create<EmailStore>((set, get) => ({
           totalEmails: result.total,
         });
       }
-    } catch { /* silent: push refresh is best-effort */ }
+    } catch { /* silent: push refresh is best-effort, keep the previous list */ }
   },
 
   handleNewEmailNotification: (email) => {

@@ -1,6 +1,7 @@
 import type { Email, Mailbox, StateChange, AccountStates, Thread, Identity, EmailAddress, ContactCard, AddressBook, VacationResponse, Calendar, CalendarEvent, CalendarEventFilter } from "./types";
 import type { SieveScript, SieveCapabilities } from "./sieve-types";
 import { retryWithBackoff } from './retry';
+import { buildQueryRequest, type EmailQuery, type EmailPage } from './search-utils';
 
 // JMAP protocol types - these are intentionally flexible due to server variations
 interface JMAPSession {
@@ -56,6 +57,13 @@ interface JMAPResponse {
   methodResponses: Array<[string, JMAPResponseResult, string]>;
 }
 
+export function chunk<T>(items: T[], size: number): T[][] {
+  if (size <= 0) return items.length ? [items] : [];
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
 export class JMAPSetError extends Error {
   type: string;
   description?: string;
@@ -64,6 +72,16 @@ export class JMAPSetError extends Error {
     this.name = 'JMAPSetError';
     this.type = type;
     this.description = description;
+  }
+}
+
+// RFC 8620 5.5: Email/query returns the `anchorNotFound` error when the anchor
+// id no longer exists in the result set (deleted/moved between pages). loadMore
+// catches this to fall back to a positional window instead of looping (#71).
+export class AnchorNotFoundError extends Error {
+  constructor(message = "Query anchor no longer exists") {
+    super(message);
+    this.name = "AnchorNotFoundError";
   }
 }
 
@@ -132,11 +150,6 @@ function namespaceMailboxIds(emails: Email[], accountId: string): void {
     }
     email.mailboxIds = namespaced;
   }
-}
-
-function computeHasMore(position: number, emailCount: number, total: number, limit: number): boolean {
-  if (total > 0) return (position + emailCount) < total;
-  return emailCount === limit;
 }
 
 export class JMAPClient {
@@ -499,48 +512,77 @@ export class JMAPClient {
     }
   }
 
-  async getEmails(mailboxId?: string, accountId?: string, limit: number = 50, position: number = 0): Promise<{ emails: Email[], hasMore: boolean, total: number }> {
-    try {
-      const targetAccountId = accountId || this.accountId;
-      const filter: { inMailbox?: string } = {};
-      if (mailboxId) {
-        filter.inMailbox = mailboxId;
-      }
+  private async resolveTrashJunkIds(accountId?: string): Promise<{ trashId?: string; junkId?: string }> {
+    const mailboxes = await this.getMailboxes();
+    const pick = (role: string): string | undefined => {
+      const mb = mailboxes.find(m =>
+        accountId ? m.role === role && m.accountId === accountId : m.role === role && !m.isShared
+      );
+      if (!mb) return undefined;
+      return accountId && mb.originalId ? mb.originalId : mb.id;
+    };
+    return { trashId: pick('trash'), junkId: pick('junk') };
+  }
 
-      const response = await this.request([
-        ["Email/query", {
-          accountId: targetAccountId,
-          filter,
-          sort: [{ property: "receivedAt", isAscending: false }],
-          limit,
-          position,
-        }, "0"],
-        ["Email/get", {
-          accountId: targetAccountId,
-          "#ids": { resultOf: "0", name: "Email/query", path: "/ids" },
-          properties: [...EMAIL_LIST_PROPERTIES],
-        }, "1"],
-      ]);
+  async queryEmails(
+    query: EmailQuery,
+    page: EmailPage,
+    accountId?: string
+  ): Promise<{ emails: Email[]; total: number; position: number; hasMore: boolean }> {
+    const targetAccountId = accountId || this.accountId;
 
-      const queryResponse = response.methodResponses?.[0]?.[1];
-      const getResponse = response.methodResponses?.[1]?.[1];
+    const ctx =
+      query.scope.kind === 'all' && !query.scope.includeTrashJunk
+        ? await this.resolveTrashJunkIds(accountId)
+        : {};
 
-      if (response.methodResponses?.[1]?.[0] === "Email/get" && getResponse) {
-        const emails = getResponse.list || [];
-        const total = queryResponse?.total || 0;
-        const hasMore = computeHasMore(position, emails.length, total, limit);
+    const req = buildQueryRequest(query, page, ctx);
 
-        if (accountId && accountId !== this.accountId) {
-          namespaceMailboxIds(emails, accountId);
+    const response = await this.request([
+      ["Email/query", {
+        accountId: targetAccountId,
+        filter: req.filter,
+        sort: req.sort,
+        ...(req.position !== undefined ? { position: req.position } : {}),
+        ...(req.anchor !== undefined ? { anchor: req.anchor } : {}),
+        ...(req.anchorOffset !== undefined ? { anchorOffset: req.anchorOffset } : {}),
+        limit: req.limit,
+        calculateTotal: req.calculateTotal,
+      }, "0"],
+      ["Email/get", {
+        accountId: targetAccountId,
+        "#ids": { resultOf: "0", name: "Email/query", path: "/ids" },
+        properties: [...EMAIL_LIST_PROPERTIES],
+      }, "1"],
+    ]);
+
+    for (const [methodName, result] of response.methodResponses || []) {
+      if (methodName === 'error') {
+        if (result.type === 'anchorNotFound') {
+          throw new AnchorNotFoundError(result.description);
         }
-
-        return { emails, hasMore, total };
+        throw new Error(result.description || `Email/query failed: ${result.type}`);
       }
-
-      return { emails: [], hasMore: false, total: 0 };
-    } catch {
-      return { emails: [], hasMore: false, total: 0 };
     }
+
+    const queryResponse = response.methodResponses?.[0]?.[1];
+    const emails: Email[] = response.methodResponses?.[1]?.[1]?.list || [];
+    const rawTotal: number | undefined = queryResponse?.total;
+    const total = rawTotal ?? 0;
+    const position = queryResponse?.position ?? 0;
+    const ids: string[] = queryResponse?.ids || [];
+    // Anchor (loadMore) pages omit calculateTotal, so the server omits `total`
+    // (RFC 8621); fall back to a full-page heuristic instead of comparing to 0.
+    const hasMore =
+      rawTotal === undefined
+        ? ids.length >= req.limit
+        : position + ids.length < rawTotal;
+
+    if (accountId && accountId !== this.accountId) {
+      namespaceMailboxIds(emails, accountId);
+    }
+
+    return { emails, total, position, hasMore };
   }
 
   async getEmail(emailId: string, accountId?: string): Promise<Email | null> {
@@ -655,29 +697,54 @@ export class JMAPClient {
    * still returns HTTP 200, so request() will not throw. A batch set against the
    * wrong account (e.g. a shared mailbox run against the primary accountId) lands
    * every id in these maps; without this check the store would optimistically
-   * mutate rows the server never touched and the next poll resurrects them.
+   * mutate rows the server never touched and the next poll resurrects them. A
+   * method-level "error" tuple (whole call rejected) is treated the same way.
    */
-  private assertNoBatchFailures(response: JMAPResponse, kind: "update" | "destroy"): void {
-    const result = response.methodResponses?.[0]?.[1];
-    const failed: Record<string, { type?: string; description?: string }> | undefined =
-      kind === "update" ? result?.notUpdated : result?.notDestroyed;
-    if (!failed) return;
-    const ids = Object.keys(failed);
-    if (ids.length > 0) {
-      const first = failed[ids[0]];
-      throw new JMAPSetError(first?.type || "unknown", first?.description || `Email/set failed to ${kind} ${ids.length} email(s)`);
+  private extractBatchFailures(
+    response: JMAPResponse,
+    kind: "update" | "destroy",
+  ): Record<string, { type?: string; description?: string }> {
+    const [methodName, result] = response.methodResponses?.[0] ?? [];
+    if (methodName === "error") {
+      const err = result as { type?: string; description?: string };
+      throw new JMAPSetError(err?.type || "serverFail", err?.description || `Email/set ${kind} returned a method-level error`);
+    }
+    return (kind === "update" ? result?.notUpdated : result?.notDestroyed) ?? {};
+  }
+
+  /**
+   * Split a multi-id Email/set across getMaxObjectsInSet()-sized chunks so large
+   * multi-selects and big threads respect the server limit, aggregating per-id
+   * notUpdated/notDestroyed failures across every chunk before throwing once.
+   */
+  private async chunkedEmailSet(
+    ids: string[],
+    buildArgs: (chunkIds: string[]) => Record<string, unknown>,
+    kind: "update" | "destroy",
+    accountId: string,
+  ): Promise<void> {
+    const failures: Record<string, { type?: string; description?: string }> = {};
+    for (const chunkIds of chunk(ids, this.getMaxObjectsInSet())) {
+      const response = await this.request([
+        ["Email/set", { accountId, ...buildArgs(chunkIds) }, "0"],
+      ]);
+      Object.assign(failures, this.extractBatchFailures(response, kind));
+    }
+    const failedIds = Object.keys(failures);
+    if (failedIds.length > 0) {
+      const first = failures[failedIds[0]];
+      throw new JMAPSetError(first?.type || "unknown", first?.description || `Email/set failed to ${kind} ${failedIds.length} email(s)`);
     }
   }
 
   async batchMarkAsRead(emailIds: string[], read: boolean = true, accountId?: string): Promise<void> {
     if (emailIds.length === 0) return;
-
-    const targetAccountId = accountId || this.accountId;
-    const updates = Object.fromEntries(emailIds.map(id => [id, { "keywords/$seen": read }]));
-    const response = await this.request([
-      ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
-    ]);
-    this.assertNoBatchFailures(response, "update");
+    await this.chunkedEmailSet(
+      emailIds,
+      (ids) => ({ update: Object.fromEntries(ids.map(id => [id, { "keywords/$seen": read }])) }),
+      "update",
+      accountId || this.accountId,
+    );
   }
 
   async toggleStar(emailId: string, starred: boolean): Promise<void> {
@@ -731,15 +798,12 @@ export class JMAPClient {
 
   async batchDeleteEmails(emailIds: string[], accountId?: string): Promise<void> {
     if (emailIds.length === 0) return;
-
-    const targetAccountId = accountId || this.accountId;
-    const response = await this.request([
-      ["Email/set", {
-        accountId: targetAccountId,
-        destroy: emailIds,
-      }, "0"],
-    ]);
-    this.assertNoBatchFailures(response, "destroy");
+    await this.chunkedEmailSet(
+      emailIds,
+      (ids) => ({ destroy: ids }),
+      "destroy",
+      accountId || this.accountId,
+    );
   }
 
   async queryTagCounts(tags: string[]): Promise<Record<string, number>> {
@@ -789,13 +853,12 @@ export class JMAPClient {
 
   async batchMoveEmails(emailIds: string[], toMailboxId: string, accountId?: string): Promise<void> {
     if (emailIds.length === 0) return;
-
-    const targetAccountId = accountId || this.accountId;
-    const updates = Object.fromEntries(emailIds.map(id => [id, { mailboxIds: { [toMailboxId]: true } }]));
-    const response = await this.request([
-      ["Email/set", { accountId: targetAccountId, update: updates }, "0"],
-    ]);
-    this.assertNoBatchFailures(response, "update");
+    await this.chunkedEmailSet(
+      emailIds,
+      (ids) => ({ update: Object.fromEntries(ids.map(id => [id, { mailboxIds: { [toMailboxId]: true } }])) }),
+      "update",
+      accountId || this.accountId,
+    );
   }
 
   /**
@@ -830,9 +893,12 @@ export class JMAPClient {
     }
     if (moved.length === 0) return [];
 
-    await this.request([
-      ["Email/set", { accountId: targetAccountId, update }, "0"],
-    ]);
+    await this.chunkedEmailSet(
+      moved,
+      (ids) => ({ update: Object.fromEntries(ids.map(id => [id, update[id]])) }),
+      "update",
+      targetAccountId,
+    );
     return moved;
   }
 
@@ -952,71 +1018,6 @@ export class JMAPClient {
         },
       }, "0"],
     ]);
-  }
-
-  async searchEmails(query: string, mailboxId?: string, accountId?: string, limit: number = 50, position: number = 0): Promise<{ emails: Email[], hasMore: boolean, total: number }> {
-    try {
-      const targetAccountId = accountId || this.accountId;
-      const filter: Record<string, unknown> = { text: query };
-      if (mailboxId) {
-        filter.inMailbox = mailboxId;
-      }
-
-      const response = await this.request([
-        ["Email/query", {
-          accountId: targetAccountId,
-          filter,
-          sort: [{ property: "receivedAt", isAscending: false }],
-          limit,
-          position,
-        }, "0"],
-        ["Email/get", {
-          accountId: targetAccountId,
-          "#ids": { resultOf: "0", name: "Email/query", path: "/ids" },
-          properties: [...EMAIL_LIST_PROPERTIES],
-        }, "1"],
-      ]);
-
-      const queryResponse = response.methodResponses?.[0]?.[1];
-      const emails = response.methodResponses?.[1]?.[1]?.list || [];
-      const total = queryResponse?.total || 0;
-      const hasMore = computeHasMore(position, emails.length, total, limit);
-
-      return { emails, hasMore, total };
-    } catch {
-      return { emails: [], hasMore: false, total: 0 };
-    }
-  }
-
-  async advancedSearchEmails(
-    filter: Record<string, unknown>,
-    accountId?: string,
-    limit: number = 50,
-    position: number = 0
-  ): Promise<{ emails: Email[], hasMore: boolean, total: number }> {
-    const targetAccountId = accountId || this.accountId;
-
-    const response = await this.request([
-      ["Email/query", {
-        accountId: targetAccountId,
-        filter,
-        sort: [{ property: "receivedAt", isAscending: false }],
-        limit,
-        position,
-      }, "0"],
-      ["Email/get", {
-        accountId: targetAccountId,
-        "#ids": { resultOf: "0", name: "Email/query", path: "/ids" },
-        properties: [...EMAIL_LIST_PROPERTIES],
-      }, "1"],
-    ]);
-
-    const queryResponse = response.methodResponses?.[0]?.[1];
-    const emails = response.methodResponses?.[1]?.[1]?.list || [];
-    const total = queryResponse?.total || 0;
-    const hasMore = computeHasMore(position, emails.length, total, limit);
-
-    return { emails, hasMore, total };
   }
 
   async getThread(threadId: string, accountId?: string): Promise<Thread | null> {
@@ -1558,6 +1559,11 @@ export class JMAPClient {
   getMaxObjectsInGet(): number {
     const coreCapability = this.capabilities["urn:ietf:params:jmap:core"] as { maxObjectsInGet?: number } | undefined;
     return coreCapability?.maxObjectsInGet || 500;
+  }
+
+  getMaxObjectsInSet(): number {
+    const coreCapability = this.capabilities["urn:ietf:params:jmap:core"] as { maxObjectsInSet?: number } | undefined;
+    return coreCapability?.maxObjectsInSet || 500;
   }
 
   getEventSourceUrl(): string | null {

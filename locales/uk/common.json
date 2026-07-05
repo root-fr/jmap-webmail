@@ -134,6 +134,14 @@
       "move_to_top_level": "Найвищий рівень"
     }
   },
+  "sort": {
+    "by_date": "Дата",
+    "by_sender": "Відправник",
+    "by_subject": "Тема",
+    "by_size": "Розмір",
+    "ascending": "За зростанням",
+    "descending": "За спаданням"
+  },
   "email_list": {
     "no_emails": "Немає листів",
     "no_emails_description": "Почніть зі створення нового листа",
@@ -523,6 +531,7 @@
     "portuguese": "Português",
     "russian": "Русский",
     "ukrainian": "Українська",
+    "polish": "Polski",
     "select_language": "Виберіть мову",
     "switch_to_english": "Перейти на англійську",
     "switch_to_french": "Перейти на французьку",
@@ -534,6 +543,7 @@
     "switch_to_portuguese": "Перейти на португальську",
     "switch_to_russian": "Перейти на російську",
     "switch_to_ukrainian": "Перейти на українську",
+    "switch_to_polish": "Перейти на польську",
     "switching": "Зміна мови…"
   },
   "settings": {
@@ -1472,5 +1482,10 @@
     "tip_settings": "Вигляд, мову, фільтри та конфіденційність змінюють у «Налаштуваннях»",
     "got_it": "Зрозумів",
     "dismiss": "Закрити"
+  },
+  "search": {
+    "scope_everywhere": "Скрізь",
+    "scope_this_folder": "Ця папка",
+    "include_trash_junk": "+ Кошик і Спам"
   }
 }

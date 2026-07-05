@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Paperclip, Star, Circle, ChevronRight, ChevronDown, Loader2, MessageSquare, CheckSquare, Square } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useUIStore } from "@/stores/ui-store";
+import { useEmailStore } from "@/stores/email-store";
 import { getThreadColorTag } from "@/lib/thread-utils";
 import { ThreadEmailItem } from "./thread-email-item";
 import { useTranslations } from "next-intl";
@@ -45,10 +46,11 @@ interface SingleEmailItemProps {
   colorTag: string | null;
   isChecked: boolean;
   onCheckboxClick: (e: React.MouseEvent) => void;
+  folderBadgeName: string | null;
 }
 
 const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
-  function SingleEmailItem({ email, selected, onClick, onContextMenu, showPreview, colorTag, isChecked, onCheckboxClick }, ref) {
+  function SingleEmailItem({ email, selected, onClick, onContextMenu, showPreview, colorTag, isChecked, onCheckboxClick, folderBadgeName }, ref) {
     const isUnread = !email.keywords?.$seen;
     const isStarred = email.keywords?.$flagged;
     const sender = email.from?.[0];
@@ -125,6 +127,14 @@ const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
                   {isStarred && (
                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   )}
+                  {folderBadgeName && (
+                    <span
+                      data-testid="folder-badge"
+                      className="px-1.5 py-0.5 text-xs bg-muted text-foreground rounded font-medium truncate max-w-[8rem]"
+                    >
+                      {folderBadgeName}
+                    </span>
+                  )}
                   {email.hasAttachment && (
                     <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
                   )}
@@ -183,7 +193,14 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
     const t = useTranslations('threads');
     const showPreview = useSettingsStore((state) => state.showPreview);
     const isMobile = useUIStore((state) => state.isMobile);
+    const { currentQuery, mailboxes } = useEmailStore();
     const { latestEmail, participantNames, hasUnread, hasStarred, hasAttachment, emailCount } = thread;
+    // Only surface the folder badge when browsing across all folders, where a
+    // row's mailbox isn't implied by the current view.
+    const folderBadgeName: string | null =
+      currentQuery.scope.kind === "all"
+        ? mailboxes.find((mb) => latestEmail.mailboxIds?.[mb.id])?.name ?? null
+        : null;
 
     const threadColor = getThreadColorTag(thread.emails);
     const colorTag = threadColor ? colorTags[threadColor as keyof typeof colorTags] : null;
@@ -203,6 +220,7 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
           colorTag={colorTag}
           isChecked={isChecked}
           onCheckboxClick={onCheckboxClick}
+          folderBadgeName={folderBadgeName}
         />
       );
     }
@@ -338,6 +356,14 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
                   <div className="flex items-center gap-1.5">
                     {hasStarred && (
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    )}
+                    {folderBadgeName && (
+                      <span
+                        data-testid="folder-badge"
+                        className="px-1.5 py-0.5 text-xs bg-muted text-foreground rounded font-medium truncate max-w-[8rem]"
+                      >
+                        {folderBadgeName}
+                      </span>
                     )}
                     {hasAttachment && (
                       <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />

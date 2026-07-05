@@ -11,6 +11,7 @@ import frMessages from '@/locales/fr/common.json';
 import itMessages from '@/locales/it/common.json';
 import jaMessages from '@/locales/ja/common.json';
 import nlMessages from '@/locales/nl/common.json';
+import plMessages from '@/locales/pl/common.json';
 import ptMessages from '@/locales/pt/common.json';
 import ruMessages from '@/locales/ru/common.json';
 import ukMessages from '@/locales/uk/common.json';
@@ -24,6 +25,7 @@ const ALL_MESSAGES: Record<Locale, typeof enMessages> = {
   it: itMessages,
   ja: jaMessages,
   nl: nlMessages,
+  pl: plMessages,
   pt: ptMessages,
   ru: ruMessages,
   uk: ukMessages,

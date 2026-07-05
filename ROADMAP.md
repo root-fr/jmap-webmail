@@ -289,17 +289,18 @@ This document tracks the development status and planned features for JMAP Webmai
 - [x] "Stop processing" honoured after Discard/Reject (#67, thanks @travier)
 - [x] dompurify 3.4.11 and Next.js 16.2.10 security updates
 
+### Release 1.6.0 (2026-07-05)
+- [x] Global cross-folder search by default with folder/everywhere/Trash-Junk scope chips (#75)
+- [x] Large mailboxes no longer hide mail behind search: anchor-based pagination (#71)
+- [x] Server-side sort by date, sender, subject or size
+- [x] Polish added as the eleventh language (thanks @priard)
+- [x] Browser language respected on first visit (#70)
+- [x] Full keyboard navigation for menus and dialogs (#94)
+
 ## Planned Features
 
-The next two releases focus on the most requested items from the issue
-tracker: search that covers the whole account (#75, #71) and a unified
-view across accounts (#53, #73). PWA and push work follows.
-
-### Search and list correctness (1.6.0)
-- [ ] Global cross-folder search with a folder/everywhere scope toggle (#75)
-- [ ] Fix large mailboxes where some mail is only reachable via search (#71)
-- [ ] Stable pagination on big folders (anchor-based paging, no drift)
-- [ ] Sort options beyond date, applied server-side
+The next release brings the other most-requested item: a unified view
+across every account (#53, #73). PWA and push work follows.
 
 ### Multi-account and unified inbox (1.7.0)
 - [ ] "All accounts" unified inbox across every account the session exposes (#53, #73)
