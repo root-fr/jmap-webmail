@@ -5,6 +5,8 @@ import {
   isDarkColor,
   transformColorForDarkMode,
   transformBgColorForDarkMode,
+  transformColorForLightMode,
+  transformBgColorForLightMode,
   transformInlineStyles,
 } from '../color-transform';
 
@@ -288,10 +290,143 @@ describe('transformBgColorForDarkMode', () => {
   });
 });
 
+describe('transformColorForLightMode', () => {
+  it('should darken very light colors', () => {
+    const original = '#eeeeee';
+    const transformed = transformColorForLightMode(original);
+    const originalRgb = parseColor(original)!;
+    const transformedRgb = parseColor(transformed)!;
+
+    expect(transformedRgb.r).toBeLessThan(originalRgb.r);
+    expect(transformedRgb.g).toBeLessThan(originalRgb.g);
+    expect(transformedRgb.b).toBeLessThan(originalRgb.b);
+  });
+
+  it('should darken a near-invisible light-gray body text to a readable color', () => {
+    // Representative of real transactional-email body text (e.g. #999/#ccc
+    // on a white background) that was rendering essentially invisible.
+    const transformed = transformColorForLightMode('#cccccc');
+    const rgb = parseColor(transformed)!;
+    const luminance = getLuminance(rgb.r, rgb.g, rgb.b);
+    expect(luminance).toBeLessThan(0.4);
+  });
+
+  it('should preserve hue for colored text', () => {
+    const transformed = transformColorForLightMode('#a8c7fa');
+    const rgb = parseColor(transformed)!;
+    expect(rgb.b).toBeGreaterThanOrEqual(rgb.r);
+    expect(rgb.b).toBeGreaterThan(rgb.g);
+  });
+
+  it('should preserve already dark colors', () => {
+    const darkColors = ['#111111', '#333333', 'rgb(50, 50, 50)'];
+    darkColors.forEach((color) => {
+      expect(transformColorForLightMode(color)).toBe(color);
+    });
+  });
+
+  it('should handle rgba colors with alpha', () => {
+    const original = 'rgba(220, 220, 220, 0.8)';
+    const transformed = transformColorForLightMode(original);
+    expect(transformed).toContain('rgba');
+    expect(transformed).toContain('0.8');
+  });
+
+  it('should preserve nearly transparent colors', () => {
+    const original = 'rgba(255, 255, 255, 0.05)';
+    expect(transformColorForLightMode(original)).toBe(original);
+  });
+
+  it('should handle invalid colors gracefully', () => {
+    expect(transformColorForLightMode('invalid')).toBe('invalid');
+    expect(transformColorForLightMode('inherit')).toBe('inherit');
+  });
+
+  it('should ensure minimum contrast for all light text colors', () => {
+    const lightTextColors = [
+      '#ffffff', '#eeeeee', '#dddddd', '#cccccc', '#bbbbbb', '#aaaaaa',
+    ];
+    for (const color of lightTextColors) {
+      const transformed = transformColorForLightMode(color);
+      const rgb = parseColor(transformed)!;
+      const luminance = getLuminance(rgb.r, rgb.g, rgb.b);
+      expect(luminance).toBeLessThan(0.5);
+    }
+  });
+});
+
+describe('transformBgColorForLightMode', () => {
+  it('should lighten black backgrounds', () => {
+    const transformed = transformBgColorForLightMode('#000000');
+    const rgb = parseColor(transformed)!;
+    const luminance = getLuminance(rgb.r, rgb.g, rgb.b);
+    expect(luminance).toBeGreaterThan(0.7);
+  });
+
+  it('should lighten dark gray backgrounds', () => {
+    const transformed = transformBgColorForLightMode('#1a1a2e');
+    const rgb = parseColor(transformed)!;
+    const luminance = getLuminance(rgb.r, rgb.g, rgb.b);
+    expect(luminance).toBeGreaterThan(0.7);
+  });
+
+  it('should preserve already light backgrounds', () => {
+    const lightBgs = ['#ffffff', '#f8f9fa', '#eeeeee'];
+    for (const color of lightBgs) {
+      expect(transformBgColorForLightMode(color)).toBe(color);
+    }
+  });
+
+  it('should preserve nearly transparent backgrounds', () => {
+    const original = 'rgba(0, 0, 0, 0.05)';
+    expect(transformBgColorForLightMode(original)).toBe(original);
+  });
+
+  it('should handle invalid colors gracefully', () => {
+    expect(transformBgColorForLightMode('invalid')).toBe('invalid');
+    expect(transformBgColorForLightMode('inherit')).toBe('inherit');
+  });
+
+  it('should handle rgba backgrounds', () => {
+    const transformed = transformBgColorForLightMode('rgba(0, 0, 0, 0.9)');
+    expect(transformed).toContain('rgba');
+    expect(transformed).toContain('0.9');
+    const rgb = parseColor(transformed)!;
+    expect(rgb.r).toBeGreaterThan(150);
+  });
+
+  it('should moderately lighten medium backgrounds', () => {
+    const transformed = transformBgColorForLightMode('#606060');
+    const rgb = parseColor(transformed)!;
+    const luminance = getLuminance(rgb.r, rgb.g, rgb.b);
+    expect(luminance).toBeGreaterThan(0.7);
+  });
+});
+
 describe('transformInlineStyles', () => {
-  it('should not transform styles in light mode', () => {
+  it('should not transform already-readable colors in light mode', () => {
     const original = 'color: #333333; font-size: 16px';
     expect(transformInlineStyles(original, 'light')).toBe(original);
+  });
+
+  it('should darken too-light colors in light mode', () => {
+    const original = 'color: #cccccc';
+    const transformed = transformInlineStyles(original, 'light');
+    expect(transformed).not.toBe(original);
+    expect(transformed).toContain('color:');
+    expect(transformed).toContain('rgb(');
+  });
+
+  it('should lighten too-dark background-color in light mode', () => {
+    const original = 'background-color: #111111';
+    const transformed = transformInlineStyles(original, 'light');
+    expect(transformed).not.toBe(original);
+    const colorMatch = transformed.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    expect(colorMatch).not.toBeNull();
+    if (colorMatch) {
+      const [, r] = colorMatch.map(Number);
+      expect(r).toBeGreaterThan(150);
+    }
   });
 
   it('should transform color property in dark mode', () => {
