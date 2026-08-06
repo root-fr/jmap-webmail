@@ -145,6 +145,7 @@
   "email_list": {
     "no_emails": "Kirju pole",
     "no_emails_description": "Alusta uue kirja koostamisega",
+    "no_preview": "Eelvaade puudub",
     "loading": "Kirjade laadimine...",
     "unread": "lugemata",
     "to_me": "Minule",

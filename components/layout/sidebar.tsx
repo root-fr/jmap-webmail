@@ -33,7 +33,7 @@ import {
   Edit3,
   FolderInput,
 } from "lucide-react";
-import { cn, buildMailboxTree, flattenMailboxTree, MailboxNode, formatFileSize } from "@/lib/utils";
+import { cn, buildMailboxTree, flattenMailboxTree, MailboxNode, formatFileSize, getMailboxDisplayName } from "@/lib/utils";
 import { Mailbox } from "@/lib/jmap/types";
 import { useDragDropContext } from "@/contexts/drag-drop-context";
 import { useMailboxDrop } from "@/hooks/use-mailbox-drop";
@@ -232,6 +232,7 @@ function MailboxTreeItem({
   const tNotifications = useTranslations('notifications');
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedFolders.has(node.id);
+  const displayName = getMailboxDisplayName(node.role, node.name, t);
   const Icon = getIconForMailbox(node.role, node.name, hasChildren, isExpanded, node.isShared, node.id);
   const indentPixels = node.depth * 16;
   const isVirtualNode = node.id.startsWith('shared-');
@@ -342,7 +343,7 @@ function MailboxTreeItem({
           style={{
             paddingLeft: hasChildren ? '4px' : `${indentPixels + 24}px`
           }}
-          title={isCollapsed ? node.name : undefined}
+          title={isCollapsed ? displayName : undefined}
         >
           <Icon className={cn(
             "w-4 h-4 mr-2 flex-shrink-0 transition-colors",
@@ -369,7 +370,7 @@ function MailboxTreeItem({
                     }
                   }}
                 >
-                  {node.name}
+                  {displayName}
                 </span>
               )}
               {!isRenaming && node.unreadEmails > 0 && (

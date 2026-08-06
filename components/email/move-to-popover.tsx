@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { FolderInput, Search, Inbox, Send, FileText, Archive, Trash2, AlertTriangle, Folder } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getMailboxDisplayName } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 import { Mailbox } from "@/lib/jmap/types";
 
@@ -44,6 +44,7 @@ function getMailboxDepth(mailbox: Mailbox, allMailboxes: Mailbox[]): number {
 
 export function MoveToPopover({ mailboxes, currentMailboxId, onMove, disabled }: MoveToPopoverProps) {
   const t = useTranslations('email_list');
+  const tSidebar = useTranslations('sidebar');
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -59,14 +60,14 @@ export function MoveToPopover({ mailboxes, currentMailboxId, onMove, disabled }:
     const systemRoles = ['inbox', 'sent', 'drafts', 'archive', 'trash', 'junk'];
     const query = search.toLowerCase();
     const filtered = availableMailboxes.filter(m =>
-      m.name.toLowerCase().includes(query)
+      getMailboxDisplayName(m.role, m.name, tSidebar).toLowerCase().includes(query)
     );
 
     const system = filtered.filter(m => m.role && systemRoles.includes(m.role));
     const custom = filtered.filter(m => !m.role || !systemRoles.includes(m.role));
 
     return { system, custom };
-  }, [availableMailboxes, search]);
+  }, [availableMailboxes, search, tSidebar]);
 
   const allFiltered = [...filteredMailboxes.system, ...filteredMailboxes.custom];
 
@@ -214,7 +215,7 @@ export function MoveToPopover({ mailboxes, currentMailboxId, onMove, disabled }:
                       onClick={() => handleMove(mailbox.id)}
                     >
                       <Icon className="w-4 h-4 flex-shrink-0" />
-                      <span>{highlightMatch(mailbox.name)}</span>
+                      <span>{highlightMatch(getMailboxDisplayName(mailbox.role, mailbox.name, tSidebar))}</span>
                     </button>
                   );
                 })}

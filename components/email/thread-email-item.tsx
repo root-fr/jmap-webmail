@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations, useLocale } from "next-intl";
 import { formatDate } from "@/lib/utils";
 import { Email } from "@/lib/jmap/types";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,9 @@ export function ThreadEmailItem({
   onClick,
   onContextMenu,
 }: ThreadEmailItemProps) {
+  const t = useTranslations();
+  const tDate = useTranslations('date');
+  const locale = useLocale();
   const isUnread = !email.keywords?.$seen;
   const isStarred = email.keywords?.$flagged;
   const sender = email.from?.[0];
@@ -70,7 +74,7 @@ export function ThreadEmailItem({
                 ? "font-semibold text-foreground"
                 : "font-medium text-muted-foreground"
             )}>
-              {sender?.name || sender?.email?.split('@')[0] || "Unknown"}
+              {sender?.name || sender?.email?.split('@')[0] || t('email_viewer.unknown_sender')}
             </span>
 
             {/* Indicators */}
@@ -90,7 +94,7 @@ export function ThreadEmailItem({
                 ? "text-muted-foreground"
                 : "text-muted-foreground/70"
             )}>
-              {email.preview || "No preview"}
+              {email.preview || t('email_list.no_preview')}
             </span>
 
             {/* Date */}
@@ -100,7 +104,7 @@ export function ThreadEmailItem({
                 ? "text-foreground font-medium"
                 : "text-muted-foreground"
             )}>
-              {formatDate(email.receivedAt)}
+              {formatDate(email.receivedAt, tDate, locale)}
             </span>
           </div>
         </div>

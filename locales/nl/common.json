@@ -145,6 +145,7 @@
   "email_list": {
     "no_emails": "Geen e-mails",
     "no_emails_description": "Begin met het opstellen van een nieuw bericht",
+    "no_preview": "Geen voorbeeld beschikbaar",
     "loading": "E-mails laden...",
     "unread": "ongelezen",
     "to_me": "Aan mij",

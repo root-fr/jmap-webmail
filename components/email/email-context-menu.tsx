@@ -28,7 +28,7 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
-import { cn, buildMailboxTree, flattenMailboxTree } from "@/lib/utils";
+import { cn, buildMailboxTree, flattenMailboxTree, getMailboxDisplayName } from "@/lib/utils";
 
 interface Position {
   x: number;
@@ -125,6 +125,7 @@ export function EmailContextMenu({
 }: EmailContextMenuProps) {
   const t = useTranslations("context_menu");
   const tColor = useTranslations("email_viewer.color_tag");
+  const tSidebar = useTranslations("sidebar");
   const isUnread = !email.keywords?.$seen;
   const isStarred = email.keywords?.$flagged;
   const currentColor = getCurrentColor(email.keywords);
@@ -228,7 +229,7 @@ export function EmailContextMenu({
               <ContextMenuItem
                 key={mailbox.id}
                 icon={Icon}
-                label={mailbox.name}
+                label={getMailboxDisplayName(mailbox.role, mailbox.name, tSidebar)}
                 style={mailbox.depth > 0 ? { paddingLeft: `${12 + mailbox.depth * 12}px` } : undefined}
                 onClick={() =>
                   handleAction(() =>

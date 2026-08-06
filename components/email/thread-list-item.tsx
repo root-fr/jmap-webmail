@@ -11,7 +11,7 @@ import { useUIStore } from "@/stores/ui-store";
 import { useEmailStore } from "@/stores/email-store";
 import { getThreadColorTag } from "@/lib/thread-utils";
 import { ThreadEmailItem } from "./thread-email-item";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 interface ThreadListItemProps {
   thread: ThreadGroup;
@@ -51,6 +51,9 @@ interface SingleEmailItemProps {
 
 const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
   function SingleEmailItem({ email, selected, onClick, onContextMenu, showPreview, colorTag, isChecked, onCheckboxClick, folderBadgeName }, ref) {
+    const t = useTranslations();
+    const tDate = useTranslations('date');
+    const locale = useLocale();
     const isUnread = !email.keywords?.$seen;
     const isStarred = email.keywords?.$flagged;
     const sender = email.from?.[0];
@@ -146,7 +149,7 @@ const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
                   ? "text-foreground font-semibold"
                   : "text-muted-foreground"
               )}>
-                {formatDate(email.receivedAt)}
+                {formatDate(email.receivedAt, tDate, locale)}
               </span>
             </div>
 
@@ -156,7 +159,7 @@ const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
                 ? "font-semibold text-foreground"
                 : "font-normal text-foreground/90"
             )}>
-              {email.subject || "(no subject)"}
+              {email.subject || t('email_viewer.no_subject')}
             </div>
 
             {showPreview && (
@@ -166,7 +169,7 @@ const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
                   ? "text-muted-foreground"
                   : "text-muted-foreground/80"
               )}>
-                {email.preview || "No preview available"}
+                {email.preview || t('email_list.no_preview')}
               </p>
             )}
           </div>
@@ -191,6 +194,9 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
     onCheckboxClick,
   }, ref) {
     const t = useTranslations('threads');
+    const tRoot = useTranslations();
+    const tDate = useTranslations('date');
+    const locale = useLocale();
     const showPreview = useSettingsStore((state) => state.showPreview);
     const isMobile = useUIStore((state) => state.isMobile);
     const { currentQuery, mailboxes } = useEmailStore();
@@ -376,7 +382,7 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
                     ? "text-foreground font-semibold"
                     : "text-muted-foreground"
                 )}>
-                  {formatDate(latestEmail.receivedAt)}
+                  {formatDate(latestEmail.receivedAt, tDate, locale)}
                 </span>
               </div>
 
@@ -386,7 +392,7 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
                   ? "font-semibold text-foreground"
                   : "font-normal text-foreground/90"
               )}>
-                {latestEmail.subject || "(no subject)"}
+                {latestEmail.subject || tRoot('email_viewer.no_subject')}
               </div>
 
               {showPreview && (
@@ -396,7 +402,7 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
                     ? "text-muted-foreground"
                     : "text-muted-foreground/80"
                 )}>
-                  {latestEmail.preview || "No preview available"}
+                  {latestEmail.preview || tRoot('email_list.no_preview')}
                 </p>
               )}
             </div>

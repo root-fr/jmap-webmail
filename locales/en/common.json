@@ -145,6 +145,7 @@
   "email_list": {
     "no_emails": "No emails",
     "no_emails_description": "Start by composing a new email",
+    "no_preview": "No preview available",
     "loading": "Loading emails...",
     "unread": "unread",
     "to_me": "To me",

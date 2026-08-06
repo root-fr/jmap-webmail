@@ -21,7 +21,7 @@ import { useDeviceDetection } from "@/hooks/use-media-query";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { debug } from "@/lib/debug";
 import { playNotificationSound } from "@/lib/notification-sound";
-import { cn } from "@/lib/utils";
+import { cn, getMailboxDisplayName } from "@/lib/utils";
 import {
   ErrorBoundary,
   SidebarErrorFallback,
@@ -224,7 +224,7 @@ export default function Home() {
       // Mailbox view
       const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
       if (mailbox) {
-        const mailboxName = mailbox.name;
+        const mailboxName = getMailboxDisplayName(mailbox.role, mailbox.name, (key) => t(`sidebar.${key}`));
         const unreadCount = mailbox.unreadEmails || 0;
         title = unreadCount > 0
           ? `${mailboxName} (${unreadCount}) - ${tCommon('app_title')}`
@@ -666,7 +666,10 @@ export default function Home() {
   }
 
   // Get current mailbox name for mobile header
-  const currentMailboxName = mailboxes.find(m => m.id === selectedMailbox)?.name || "Inbox";
+  const currentMailbox = mailboxes.find(m => m.id === selectedMailbox);
+  const currentMailboxName = currentMailbox
+    ? getMailboxDisplayName(currentMailbox.role, currentMailbox.name, (key) => t(`sidebar.${key}`))
+    : t('sidebar.mailboxes.inbox');
 
   // Handle email selection with mobile view switching
   const handleEmailSelect = async (email: { id: string }) => {

@@ -50,7 +50,7 @@ import {
   Sparkles,
   Keyboard,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useUIStore } from "@/stores/ui-store";
 import { useDeviceDetection } from "@/hooks/use-media-query";
@@ -186,6 +186,7 @@ export function EmailViewer({
   className,
 }: EmailViewerProps) {
   const t = useTranslations('email_viewer');
+  const locale = useLocale();
   const tCommon = useTranslations('common');
   const externalContentPolicy = useSettingsStore((state) => state.externalContentPolicy);
   const addTrustedSender = useSettingsStore((state) => state.addTrustedSender);
@@ -799,7 +800,7 @@ export function EmailViewer({
               <div className="flex items-center gap-2 lg:gap-3 mt-1.5 lg:mt-2 text-xs lg:text-sm text-muted-foreground flex-wrap lg:flex-nowrap">
                 <span className="flex items-center gap-1 lg:gap-1.5 whitespace-nowrap">
                   <Clock className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
-                  {new Date(email.receivedAt).toLocaleString('en-US', {
+                  {new Date(email.receivedAt).toLocaleString(locale, {
                     weekday: 'short',
                     year: 'numeric',
                     month: 'short',
@@ -839,7 +840,7 @@ export function EmailViewer({
                 title={t('tooltips.reply')}
               >
                 <Reply className="w-4 h-4" />
-                <span className="ml-1.5 hidden lg:inline">Reply</span>
+                <span className="ml-1.5 hidden lg:inline">{t('reply')}</span>
               </Button>
 
               {/* Reply Options Dropdown - hidden on mobile/tablet */}
@@ -858,14 +859,14 @@ export function EmailViewer({
                     className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
                   >
                     <ReplyAll className="w-4 h-4" />
-                    Reply all
+                    {t('reply_all')}
                   </button>
                   <button
                     onClick={onForward}
                     className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-foreground flex items-center gap-2"
                   >
                     <Forward className="w-4 h-4" />
-                    Forward
+                    {t('forward')}
                   </button>
                 </div>
               </div>

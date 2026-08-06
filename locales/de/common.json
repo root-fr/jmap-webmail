@@ -145,6 +145,7 @@
   "email_list": {
     "no_emails": "Keine E-Mails",
     "no_emails_description": "Beginnen Sie, indem Sie eine neue E-Mail verfassen",
+    "no_preview": "Keine Vorschau verfügbar",
     "loading": "E-Mails werden geladen...",
     "unread": "ungelesen",
     "to_me": "An mich",

@@ -28,7 +28,7 @@ import {
   FileArchive,
   File,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -221,6 +221,8 @@ function EmailCard({
   onMarkAsRead,
 }: EmailCardProps) {
   const t = useTranslations();
+  const tDate = useTranslations('date');
+  const locale = useLocale();
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
   const sender = email.from?.[0];
   const isUnread = !email.keywords?.$seen;
@@ -458,11 +460,11 @@ function EmailCard({
             )}
           </div>
           <div className="text-sm text-muted-foreground">
-            {formatDate(email.receivedAt)}
+            {formatDate(email.receivedAt, tDate, locale)}
           </div>
           {!isExpanded && (
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {email.preview || "No preview available"}
+              {email.preview || t('email_list.no_preview')}
             </p>
           )}
         </div>

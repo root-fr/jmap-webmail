@@ -145,6 +145,7 @@
   "email_list": {
     "no_emails": "Brak wiadomości",
     "no_emails_description": "Zacznij od napisania nowej wiadomości",
+    "no_preview": "Brak podglądu",
     "loading": "Ładowanie wiadomości...",
     "unread": "nieprzeczytane",
     "to_me": "Do mnie",

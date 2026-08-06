@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -59,6 +59,7 @@ export function EmailComposer({
 }: EmailComposerProps) {
   const t = useTranslations('email_composer');
   const tCommon = useTranslations('common');
+  const locale = useLocale();
 
   // Initialize with reply/forward data if provided
   const getInitialTo = () => {
@@ -94,7 +95,7 @@ export function EmailComposer({
     const prefix = initialDraftText || "";
     if (!replyTo?.body) return prefix;
 
-    const date = replyTo.receivedAt ? new Date(replyTo.receivedAt).toLocaleString() : "";
+    const date = replyTo.receivedAt ? new Date(replyTo.receivedAt).toLocaleString(locale) : "";
     const from = replyTo.from?.[0];
     const fromStr = from ? `${from.name || from.email}` : tCommon('unknown');
 

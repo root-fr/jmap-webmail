@@ -6,7 +6,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDate(date: Date | string): string {
+// `t` should be a translator scoped to the `date` namespace (e.g.
+// useTranslations('date')) and `locale` the app's active locale (useLocale())
+// — both are required so relative timestamps ("2h ago") and the older-date
+// fallback actually respect the user's chosen language instead of always
+// rendering in English.
+export function formatDate(date: Date | string, t: (key: string, values?: Record<string, string | number | Date>) => string, locale: string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const now = new Date();
   const diff = now.getTime() - d.getTime();
@@ -15,12 +20,12 @@ export function formatDate(date: Date | string): string {
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
+  if (minutes < 1) return t('just_now');
+  if (minutes < 60) return t(minutes === 1 ? 'minutes_ago' : 'minutes_ago_plural', { count: minutes });
+  if (hours < 24) return t(hours === 1 ? 'hours_ago' : 'hours_ago_plural', { count: hours });
+  if (days < 7) return t(days === 1 ? 'days_ago' : 'days_ago_plural', { count: days });
 
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
@@ -46,6 +51,28 @@ export function formatFileSize(bytes: number): string {
 export interface MailboxNode extends Mailbox {
   children: MailboxNode[];
   depth: number;
+}
+
+// JMAP standard mailbox roles (RFC 8621) to their translated-label keys under
+// the `sidebar.mailboxes` namespace. System mailboxes come back from the
+// server with their own (English) `name`, which was being rendered verbatim
+// everywhere instead of the already-translated labels sitting unused in the
+// locale files. Custom/shared folders have no `role` and keep their literal name.
+const MAILBOX_ROLE_LABEL_KEYS: Record<string, string> = {
+  inbox: 'mailboxes.inbox',
+  drafts: 'mailboxes.drafts',
+  sent: 'mailboxes.sent',
+  trash: 'mailboxes.trash',
+  archive: 'mailboxes.archive',
+  junk: 'mailboxes.spam',
+  flagged: 'mailboxes.starred',
+  important: 'mailboxes.important',
+  all: 'mailboxes.all_mail',
+};
+
+export function getMailboxDisplayName(role: string | undefined, name: string, t: (key: string) => string): string {
+  const labelKey = role ? MAILBOX_ROLE_LABEL_KEYS[role] : undefined;
+  return labelKey ? t(labelKey) : name;
 }
 
 // Role priority for mailbox ordering (lower number = higher priority)

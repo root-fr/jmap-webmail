@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { formatDate } from "@/lib/utils";
 import { Email } from "@/lib/jmap/types";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,9 @@ const getEmailColor = (keywords: Record<string, boolean> | undefined) => {
 
 export function EmailListItem({ email, selected, onClick, onContextMenu }: EmailListItemProps) {
   const t = useTranslations('email_viewer');
+  const tList = useTranslations('email_list');
+  const tDate = useTranslations('date');
+  const locale = useLocale();
   const { selectedEmailIds, toggleEmailSelection, selectedMailbox } = useEmailStore();
   const showPreview = useSettingsStore((state) => state.showPreview);
   const listDensity = useSettingsStore((state) => state.listDensity);
@@ -184,7 +187,7 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
                 ? "text-foreground font-semibold"
                 : "text-muted-foreground"
             )}>
-              {formatDate(email.receivedAt)}
+              {formatDate(email.receivedAt, tDate, locale)}
             </span>
           </div>
 
@@ -206,7 +209,7 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
                 ? "text-muted-foreground"
                 : "text-muted-foreground/80"
             )}>
-              {email.preview || "No preview available"}
+              {email.preview || tList('no_preview')}
             </p>
           )}
         </div>

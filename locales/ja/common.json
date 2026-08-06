@@ -145,6 +145,7 @@
   "email_list": {
     "no_emails": "メールがありません",
     "no_emails_description": "新しいメールを作成してください",
+    "no_preview": "プレビューはありません",
     "loading": "メールを読み込み中...",
     "unread": "未読",
     "to_me": "宛先: 自分",
