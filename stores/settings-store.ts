@@ -44,6 +44,7 @@ interface SettingsState {
 
   // Layout
   sidebarWidth: number;
+  emailListWidth: number;
 
   // Advanced
   debugMode: boolean;
@@ -97,6 +98,7 @@ const DEFAULT_SETTINGS = {
 
   // Layout
   sidebarWidth: 256,
+  emailListWidth: 384,
 
   // Advanced
   debugMode: false,
@@ -129,6 +131,11 @@ export const useSettingsStore = create<SettingsState>()(
         if (key === 'sidebarWidth') {
           applySidebarWidth(value as number);
         }
+
+        // Apply email list width to document root
+        if (key === 'emailListWidth') {
+          applyEmailListWidth(value as number);
+        }
       },
 
       resetToDefaults: () => {
@@ -137,6 +144,7 @@ export const useSettingsStore = create<SettingsState>()(
         applyListDensity(DEFAULT_SETTINGS.listDensity);
         applyAnimations(DEFAULT_SETTINGS.animationsEnabled);
         applySidebarWidth(DEFAULT_SETTINGS.sidebarWidth);
+        applyEmailListWidth(DEFAULT_SETTINGS.emailListWidth);
       },
 
       exportSettings: () => {
@@ -161,6 +169,7 @@ export const useSettingsStore = create<SettingsState>()(
           calendarNotificationsEnabled: state.calendarNotificationsEnabled,
           calendarNotificationSound: state.calendarNotificationSound,
           sidebarWidth: state.sidebarWidth,
+          emailListWidth: state.emailListWidth,
           debugMode: state.debugMode,
         };
         return JSON.stringify(settings, null, 2);
@@ -187,6 +196,7 @@ export const useSettingsStore = create<SettingsState>()(
           applyListDensity(get().listDensity);
           applyAnimations(get().animationsEnabled);
           applySidebarWidth(get().sidebarWidth);
+          applyEmailListWidth(get().emailListWidth);
 
           return true;
         } catch {
@@ -255,6 +265,12 @@ function applySidebarWidth(width: number) {
   document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
 }
 
+function applyEmailListWidth(width: number) {
+  if (typeof document === 'undefined') return;
+
+  document.documentElement.style.setProperty('--email-list-width', `${width}px`);
+}
+
 function applyAnimations(enabled: boolean) {
   if (typeof document === 'undefined') return;
 
@@ -273,4 +289,5 @@ if (typeof window !== 'undefined') {
   applyListDensity(store.listDensity);
   applyAnimations(store.animationsEnabled);
   applySidebarWidth(store.sidebarWidth);
+  applyEmailListWidth(store.emailListWidth);
 }

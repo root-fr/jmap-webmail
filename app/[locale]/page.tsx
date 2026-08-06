@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -19,6 +19,7 @@ import { useUIStore } from "@/stores/ui-store";
 import { useContactStore } from "@/stores/contact-store";
 import { useDeviceDetection } from "@/hooks/use-media-query";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useResizeHandle } from "@/hooks/use-resize-handle";
 import { debug } from "@/lib/debug";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { cn } from "@/lib/utils";
@@ -56,6 +57,23 @@ export default function Home() {
   // Mobile/tablet responsive hooks
   const { isMobile, isTablet } = useDeviceDetection();
   const { activeView, sidebarOpen, setSidebarOpen, setActiveView, tabletListVisible, setTabletListVisible } = useUIStore();
+  const { emailListWidth, updateSetting: updateSettingsStore } = useSettingsStore();
+
+  const handleEmailListResize = useCallback((width: number) => {
+    document.documentElement.style.setProperty('--email-list-width', `${width}px`);
+  }, []);
+
+  const handleEmailListResizeEnd = useCallback((width: number) => {
+    updateSettingsStore('emailListWidth', width);
+  }, [updateSettingsStore]);
+
+  const emailListResizeHandle = useResizeHandle({
+    min: 280,
+    max: 640,
+    initial: emailListWidth,
+    onResize: handleEmailListResize,
+    onResizeEnd: handleEmailListResizeEnd,
+  });
   const {
     emails,
     mailboxes,
@@ -803,19 +821,21 @@ export default function Home() {
         {/* Main Content Area */}
         <div className="flex flex-col flex-1 min-w-0 h-full">
           <div className="flex flex-1 min-h-0">
-          {/* Email List - full width on mobile, fixed width on tablet/desktop */}
+          {/* Email List - full width on mobile, fixed (but resizable) width on tablet/desktop,
+              regardless of whether an email is currently open (matches how every other 3-pane
+              mail client behaves — the list column is a stable, user-sized pane, not something
+              that balloons to fill the screen the moment nothing happens to be selected) */}
           <div
             className={cn(
-              "flex flex-col h-full bg-background border-r border-border",
+              "relative flex flex-col h-full bg-background border-r border-border",
               // Mobile: full width, hidden when viewing email
               "max-md:flex-1 max-md:border-r-0",
               activeView !== "list" && "max-md:hidden",
-              // Tablet: full width when no email, fixed width when viewing
-              !selectedEmail ? "md:flex-1 md:border-r-0" : "md:w-80 lg:w-96 md:flex-shrink-0",
-              "md:shadow-sm",
+              "md:flex-shrink-0 md:shadow-sm",
               // Collapse list when viewing email on tablet (tabletListVisible only toggled in tablet range)
               selectedEmail && !tabletListVisible && "md:w-0 md:opacity-0 md:overflow-hidden md:border-r-0"
             )}
+            style={{ width: `var(--email-list-width, ${emailListWidth}px)` }}
           >
             {/* Mobile Header for List View */}
             <MobileHeader
@@ -885,6 +905,24 @@ export default function Home() {
                 className="flex-1"
               />
             </ErrorBoundary>
+
+            {/* Resize Handle - the list has a fixed width at all times now, so this is always active
+                (still gated on tabletListVisible: no point resizing a collapsed-to-0 list) */}
+            {tabletListVisible && (
+              <div
+                className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hidden md:block hover:bg-primary/20 active:bg-primary/30 transition-colors z-10"
+                onMouseDown={emailListResizeHandle.handleMouseDown}
+                onTouchStart={emailListResizeHandle.handleTouchStart}
+                onKeyDown={emailListResizeHandle.handleKeyDown}
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize email list"
+                aria-valuemin={280}
+                aria-valuemax={640}
+                aria-valuenow={emailListWidth}
+                tabIndex={0}
+              />
+            )}
           </div>
 
           {/* Email Viewer - full screen on mobile, flex on tablet/desktop */}
@@ -894,10 +932,13 @@ export default function Home() {
               // Mobile: full screen overlay when active
               "max-md:fixed max-md:inset-0 max-md:z-30",
               activeView !== "viewer" && "max-md:hidden",
-              // Tablet/Desktop: flex grow
-              "md:flex-1 md:min-w-0 md:relative",
-              // Hide viewer when no email selected (list takes full width)
-              !selectedEmail && "max-lg:hidden"
+              // Tablet/Desktop: always visible (flex grow) — shows the
+              // "no conversation selected" placeholder when nothing is open,
+              // same as every other 3-pane mail client. The list column has
+              // its own stable width regardless (see above), so this isn't
+              // fighting it for space the way it would if the list were
+              // still flex-1 in the empty state.
+              "md:flex-1 md:min-w-0 md:relative"
             )}
           >
             {/* Mobile Conversation View - shown when thread is selected on mobile */}
