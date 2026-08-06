@@ -50,7 +50,10 @@ export function IntlProvider({ locale: initialLocale, children }: IntlProviderPr
   // hydration explicitly instead of trusting `!currentLocale` at mount time —
   // otherwise the effect below fires while hydration is still in flight and
   // permanently overwrites a real saved locale with the server default.
-  const [hasHydrated, setHasHydrated] = useState(() => useLocaleStore.persist.hasHydrated());
+  // `persist` itself is only present in a browser context — during SSR
+  // there's no localStorage to hydrate from anyway, so treat that as
+  // "already hydrated" (i.e. just use the server-rendered initialLocale).
+  const [hasHydrated, setHasHydrated] = useState(() => useLocaleStore.persist?.hasHydrated() ?? true);
 
   // Detect user's timezone on mount
   useEffect(() => {
@@ -64,7 +67,7 @@ export function IntlProvider({ locale: initialLocale, children }: IntlProviderPr
   }, []);
 
   useEffect(() => {
-    if (useLocaleStore.persist.hasHydrated()) {
+    if (!useLocaleStore.persist || useLocaleStore.persist.hasHydrated()) {
       setHasHydrated(true);
       return;
     }
