@@ -44,6 +44,13 @@ export function IntlProvider({ locale: initialLocale, children }: IntlProviderPr
   const setLocale = useLocaleStore((state) => state.setLocale);
   const [activeLocale, setActiveLocale] = useState(currentLocale || initialLocale);
   const [timeZone, setTimeZone] = useState<string>('UTC');
+  // zustand's persist middleware rehydrates from localStorage asynchronously
+  // (even for synchronous storage backends), so on mount `currentLocale` can
+  // still read as its pre-hydration `null` default for one tick. Track
+  // hydration explicitly instead of trusting `!currentLocale` at mount time —
+  // otherwise the effect below fires while hydration is still in flight and
+  // permanently overwrites a real saved locale with the server default.
+  const [hasHydrated, setHasHydrated] = useState(() => useLocaleStore.persist.hasHydrated());
 
   // Detect user's timezone on mount
   useEffect(() => {
@@ -56,13 +63,22 @@ export function IntlProvider({ locale: initialLocale, children }: IntlProviderPr
     }
   }, []);
 
-  // Sync initial locale with store on first mount only
   useEffect(() => {
-    if (!currentLocale) {
+    if (useLocaleStore.persist.hasHydrated()) {
+      setHasHydrated(true);
+      return;
+    }
+    return useLocaleStore.persist.onFinishHydration(() => setHasHydrated(true));
+  }, []);
+
+  // Sync initial locale with store on first mount only, and only once we
+  // know for certain (post-hydration) that there really is no saved locale.
+  useEffect(() => {
+    if (hasHydrated && !currentLocale) {
       setLocale(initialLocale);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync initial locale to store once on mount
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync initial locale to store once hydration is known
+  }, [hasHydrated]);
 
   // Switch locale immediately when store changes
   useEffect(() => {
