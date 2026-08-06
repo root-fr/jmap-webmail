@@ -528,6 +528,7 @@
     "russian": "Русский",
     "ukrainian": "Українська",
     "polish": "Polski",
+    "estonian": "Eesti",
     "select_language": "Selecteer taal",
     "switch_to_english": "Overschakelen naar Engels",
     "switch_to_french": "Overschakelen naar Frans",
@@ -540,6 +541,7 @@
     "switch_to_russian": "Overschakelen naar Russisch",
     "switch_to_ukrainian": "Overschakelen naar Oekraïens",
     "switch_to_polish": "Overschakelen naar Pools",
+    "switch_to_estonian": "Overschakelen naar Ests",
     "switching": "Taal wijzigen..."
   },
   "settings": {

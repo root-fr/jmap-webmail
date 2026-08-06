@@ -528,6 +528,7 @@
     "russian": "Русский",
     "ukrainian": "Українська",
     "polish": "Polski",
+    "estonian": "Eesti",
     "select_language": "Sprache auswählen",
     "switch_to_english": "Zu Englisch wechseln",
     "switch_to_french": "Zu Französisch wechseln",
@@ -540,6 +541,7 @@
     "switch_to_russian": "Zu Russisch wechseln",
     "switch_to_ukrainian": "Zu Ukrainisch wechseln",
     "switch_to_polish": "Zu Polnisch wechseln",
+    "switch_to_estonian": "Zu Estnisch wechseln",
     "switching": "Sprache wird gewechselt..."
   },
   "settings": {

@@ -9,6 +9,7 @@ const NATIVE_LANGUAGE_LABELS: Record<Locale, string> = {
   en: 'English',
   de: 'Deutsch',
   es: 'Español',
+  et: 'Eesti',
   fr: 'Français',
   it: 'Italiano',
   ja: '日本語',

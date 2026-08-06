@@ -3,6 +3,7 @@ import { routing } from '@/i18n/routing';
 import en from '@/locales/en/common.json';
 import de from '@/locales/de/common.json';
 import es from '@/locales/es/common.json';
+import et from '@/locales/et/common.json';
 import fr from '@/locales/fr/common.json';
 import itLocale from '@/locales/it/common.json';
 import ja from '@/locales/ja/common.json';
@@ -23,12 +24,13 @@ function leafKeys(obj: Json, prefix = ''): string[] {
   });
 }
 
-const BUNDLES: Record<string, Json> = { en, de, es, fr, it: itLocale, ja, nl, pl, pt, ru, uk };
+const BUNDLES: Record<string, Json> = { en, de, es, et, fr, it: itLocale, ja, nl, pl, pt, ru, uk };
 
 describe('locale parity', () => {
-  it('routing declares 11 locales including pl', () => {
+  it('routing declares 12 locales including pl and et', () => {
     expect(routing.locales).toContain('pl');
-    expect(routing.locales).toHaveLength(11);
+    expect(routing.locales).toContain('et');
+    expect(routing.locales).toHaveLength(12);
   });
 
   it('every declared locale has a message bundle', () => {
@@ -52,6 +54,14 @@ describe('locale parity', () => {
       const lang = msgs.language as Json;
       expect(lang.polish).toBeTruthy();
       expect(lang.switch_to_polish).toBeTruthy();
+    });
+  }
+
+  for (const [code, msgs] of Object.entries(BUNDLES)) {
+    it(`${code} defines Estonian language labels`, () => {
+      const lang = msgs.language as Json;
+      expect(lang.estonian).toBeTruthy();
+      expect(lang.switch_to_estonian).toBeTruthy();
     });
   }
 });

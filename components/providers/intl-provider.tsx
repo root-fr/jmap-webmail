@@ -7,6 +7,7 @@ import type { Locale } from '@/i18n/routing';
 import enMessages from '@/locales/en/common.json';
 import deMessages from '@/locales/de/common.json';
 import esMessages from '@/locales/es/common.json';
+import etMessages from '@/locales/et/common.json';
 import frMessages from '@/locales/fr/common.json';
 import itMessages from '@/locales/it/common.json';
 import jaMessages from '@/locales/ja/common.json';
@@ -21,6 +22,7 @@ const ALL_MESSAGES: Record<Locale, typeof enMessages> = {
   en: enMessages,
   de: deMessages,
   es: esMessages,
+  et: etMessages,
   fr: frMessages,
   it: itMessages,
   ja: jaMessages,
