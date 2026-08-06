@@ -5,7 +5,7 @@ import DOMPurify from "dompurify";
 import { Email, ThreadGroup } from "@/lib/jmap/types";
 import { hasRichFormatting, needsIframeRendering, buildEmailSanitizeConfig, collapseBlockedImageContainers, plainTextToSafeHtml } from "@/lib/email-sanitization";
 import { SandboxedEmailFrame } from "./sandboxed-email-frame";
-import { transformInlineStyles, transformColorForDarkMode, transformBgColorForDarkMode } from "@/lib/color-transform";
+import { transformInlineStyles, transformColorForDarkMode, transformBgColorForDarkMode, transformColorForLightMode, transformBgColorForLightMode } from "@/lib/color-transform";
 import { useThemeStore } from "@/stores/theme-store";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -363,24 +363,28 @@ function EmailCard({
             node.setAttribute('rel', 'noopener noreferrer');
           }
 
-          if (resolvedTheme === 'dark') {
-            if (htmlNode.style) {
-              const originalStyles = htmlNode.style.cssText;
-              const transformedStyles = transformInlineStyles(originalStyles, 'dark');
-              if (transformedStyles !== originalStyles) {
-                htmlNode.style.cssText = transformedStyles;
-              }
+          if (htmlNode.style) {
+            const originalStyles = htmlNode.style.cssText;
+            const transformedStyles = transformInlineStyles(originalStyles, resolvedTheme);
+            if (transformedStyles !== originalStyles) {
+              htmlNode.style.cssText = transformedStyles;
             }
+          }
 
-            const colorAttr = node.getAttribute('color');
-            if (colorAttr) {
-              node.setAttribute('color', transformColorForDarkMode(colorAttr));
-            }
+          const colorAttr = node.getAttribute('color');
+          if (colorAttr) {
+            node.setAttribute(
+              'color',
+              resolvedTheme === 'dark' ? transformColorForDarkMode(colorAttr) : transformColorForLightMode(colorAttr)
+            );
+          }
 
-            const bgcolorAttr = node.getAttribute('bgcolor');
-            if (bgcolorAttr) {
-              node.setAttribute('bgcolor', transformBgColorForDarkMode(bgcolorAttr));
-            }
+          const bgcolorAttr = node.getAttribute('bgcolor');
+          if (bgcolorAttr) {
+            node.setAttribute(
+              'bgcolor',
+              resolvedTheme === 'dark' ? transformBgColorForDarkMode(bgcolorAttr) : transformBgColorForLightMode(bgcolorAttr)
+            );
           }
         });
 
@@ -514,7 +518,7 @@ function EmailCard({
           {/* Email Body */}
           <div className="px-4 py-4">
             {emailContent.isHtml && emailContent.useIframe ? (
-              <SandboxedEmailFrame html={emailContent.html} className="w-full" />
+              <SandboxedEmailFrame html={emailContent.html} className="w-full" theme={resolvedTheme} />
             ) : (
               <div
                 className={cn(

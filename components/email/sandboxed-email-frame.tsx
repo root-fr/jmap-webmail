@@ -6,21 +6,22 @@ import { generateIframeStylesheet } from "@/lib/color-transform";
 interface SandboxedEmailFrameProps {
   html: string;
   className?: string;
+  theme?: 'light' | 'dark';
 }
 
-function wrapHtmlForIframe(sanitizedHtml: string): string {
+function wrapHtmlForIframe(sanitizedHtml: string, theme: 'light' | 'dark'): string {
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  ${generateIframeStylesheet()}
+  ${generateIframeStylesheet(theme)}
 </head>
 <body>${sanitizedHtml}</body>
 </html>`;
 }
 
-export function SandboxedEmailFrame({ html, className }: SandboxedEmailFrameProps) {
+export function SandboxedEmailFrame({ html, className, theme = 'light' }: SandboxedEmailFrameProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const updateHeight = useCallback(() => {
@@ -60,13 +61,13 @@ export function SandboxedEmailFrame({ html, className }: SandboxedEmailFrameProp
       iframe.removeEventListener('load', handleLoad);
       observer?.disconnect();
     };
-  }, [html, updateHeight]);
+  }, [html, theme, updateHeight]);
 
   return (
     <iframe
       ref={iframeRef}
       sandbox="allow-same-origin"
-      srcDoc={wrapHtmlForIframe(html)}
+      srcDoc={wrapHtmlForIframe(html, theme)}
       className={className}
       style={{
         width: '100%',

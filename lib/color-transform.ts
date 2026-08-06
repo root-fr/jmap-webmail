@@ -164,10 +164,62 @@ export function transformBgColorForDarkMode(colorString: string): string {
   return rgb.a !== undefined ? `rgba(${r}, ${g}, ${b}, ${rgb.a})` : `rgb(${r}, ${g}, ${b})`;
 }
 
+export function transformColorForLightMode(colorString: string): string {
+  const rgb = parseColor(colorString);
+  if (!rgb) return colorString;
+
+  if (rgb.a !== undefined && rgb.a < 0.1) {
+    return colorString;
+  }
+
+  const luminance = getLuminance(rgb.r, rgb.g, rgb.b);
+
+  // Already dark enough to read against a white/light background.
+  if (luminance <= 0.4) return colorString;
+
+  const blendFactor = 0.85 - ((1 - luminance) / 0.6) * 0.55;
+
+  // Blend toward the app's own default light-mode body text color (#1e293b),
+  // matching how transformColorForDarkMode blends toward white rather than pure black.
+  const targetR = 30, targetG = 41, targetB = 59;
+
+  const r = Math.max(0, Math.round(rgb.r + (targetR - rgb.r) * blendFactor));
+  const g = Math.max(0, Math.round(rgb.g + (targetG - rgb.g) * blendFactor));
+  const b = Math.max(0, Math.round(rgb.b + (targetB - rgb.b) * blendFactor));
+
+  return rgb.a !== undefined ? `rgba(${r}, ${g}, ${b}, ${rgb.a})` : `rgb(${r}, ${g}, ${b})`;
+}
+
+export function transformBgColorForLightMode(colorString: string): string {
+  const rgb = parseColor(colorString);
+  if (!rgb) return colorString;
+
+  if (rgb.a !== undefined && rgb.a < 0.1) {
+    return colorString;
+  }
+
+  const luminance = getLuminance(rgb.r, rgb.g, rgb.b);
+
+  // Already light enough to read text against, no correction needed.
+  if (luminance > 0.8) return colorString;
+
+  const blendFactor = Math.min(0.9, (0.8 - luminance) * 1.125);
+  const lightR = 255, lightG = 255, lightB = 255;
+
+  const r = Math.min(255, Math.round(rgb.r + (lightR - rgb.r) * blendFactor));
+  const g = Math.min(255, Math.round(rgb.g + (lightG - rgb.g) * blendFactor));
+  const b = Math.min(255, Math.round(rgb.b + (lightB - rgb.b) * blendFactor));
+
+  return rgb.a !== undefined ? `rgba(${r}, ${g}, ${b}, ${rgb.a})` : `rgb(${r}, ${g}, ${b})`;
+}
+
 export function transformInlineStyles(cssText: string, theme: 'light' | 'dark'): string {
-  if (theme !== 'dark' || !cssText) {
+  if (!cssText) {
     return cssText;
   }
+
+  const transformColor = theme === 'dark' ? transformColorForDarkMode : transformColorForLightMode;
+  const transformBgColor = theme === 'dark' ? transformBgColorForDarkMode : transformBgColorForLightMode;
 
   const styleProps = cssText.split(';').map((prop) => prop.trim()).filter(Boolean);
 
@@ -181,14 +233,14 @@ export function transformInlineStyles(cssText: string, theme: 'light' | 'dark'):
     if (property === 'color') {
       const hasImportant = value.includes('!important');
       const colorValue = value.replace('!important', '').trim();
-      const transformed = transformColorForDarkMode(colorValue);
+      const transformed = transformColor(colorValue);
       return `${property}: ${transformed}${hasImportant ? ' !important' : ''}`;
     }
 
     if (property === 'background-color') {
       const hasImportant = value.includes('!important');
       const colorValue = value.replace('!important', '').trim();
-      const transformed = transformBgColorForDarkMode(colorValue);
+      const transformed = transformBgColor(colorValue);
       return `${property}: ${transformed}${hasImportant ? ' !important' : ''}`;
     }
 
@@ -197,7 +249,7 @@ export function transformInlineStyles(cssText: string, theme: 'light' | 'dark'):
       if (colorMatch) {
         const hasImportant = value.includes('!important');
         const originalColor = colorMatch[0];
-        const transformed = transformBgColorForDarkMode(originalColor);
+        const transformed = transformBgColor(originalColor);
         const newValue = value.replace(originalColor, transformed);
         return `${property}: ${newValue.replace('!important', '').trim()}${hasImportant ? ' !important' : ''}`;
       }
@@ -206,7 +258,7 @@ export function transformInlineStyles(cssText: string, theme: 'light' | 'dark'):
     if (property === 'border-color') {
       const hasImportant = value.includes('!important');
       const colorValue = value.replace('!important', '').trim();
-      const transformed = transformColorForDarkMode(colorValue);
+      const transformed = transformColor(colorValue);
       return `${property}: ${transformed}${hasImportant ? ' !important' : ''}`;
     }
 
@@ -218,12 +270,24 @@ export function transformInlineStyles(cssText: string, theme: 'light' | 'dark'):
 
 /**
  * Generate a style block for iframe-rendered emails.
- * Uses prefers-color-scheme for native dark mode adaptation
- * instead of inline style transforms.
+ * Takes the app's own resolved theme explicitly rather than relying on
+ * prefers-color-scheme, which reflects the OS/browser preference and can
+ * disagree with an explicit in-app light/dark override.
  */
-export function generateIframeStylesheet(): string {
+export function generateIframeStylesheet(theme: 'light' | 'dark' = 'light'): string {
+  const textColor = theme === 'dark' ? '#e2e8f0' : '#1e293b';
+  const bgColor = theme === 'dark' ? '#232323' : '#ffffff';
+  const linkColor = theme === 'dark' ? '#60a5fa' : '#3b82f6';
+  const imgOpacity = theme === 'dark' ? '0.9' : '1';
+
   return `
     <style>
+      :root {
+        /* Tell the browser this content already adapts itself, so any
+           browser-level "force dark mode on websites" heuristic doesn't
+           additionally reprocess it and produce double-inverted colors. */
+        color-scheme: ${theme};
+      }
       * { box-sizing: border-box; }
       body {
         margin: 0;
@@ -234,21 +298,13 @@ export function generateIframeStylesheet(): string {
         word-wrap: break-word;
         overflow-wrap: break-word;
         overflow-x: auto;
-        color: #1e293b;
-        background: #ffffff;
+        color: ${textColor};
+        background: ${bgColor};
       }
-      img { max-width: 100%; height: auto; }
+      img { max-width: 100%; height: auto; opacity: ${imgOpacity}; }
       table { max-width: 100%; }
-      a { color: #3b82f6; }
+      a { color: ${linkColor}; }
       pre, code { white-space: pre-wrap; word-wrap: break-word; }
-      @media (prefers-color-scheme: dark) {
-        body {
-          color: #e2e8f0;
-          background: #232323;
-        }
-        a { color: #60a5fa; }
-        img { opacity: 0.9; }
-      }
     </style>
   `;
 }

@@ -56,7 +56,7 @@ import { useUIStore } from "@/stores/ui-store";
 import { useDeviceDetection } from "@/hooks/use-media-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { useThemeStore } from "@/stores/theme-store";
-import { transformInlineStyles, transformColorForDarkMode, transformBgColorForDarkMode } from "@/lib/color-transform";
+import { transformInlineStyles, transformColorForDarkMode, transformBgColorForDarkMode, transformColorForLightMode, transformBgColorForLightMode } from "@/lib/color-transform";
 import { EmailIdentityBadge } from "./email-identity-badge";
 import { MobileActionBar } from "./mobile-action-bar";
 import { UnsubscribeBanner } from "./unsubscribe-banner";
@@ -592,24 +592,28 @@ export function EmailViewer({
             node.setAttribute('rel', 'noopener noreferrer');
           }
 
-          if (resolvedTheme === 'dark') {
-            if (htmlNode.style) {
-              const originalStyles = htmlNode.style.cssText;
-              const transformedStyles = transformInlineStyles(originalStyles, 'dark');
-              if (transformedStyles !== originalStyles) {
-                htmlNode.style.cssText = transformedStyles;
-              }
+          if (htmlNode.style) {
+            const originalStyles = htmlNode.style.cssText;
+            const transformedStyles = transformInlineStyles(originalStyles, resolvedTheme);
+            if (transformedStyles !== originalStyles) {
+              htmlNode.style.cssText = transformedStyles;
             }
+          }
 
-            const colorAttr = node.getAttribute('color');
-            if (colorAttr) {
-              node.setAttribute('color', transformColorForDarkMode(colorAttr));
-            }
+          const colorAttr = node.getAttribute('color');
+          if (colorAttr) {
+            node.setAttribute(
+              'color',
+              resolvedTheme === 'dark' ? transformColorForDarkMode(colorAttr) : transformColorForLightMode(colorAttr)
+            );
+          }
 
-            const bgcolorAttr = node.getAttribute('bgcolor');
-            if (bgcolorAttr) {
-              node.setAttribute('bgcolor', transformBgColorForDarkMode(bgcolorAttr));
-            }
+          const bgcolorAttr = node.getAttribute('bgcolor');
+          if (bgcolorAttr) {
+            node.setAttribute(
+              'bgcolor',
+              resolvedTheme === 'dark' ? transformBgColorForDarkMode(bgcolorAttr) : transformBgColorForLightMode(bgcolorAttr)
+            );
           }
         });
 
@@ -726,8 +730,8 @@ export function EmailViewer({
 
         {/* Loading Content Skeleton */}
         <div className="flex-1 overflow-auto bg-muted/20">
-          <div className="max-w-4xl mx-auto p-6">
-            <div className="bg-background rounded-lg shadow-sm border border-border overflow-hidden p-6 space-y-3">
+          <div className="max-w-5xl mx-auto px-5 py-6">
+            <div className="overflow-hidden px-5 py-4 space-y-3">
               <div className="h-4 bg-muted/60 rounded w-full"></div>
               <div className="h-4 bg-muted/60 rounded w-5/6"></div>
               <div className="h-4 bg-muted/60 rounded w-4/6"></div>
@@ -1519,7 +1523,7 @@ export function EmailViewer({
           (shouldShowUnsubBanner && listHeaders?.listUnsubscribe) ||
           hasCalendarInvitation) && (
           <div className="border-b border-border bg-muted/30 isolate">
-            <div className="max-w-4xl mx-auto px-6 py-1.5">
+            <div className="max-w-5xl mx-auto px-5 py-1.5">
               <div className="flex flex-col gap-3 isolate">
                 {/* External Content Controls */}
                 {hasBlockedContent && !allowExternalContent && externalContentPolicy !== 'allow' && (
@@ -1577,7 +1581,7 @@ export function EmailViewer({
           </div>
         )}
 
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-5xl mx-auto px-5 py-6">
 
           {/* Attachments (excluding inline images that the body actually cites via cid:) */}
           {email.attachments && email.attachments.filter(a => !isInlineAttachment(a)).length > 0 && (
@@ -1667,10 +1671,10 @@ export function EmailViewer({
           )}
 
           {/* Email Body */}
-          <div className="bg-background rounded-lg shadow-sm border border-border overflow-x-auto">
-            <div className="email-content-wrapper p-6">
+          <div className="overflow-x-auto">
+            <div className="email-content-wrapper px-5 py-4">
               {emailContent.isHtml && emailContent.useIframe ? (
-                <SandboxedEmailFrame html={emailContent.html} className="w-full" />
+                <SandboxedEmailFrame html={emailContent.html} className="w-full" theme={resolvedTheme} />
               ) : emailContent.isHtml ? (
                 <div
                   className="email-content prose dark:prose-invert max-w-none"
