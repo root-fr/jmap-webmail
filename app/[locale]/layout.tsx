@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { IntlProvider } from "@/components/providers/intl-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { CalendarAlertProvider } from "@/components/providers/calendar-alert-provider";
+import { SonnerToaster } from "@/components/ui/sonner-toaster";
 import { locales } from "@/i18n/routing";
 
 export default async function LocaleLayout({
@@ -27,6 +28,7 @@ export default async function LocaleLayout({
       <ThemeProvider>
         <CalendarAlertProvider>
           {children}
+          <SonnerToaster />
         </CalendarAlertProvider>
       </ThemeProvider>
     </IntlProvider>

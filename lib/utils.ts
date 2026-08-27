@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Mailbox } from "./jmap/types";
+import { UNIFIED_INBOX_ID } from "./jmap/search-utils";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -46,6 +47,50 @@ export function formatFileSize(bytes: number): string {
 export interface MailboxNode extends Mailbox {
   children: MailboxNode[];
   depth: number;
+}
+
+export interface UnifiedInboxTreeOptions {
+  name: string;
+  excludedAccountIds: string[];
+}
+
+const READ_ONLY_RIGHTS = {
+  mayReadItems: true,
+  mayAddItems: false,
+  mayRemoveItems: false,
+  maySetSeen: false,
+  maySetKeywords: false,
+  mayCreateChild: false,
+  mayRename: false,
+  mayDelete: false,
+  maySubmit: false,
+};
+
+function buildUnifiedInboxNode(
+  mailboxes: Mailbox[],
+  options: UnifiedInboxTreeOptions
+): MailboxNode | null {
+  const inboxes = mailboxes.filter(
+    (mb) =>
+      mb.role === "inbox" &&
+      !options.excludedAccountIds.includes(mb.accountId ?? "")
+  );
+  const accountCount = new Set(inboxes.map((mb) => mb.accountId ?? "")).size;
+  if (accountCount < 2) return null;
+
+  return {
+    id: UNIFIED_INBOX_ID,
+    name: options.name,
+    sortOrder: -1,
+    totalEmails: inboxes.reduce((sum, mb) => sum + mb.totalEmails, 0),
+    unreadEmails: inboxes.reduce((sum, mb) => sum + mb.unreadEmails, 0),
+    totalThreads: 0,
+    unreadThreads: 0,
+    myRights: READ_ONLY_RIGHTS,
+    isSubscribed: true,
+    children: [],
+    depth: 0,
+  };
 }
 
 // Role priority for mailbox ordering (lower number = higher priority)
@@ -97,7 +142,10 @@ function deduplicateMailboxes(mailboxes: Mailbox[]): Mailbox[] {
 }
 
 // Build a hierarchical tree structure from flat mailbox array
-export function buildMailboxTree(mailboxes: Mailbox[]): MailboxNode[] {
+export function buildMailboxTree(
+  mailboxes: Mailbox[],
+  unifiedInbox?: UnifiedInboxTreeOptions
+): MailboxNode[] {
   // Deduplicate mailboxes first
   const deduplicated = deduplicateMailboxes(mailboxes);
 
@@ -276,6 +324,11 @@ export function buildMailboxTree(mailboxes: Mailbox[]): MailboxNode[] {
 
   sortNodes(rootMailboxes);
 
+  if (unifiedInbox) {
+    const unifiedNode = buildUnifiedInboxNode(mailboxes, unifiedInbox);
+    if (unifiedNode) rootMailboxes.unshift(unifiedNode);
+  }
+
   return rootMailboxes;
 }
 
@@ -316,4 +369,18 @@ export function getMailboxFullPath(
     current = current.parentId ? byId.get(current.parentId) : undefined;
   }
   return segments.join(delimiter);
+}
+
+/**
+ * Display name for a non-primary account, resolved the same way the sidebar
+ * labels shared-account groups: the accountName carried by that account's
+ * mailboxes, falling back to the raw account id. Returns null for the
+ * primary account (no accountId), which renders no attribution.
+ */
+export function getAccountDisplayName(
+  mailboxes: Mailbox[],
+  accountId?: string,
+): string | null {
+  if (!accountId) return null;
+  return mailboxes.find(mb => mb.accountId === accountId)?.accountName ?? accountId;
 }

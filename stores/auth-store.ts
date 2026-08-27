@@ -64,6 +64,8 @@ function markSessionExpired(): void {
 }
 
 function initializeFeatureStores(client: JMAPClient): void {
+  useIdentityStore.getState().loadAccountIdentities(client).catch((err) => debug.error('Failed to load account identities:', err));
+
   if (client.supportsContacts()) {
     const contactStore = useContactStore.getState();
     contactStore.setSupportsSync(true);

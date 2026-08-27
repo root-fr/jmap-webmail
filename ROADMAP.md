@@ -289,6 +289,18 @@ This document tracks the development status and planned features for JMAP Webmai
 - [x] "Stop processing" honoured after Discard/Reject (#67, thanks @travier)
 - [x] dompurify 3.4.11 and Next.js 16.2.10 security updates
 
+### Release 1.7.0 (2026-08-28)
+- [x] "All Inboxes" unified view across every account the session exposes (#53, #73, mail part of #28)
+- [x] Search set to Everywhere covers all accounts instead of only the primary
+- [x] Reply and send as a shared account through its own identity, attachments preserved, with an explicit fallback to your own address
+- [x] Account chips on list rows and account context in the viewer for shared-account mail
+- [x] New-mail push polling covers every account
+- [x] Unified inbox settings: show/hide toggle and per-account include list
+- [x] Partial-failure notice with per-account retry when an account fails to load
+- [x] Actions in merged views always target the account of the message you acted on
+- [x] Toast notifications fixed: the spam Undo button and batch move feedback were invisible
+- [x] Next.js 16.3.3 and dompurify 3.4.14 security updates
+
 ### Release 1.6.0 (2026-07-05)
 - [x] Global cross-folder search by default with folder/everywhere/Trash-Junk scope chips (#75)
 - [x] Large mailboxes no longer hide mail behind search: anchor-based pagination (#71)
@@ -299,13 +311,8 @@ This document tracks the development status and planned features for JMAP Webmai
 
 ## Planned Features
 
-The next release brings the other most-requested item: a unified view
-across every account (#53, #73). PWA and push work follows.
-
-### Multi-account and unified inbox (1.7.0)
-- [ ] "All accounts" unified inbox across every account the session exposes (#53, #73)
-- [ ] Per-account sections and badges in the sidebar
-- [ ] Compose picks the right identity for the account you are replying from
+The next release focuses on real-time and PWA work: a native push
+transport and an installable app.
 
 ### Real-time and PWA (1.8.0)
 - [ ] JMAP WebSocket push transport (RFC 8887), replacing polling fallback

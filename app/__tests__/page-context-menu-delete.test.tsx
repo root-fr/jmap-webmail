@@ -146,7 +146,7 @@ describe('context-menu delete targets the right-clicked email', () => {
     fireEvent.click(btn);
     await waitFor(() => expect(h.deleteEmail).toHaveBeenCalled());
     // Regression: on master this is called with h.client, 'a-id' (the stale open email)
-    expect(h.deleteEmail).toHaveBeenCalledWith(h.client, 'b-id');
+    expect(h.deleteEmail).toHaveBeenCalledWith(h.client, 'b-id', undefined);
   });
 
   it('viewer toolbar delete acts on the open email, ignoring the click event', async () => {
@@ -156,6 +156,6 @@ describe('context-menu delete targets the right-clicked email', () => {
     await waitFor(() => expect(h.deleteEmail).toHaveBeenCalled());
     // The toolbar passes a MouseEvent; the handler must fall back to selectedEmail
     // (a-id) rather than treating the event as the email and deleting undefined.
-    expect(h.deleteEmail).toHaveBeenCalledWith(h.client, 'a-id');
+    expect(h.deleteEmail).toHaveBeenCalledWith(h.client, 'a-id', undefined);
   });
 });

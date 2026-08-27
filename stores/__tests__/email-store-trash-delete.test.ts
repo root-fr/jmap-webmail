@@ -3,6 +3,7 @@ import { useEmailStore } from '../email-store';
 import { useSettingsStore } from '../settings-store';
 import type { Email, Mailbox } from '@/lib/jmap/types';
 import type { JMAPClient } from '@/lib/jmap/client';
+import { accountScopedKey } from '@/lib/thread-utils';
 
 const client = {
   moveToTrash: vi.fn().mockResolvedValue(undefined),
@@ -30,7 +31,7 @@ describe('delete of an email already in Trash', () => {
     useSettingsStore.setState({ deleteAction: 'trash' });
     useEmailStore.setState({
       emails: [], mailboxes: [], selectedMailbox: '',
-      selectedEmail: null, selectedEmailIds: new Set<string>(), error: null,
+      selectedEmail: null, selectedEmailIds: new Set(), error: null,
     });
   });
 
@@ -71,7 +72,7 @@ describe('delete of an email already in Trash', () => {
     const e2 = makeEmail({ id: 'e2', mailboxIds: { 'trash-1': true } });
     useEmailStore.setState({
       mailboxes: [trash], selectedMailbox: 'trash-1', emails: [e1, e2],
-      selectedEmailIds: new Set(['e1', 'e2']),
+      selectedEmailIds: new Set([accountScopedKey(undefined, 'e1'), accountScopedKey(undefined, 'e2')]),
     });
 
     await useEmailStore.getState().batchDelete(client);
@@ -89,7 +90,7 @@ describe('delete of an email already in Trash', () => {
     const e2 = makeEmail({ id: 'e2', mailboxIds: { 'shared-acc/trash': true } });
     useEmailStore.setState({
       mailboxes: [sharedTrash], selectedMailbox: 'shared-acc/trash', emails: [e1, e2],
-      selectedEmailIds: new Set(['e1', 'e2']),
+      selectedEmailIds: new Set([accountScopedKey(undefined, 'e1'), accountScopedKey(undefined, 'e2')]),
     });
 
     await useEmailStore.getState().batchDelete(client);
@@ -106,7 +107,7 @@ describe('delete of an email already in Trash', () => {
     const e2 = makeEmail({ id: 'e2', mailboxIds: { 'inbox-1': true } });
     useEmailStore.setState({
       mailboxes: [inbox, trash], selectedMailbox: 'inbox-1', emails: [e1, e2],
-      selectedEmailIds: new Set(['e1', 'e2']),
+      selectedEmailIds: new Set([accountScopedKey(undefined, 'e1'), accountScopedKey(undefined, 'e2')]),
     });
 
     await useEmailStore.getState().batchDelete(client);

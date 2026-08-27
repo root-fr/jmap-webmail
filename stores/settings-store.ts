@@ -42,6 +42,10 @@ interface SettingsState {
   calendarNotificationsEnabled: boolean;
   calendarNotificationSound: boolean;
 
+  // Unified Inbox
+  showUnifiedInbox: boolean;
+  unifiedInboxExcludedAccounts: string[]; // account ids opted out of All Inboxes
+
   // Layout
   sidebarWidth: number;
 
@@ -94,6 +98,10 @@ const DEFAULT_SETTINGS = {
   // Calendar Notifications
   calendarNotificationsEnabled: true,
   calendarNotificationSound: true,
+
+  // Unified Inbox
+  showUnifiedInbox: true,
+  unifiedInboxExcludedAccounts: [] as string[],
 
   // Layout
   sidebarWidth: 256,
@@ -160,6 +168,8 @@ export const useSettingsStore = create<SettingsState>()(
           sessionTimeout: state.sessionTimeout,
           calendarNotificationsEnabled: state.calendarNotificationsEnabled,
           calendarNotificationSound: state.calendarNotificationSound,
+          showUnifiedInbox: state.showUnifiedInbox,
+          unifiedInboxExcludedAccounts: state.unifiedInboxExcludedAccounts,
           sidebarWidth: state.sidebarWidth,
           debugMode: state.debugMode,
         };

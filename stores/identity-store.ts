@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { Identity } from '@/lib/jmap/types';
+import type { JMAPClient } from '@/lib/jmap/client';
 
 // Constants for sub-addressing limits
 const MAX_RECENT_TAGS = 10;
@@ -14,6 +15,9 @@ interface SubAddressState {
 interface IdentityStore {
   // Identity state (from server)
   identities: Identity[];
+  // Per-account buckets; identitiesByAccount[primaryAccountId] mirrors `identities`
+  identitiesByAccount: Record<string, Identity[]>;
+  primaryAccountId: string | null;
   selectedIdentityId: string | null;
   isLoading: boolean;
   error: string | null;
@@ -30,6 +34,7 @@ interface IdentityStore {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearIdentities: () => void;
+  loadAccountIdentities: (client: JMAPClient) => Promise<void>;
 
   // Sub-addressing actions
   addRecentTag: (tag: string) => void;
@@ -42,6 +47,8 @@ export const useIdentityStore = create<IdentityStore>()(
   persist(
     (set, get) => ({
       identities: [],
+      identitiesByAccount: {},
+      primaryAccountId: null,
       selectedIdentityId: null,
       isLoading: false,
       error: null,
@@ -77,9 +84,30 @@ export const useIdentityStore = create<IdentityStore>()(
 
       clearIdentities: () => set({
         identities: [],
+        identitiesByAccount: {},
+        primaryAccountId: null,
         selectedIdentityId: null,
         error: null,
       }),
+
+      loadAccountIdentities: async (client) => {
+        const primaryAccountId = client.getPrimaryAccountId();
+        const otherAccountIds = client.getAccountIds().filter((id) => id !== primaryAccountId);
+        const results = await Promise.all(
+          otherAccountIds.map(async (accountId) =>
+            [accountId, await client.getIdentities(accountId)] as const
+          )
+        );
+        set((state) => {
+          const identitiesByAccount: Record<string, Identity[]> = {
+            [primaryAccountId]: state.identities,
+          };
+          for (const [accountId, list] of results) {
+            if (list.length > 0) identitiesByAccount[accountId] = list;
+          }
+          return { primaryAccountId, identitiesByAccount };
+        });
+      },
 
       addRecentTag: (tag) => set((state) => {
         const recent = [tag, ...state.subAddress.recentTags.filter(t => t !== tag)];

@@ -5,6 +5,13 @@ import { Email } from "@/lib/jmap/types";
 
 type DragType = 'email' | 'mailbox';
 
+// Wire shape of the drag payload ("application/x-email-ids"): id plus owning
+// account so merged-view drops route each row through its own account.
+export interface DraggedEmailRef {
+  id: string;
+  accountId?: string;
+}
+
 interface DragDropState {
   isDragging: boolean;
   dragType: DragType | null;

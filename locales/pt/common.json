@@ -27,6 +27,7 @@
     "totp_placeholder": "000000",
     "totp_toggle": "Tenho um código 2FA",
     "remember_me": "Lembrar-me",
+    "retry": "Tentar novamente",
     "show_password": "Mostrar senha",
     "hide_password": "Ocultar senha",
     "session_expired": "Sua sessão expirou. Faça login novamente.",
@@ -46,6 +47,7 @@
   },
   "sidebar": {
     "close": "Fechar",
+    "all_inboxes": "Todas as caixas de entrada",
     "compose": "Escrever",
     "search_placeholder": "Buscar e-mails...",
     "storage": "Armazenamento",
@@ -143,6 +145,11 @@
     "descending": "Decrescente"
   },
   "email_list": {
+    "unified_failure": {
+      "message": "Não foi possível carregar algumas contas: {accounts}",
+      "retry": "Tentar novamente",
+      "dismiss": "Dispensar"
+    },
     "no_emails": "Nenhum e-mail",
     "no_emails_description": "Comece escrevendo um novo e-mail",
     "loading": "Carregando e-mails...",
@@ -392,6 +399,7 @@
     "reply_all_to": "Responder a Todos",
     "forward_message": "Encaminhar",
     "from": "De",
+    "identity_group_own": "Minhas identidades",
     "to": "Para",
     "cc": "CC",
     "bcc": "CCO",
@@ -440,6 +448,9 @@
     "upload_cancel": "Cancelar envio",
     "upload_failed": "Falha ao enviar {filename}",
     "send_failed": "Falha ao enviar o e-mail",
+    "send_as_failed_title": "Não foi possível enviar do endereço do grupo",
+    "send_as_failed_message": "O servidor recusou o envio a partir da conta de grupo: {error}. Você pode reenviar a mensagem a partir do seu próprio endereço.",
+    "send_as_fallback_confirm": "Reenviar do meu endereço",
     "discard_draft_title": "Descartar rascunho?"
   },
   "common": {
@@ -560,7 +571,8 @@
       "advanced": "Avançado",
       "calendar": "Calendário",
       "filters": "Filtros",
-      "templates": "Modelos"
+      "templates": "Modelos",
+      "unified_inbox": "Caixa unificada"
     },
     "appearance": {
       "title": "Aparência",
@@ -962,7 +974,20 @@
     "unsaved_changes": "Você tem alterações não salvas",
     "discard_changes": "Descartar alterações?",
     "discard": "Descartar",
-    "keep_editing": "Continuar editando"
+    "keep_editing": "Continuar editando",
+    "unified_inbox": {
+      "title": "Caixa unificada",
+      "description": "Combina as caixas de entrada das suas contas numa única vista",
+      "show": {
+        "label": "Mostrar Todas as caixas",
+        "description": "Mostra a pasta Todas as caixas quando pelo menos duas contas estão incluídas"
+      },
+      "accounts": {
+        "label": "Contas incluídas",
+        "description": "Escolha que contas aparecem em Todas as caixas",
+        "empty": "As contas aparecerão aqui assim que a sua caixa de correio for carregada"
+      }
+    }
   },
   "errors": {
     "page_error_title": "Algo deu errado",

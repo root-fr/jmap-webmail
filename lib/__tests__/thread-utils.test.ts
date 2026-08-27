@@ -89,6 +89,25 @@ describe('groupEmailsByThread', () => {
     expect(groupEmailsByThread(emails)[0].hasAttachment).toBe(true);
   });
 
+  it('keeps threads from different accounts separate when threadId strings collide', () => {
+    const emails = [
+      makeEmail({ id: 'e1', threadId: 'T1', receivedAt: '2024-01-16T10:00:00Z' }),
+      makeEmail({ id: 'e2', threadId: 'T1', accountId: 'acc-b', receivedAt: '2024-01-15T10:00:00Z' }),
+      makeEmail({ id: 'e3', threadId: 'T1', accountId: 'acc-b', receivedAt: '2024-01-14T10:00:00Z' }),
+    ];
+    const groups = groupEmailsByThread(emails);
+    expect(groups).toHaveLength(2);
+
+    const primaryGroup = groups.find(g => g.latestEmail.accountId === undefined)!;
+    expect(primaryGroup.emailCount).toBe(1);
+    expect(primaryGroup.emails.map(e => e.id)).toEqual(['e1']);
+
+    const sharedGroup = groups.find(g => g.latestEmail.accountId === 'acc-b')!;
+    expect(sharedGroup.emailCount).toBe(2);
+    expect(sharedGroup.emails.map(e => e.id)).toEqual(['e2', 'e3']);
+    expect(sharedGroup.threadId).toBe('T1');
+  });
+
   it('returns empty array for empty input', () => {
     expect(groupEmailsByThread([])).toEqual([]);
   });

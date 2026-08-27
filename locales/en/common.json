@@ -17,6 +17,7 @@
       "totp_invalid": "Invalid authentication code. Please check your authenticator app and try again.",
       "oauth_discovery_failed": "SSO is enabled but the identity provider could not be reached. Check your OAuth configuration."
     },
+    "retry": "Retry",
     "show_password": "Show password",
     "hide_password": "Hide password",
     "totp_toggle": "I have a 2FA code",
@@ -46,6 +47,7 @@
   },
   "sidebar": {
     "close": "Close",
+    "all_inboxes": "All Inboxes",
     "compose": "Compose",
     "compose_hint": "Compose (c)",
     "search_placeholder": "Search mail...",
@@ -143,6 +145,11 @@
     "descending": "Descending"
   },
   "email_list": {
+    "unified_failure": {
+      "message": "Some accounts could not be loaded: {accounts}",
+      "retry": "Retry",
+      "dismiss": "Dismiss"
+    },
     "no_emails": "No emails",
     "no_emails_description": "Start by composing a new email",
     "loading": "Loading emails...",
@@ -392,6 +399,7 @@
     "reply_all_to": "Reply All",
     "forward_message": "Forward",
     "from": "From",
+    "identity_group_own": "My identities",
     "to": "To",
     "cc": "CC",
     "bcc": "BCC",
@@ -440,7 +448,10 @@
     "upload_progress": "Uploading {uploaded} / {total}",
     "upload_cancel": "Cancel upload",
     "upload_failed": "Failed to upload {filename}",
-    "send_failed": "Failed to send email"
+    "send_failed": "Failed to send email",
+    "send_as_failed_title": "Could not send from group address",
+    "send_as_failed_message": "The server rejected sending from the group account: {error}. You can resend the message from your own address instead.",
+    "send_as_fallback_confirm": "Resend from my address"
   },
   "confirm_dialog": {
     "confirm": "Confirm",
@@ -568,7 +579,8 @@
       "advanced": "Advanced",
       "calendar": "Calendar",
       "filters": "Filters",
-      "templates": "Templates"
+      "templates": "Templates",
+      "unified_inbox": "Unified Inbox"
     },
     "appearance": {
       "title": "Appearance",
@@ -965,6 +977,19 @@
       "validation": {
         "empty": "Template name is required",
         "too_long": "Template name must be 200 characters or less"
+      }
+    },
+    "unified_inbox": {
+      "title": "Unified Inbox",
+      "description": "Combine the inboxes of your accounts into a single All Inboxes view",
+      "show": {
+        "label": "Show All Inboxes",
+        "description": "Display the All Inboxes folder when at least two accounts are included"
+      },
+      "accounts": {
+        "label": "Included accounts",
+        "description": "Choose which accounts appear in All Inboxes",
+        "empty": "Accounts will appear here once your mailbox has loaded"
       }
     }
   },

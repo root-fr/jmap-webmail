@@ -11,7 +11,8 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSettingsStore } from "@/stores/settings-store";
-import { groupEmailsByThread, sortThreadGroups } from "@/lib/thread-utils";
+import { groupEmailsByThread, sortThreadGroups, accountScopedKey, emailRowKey } from "@/lib/thread-utils";
+import type { RowKey } from "@/lib/thread-utils";
 import { useContextMenu } from "@/hooks/use-context-menu";
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
 import { useTranslations } from "next-intl";
@@ -22,10 +23,12 @@ import { isFilterEmpty, DEFAULT_SEARCH_FILTERS } from "@/lib/jmap/search-utils";
 import { SelectionDropdown } from "./selection-dropdown";
 import { MoveToPopover } from "./move-to-popover";
 import { SortMenu } from "./sort-menu";
+import { UnifiedFailureNotice } from "./unified-failure-notice";
 
 interface EmailListProps {
   emails: Email[];
   selectedEmailId?: string;
+  selectedEmailAccountId?: string;
   onEmailSelect?: (email: Email) => void;
   className?: string;
   isLoading?: boolean;
@@ -37,8 +40,8 @@ interface EmailListProps {
   onToggleStar?: (email: Email) => void;
   onDelete?: (email: Email) => void;
   onArchive?: (email: Email) => void;
-  onSetColorTag?: (emailId: string, color: string | null) => void;
-  onMoveToMailbox?: (emailId: string, mailboxId: string) => void;
+  onSetColorTag?: (emailId: string, color: string | null, accountId?: string) => void;
+  onMoveToMailbox?: (emailId: string, mailboxId: string, accountId?: string) => void;
   onMarkAsSpam?: (email: Email) => void;
   onUndoSpam?: (email: Email) => void;
 }
@@ -46,6 +49,7 @@ interface EmailListProps {
 export function EmailList({
   emails,
   selectedEmailId,
+  selectedEmailAccountId,
   onEmailSelect,
   className,
   isLoading = false,
@@ -130,7 +134,12 @@ export function EmailList({
     getScrollElement: () => parentRef.current,
     estimateSize,
     overscan: 5,
-    getItemKey: (index) => threadGroups[index]?.threadId ?? String(index),
+    getItemKey: (index) => {
+      const group = threadGroups[index];
+      if (!group) return String(index);
+      // threadId alone can collide across accounts in the unified list
+      return accountScopedKey(group.latestEmail.accountId, group.threadId);
+    },
   });
 
   const LoadingSkeleton = () => (
@@ -154,7 +163,8 @@ export function EmailList({
   );
 
   const hasSelection = selectedEmailIds.size > 0;
-  const allSelected = threadGroups.length > 0 && threadGroups.every(g => selectedEmailIds.has(g.latestEmail.id));
+  const allSelected = threadGroups.length > 0
+    && threadGroups.every(g => selectedEmailIds.has(emailRowKey(g.latestEmail)));
 
   const handleBatchMarkAsRead = async (read: boolean) => {
     if (!client || isProcessing) return;
@@ -210,23 +220,24 @@ export function EmailList({
     }
   }, [client, hasMoreEmails, isLoadingMore, isLoading, loadMoreEmails]);
 
-  const handleToggleThreadExpansion = useCallback(async (threadId: string) => {
-    const isExpanded = expandedThreadIds.has(threadId);
+  const handleToggleThreadExpansion = useCallback(async (thread: ThreadGroup) => {
+    const threadKey = accountScopedKey(thread.latestEmail.accountId, thread.threadId);
+    const isExpanded = expandedThreadIds.has(threadKey);
 
     if (!isExpanded && client) {
-      toggleThreadExpansion(threadId);
-      await fetchThreadEmails(client, threadId);
+      toggleThreadExpansion(threadKey);
+      await fetchThreadEmails(client, thread.threadId, thread.latestEmail.accountId);
     } else {
-      toggleThreadExpansion(threadId);
+      toggleThreadExpansion(threadKey);
     }
   }, [client, expandedThreadIds, toggleThreadExpansion, fetchThreadEmails]);
 
-  const handleCheckboxClick = useCallback((e: React.MouseEvent, emailId: string, groupIndex: number) => {
+  const handleCheckboxClick = useCallback((e: React.MouseEvent, selectionKey: RowKey, groupIndex: number) => {
     e.stopPropagation();
     if (e.shiftKey && lastSelectedIndex !== null) {
       selectRange(lastSelectedIndex, groupIndex, threadGroups);
     } else {
-      toggleEmailSelection(emailId, groupIndex);
+      toggleEmailSelection(selectionKey, groupIndex);
     }
   }, [lastSelectedIndex, selectRange, toggleEmailSelection, threadGroups]);
 
@@ -245,8 +256,9 @@ export function EmailList({
   useEffect(() => {
     if (!selectedEmailId) return;
     const index = threadGroups.findIndex(thread =>
-      thread.latestEmail.id === selectedEmailId ||
-      thread.emails.some(e => e.id === selectedEmailId)
+      thread.latestEmail.accountId === selectedEmailAccountId &&
+      (thread.latestEmail.id === selectedEmailId ||
+        thread.emails.some(e => e.id === selectedEmailId))
     );
     if (index >= 0) {
       virtualizer.scrollToIndex(index, { align: 'auto' });
@@ -389,6 +401,8 @@ export function EmailList({
         />
       )}
 
+      <UnifiedFailureNotice />
+
       {/* List Header */}
       <div className="px-4 py-3 border-b bg-muted/50 border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -443,6 +457,8 @@ export function EmailList({
             >
               {virtualizer.getVirtualItems().map((virtualItem) => {
                 const thread = threadGroups[virtualItem.index];
+                const threadKey = accountScopedKey(thread.latestEmail.accountId, thread.threadId);
+                const rowKey = emailRowKey(thread.latestEmail);
                 return (
                   <div
                     key={virtualItem.key}
@@ -458,16 +474,17 @@ export function EmailList({
                   >
                     <ThreadListItem
                       thread={thread}
-                      isExpanded={expandedThreadIds.has(thread.threadId)}
+                      isExpanded={expandedThreadIds.has(threadKey)}
                       selectedEmailId={selectedEmailId}
-                      isLoading={isLoadingThread === thread.threadId}
-                      expandedEmails={threadEmailsCache.get(thread.threadId)}
-                      onToggleExpand={() => handleToggleThreadExpansion(thread.threadId)}
+                      selectedEmailAccountId={selectedEmailAccountId}
+                      isLoading={isLoadingThread === threadKey}
+                      expandedEmails={threadEmailsCache.get(threadKey)}
+                      onToggleExpand={() => handleToggleThreadExpansion(thread)}
                       onEmailSelect={(email) => onEmailSelect?.(email)}
                       onContextMenu={openContextMenu}
                       onOpenConversation={onOpenConversation}
-                      isChecked={selectedEmailIds.has(thread.latestEmail.id)}
-                      onCheckboxClick={(e) => handleCheckboxClick(e, thread.latestEmail.id, virtualItem.index)}
+                      isChecked={selectedEmailIds.has(rowKey)}
+                      onCheckboxClick={(e) => handleCheckboxClick(e, rowKey, virtualItem.index)}
                     />
                   </div>
                 );
@@ -502,7 +519,7 @@ export function EmailList({
           mailboxes={mailboxes}
           selectedMailbox={selectedMailbox}
           currentMailboxRole={mailboxes.find(m => m.id === selectedMailbox)?.role}
-          isMultiSelect={selectedEmailIds.has(contextMenu.data.id)}
+          isMultiSelect={selectedEmailIds.has(emailRowKey(contextMenu.data))}
           selectedCount={selectedEmailIds.size}
           onReply={() => onReply?.(contextMenu.data!)}
           onReplyAll={() => onReplyAll?.(contextMenu.data!)}
@@ -511,21 +528,21 @@ export function EmailList({
           onToggleStar={() => onToggleStar?.(contextMenu.data!)}
           onDelete={() => onDelete?.(contextMenu.data!)}
           onArchive={() => onArchive?.(contextMenu.data!)}
-          onSetColorTag={(color) => onSetColorTag?.(contextMenu.data!.id, color)}
-          onMoveToMailbox={(mailboxId) => onMoveToMailbox?.(contextMenu.data!.id, mailboxId)}
+          onSetColorTag={(color) => onSetColorTag?.(contextMenu.data!.id, color, contextMenu.data!.accountId)}
+          onMoveToMailbox={(mailboxId) => onMoveToMailbox?.(contextMenu.data!.id, mailboxId, contextMenu.data!.accountId)}
           onMarkAsSpam={() => onMarkAsSpam?.(contextMenu.data!)}
           onUndoSpam={() => onUndoSpam?.(contextMenu.data!)}
           onBatchMarkAsRead={(read) => client && batchMarkAsRead(client, read)}
           onBatchDelete={() => client && batchDelete(client)}
-          onBatchMoveToMailbox={(mailboxId) => client && batchMoveToMailbox(client, mailboxId)}
+          onBatchMoveToMailbox={(mailboxId) => client && handleBatchMove(mailboxId)}
           onBatchMarkAsSpam={async () => {
             if (client) {
-              const emailIds = Array.from(selectedEmailIds);
+              const count = selectedEmailIds.size;
               try {
-                await batchMarkAsSpam(client, emailIds);
+                await batchMarkAsSpam(client);
                 const { toast } = await import('sonner');
                 toast.success(
-                  t('../email_viewer.spam.toast_batch', { count: emailIds.length })
+                  t('../email_viewer.spam.toast_batch', { count })
                 );
               } catch {
                 const { toast } = await import('sonner');
@@ -535,12 +552,12 @@ export function EmailList({
           }}
           onBatchUndoSpam={async () => {
             if (client) {
-              const emailIds = Array.from(selectedEmailIds);
+              const count = selectedEmailIds.size;
               try {
-                await batchUndoSpam(client, emailIds);
+                await batchUndoSpam(client);
                 const { toast } = await import('sonner');
                 toast.success(
-                  t('../email_viewer.spam.toast_not_spam_batch', { count: emailIds.length })
+                  t('../email_viewer.spam.toast_not_spam_batch', { count })
                 );
               } catch {
                 const { toast } = await import('sonner');

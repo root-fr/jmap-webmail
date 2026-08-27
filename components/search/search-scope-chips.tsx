@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { EmailScope } from "@/lib/jmap/search-utils";
+import { EmailScope, UNIFIED_INBOX_ID } from "@/lib/jmap/search-utils";
 
 interface SearchScopeChipsProps {
   scope: EmailScope;
@@ -46,7 +46,13 @@ export function SearchScopeChips({
         <button
           type="button"
           aria-pressed={!isEverywhere}
-          onClick={() => onScopeChange({ kind: "folder", mailboxId: folderMailboxId })}
+          onClick={() =>
+            onScopeChange(
+              folderMailboxId === UNIFIED_INBOX_ID
+                ? { kind: "unified" }
+                : { kind: "folder", mailboxId: folderMailboxId }
+            )
+          }
           className={cn(
             "px-3 py-0.5 font-medium transition-colors border-l border-border",
             !isEverywhere

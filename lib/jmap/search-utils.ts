@@ -1,3 +1,6 @@
+import type { Mailbox } from "./types";
+import type { UnifiedTarget } from "./unified-query";
+
 export interface SearchFilters {
   from: string;
   to: string;
@@ -130,7 +133,49 @@ export function activeFilterCount(filters: SearchFilters): number {
 
 export type EmailScope =
   | { kind: "folder"; mailboxId: string }
-  | { kind: "all"; includeTrashJunk: boolean };
+  | { kind: "all"; includeTrashJunk: boolean }
+  | { kind: "unified" };
+
+// Virtual sidebar node id for "All Inboxes". Shares the accountId:mailboxId
+// shape of namespaced shared-mailbox ids, so it must be checked before
+// shared-mailbox resolution and never parsed as a namespaced id.
+export const UNIFIED_INBOX_ID = "unified:inbox";
+
+// Maps a scope to per-account query targets; null keeps the single-account
+// path. "unified" targets included accounts' inboxes (un-namespaced ids);
+// "all" (Everywhere) spans every session account regardless of the
+// unified-inbox exclude list — excluding an account means "don't make me
+// triage it", not "hide it from explicit search".
+export function resolveScopeTargets(
+  scope: EmailScope,
+  mailboxes: Mailbox[],
+  excludedAccountIds: string[]
+): UnifiedTarget[] | null {
+  if (scope.kind === "folder") return null;
+
+  if (scope.kind === "unified") {
+    const excluded = new Set(excludedAccountIds);
+    return mailboxes
+      .filter(
+        (mb): mb is Mailbox & { accountId: string } =>
+          mb.role === "inbox" && !!mb.accountId && !excluded.has(mb.accountId)
+      )
+      .map((mb) => ({
+        accountId: mb.accountId,
+        mailboxId: mb.originalId ?? mb.id,
+      }));
+  }
+
+  const targets: UnifiedTarget[] = [];
+  const seen = new Set<string>();
+  for (const mb of mailboxes) {
+    if (mb.accountId && !seen.has(mb.accountId)) {
+      seen.add(mb.accountId);
+      targets.push({ accountId: mb.accountId });
+    }
+  }
+  return targets;
+}
 
 export type EmailSort = {
   by: "receivedAt" | "from" | "subject" | "size";

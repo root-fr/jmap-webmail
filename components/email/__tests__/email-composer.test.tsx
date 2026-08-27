@@ -25,6 +25,8 @@ vi.mock('@/stores/identity-store', () => ({
     addRecentTag: vi.fn(),
     addTagSuggestion: vi.fn(),
     getTagSuggestionsForDomain: () => [],
+    identitiesByAccount: {},
+    primaryAccountId: null,
   }),
 }));
 

@@ -27,6 +27,7 @@
     "totp_placeholder": "000000",
     "totp_toggle": "Tengo un código 2FA",
     "remember_me": "Recordarme",
+    "retry": "Reintentar",
     "show_password": "Mostrar contraseña",
     "hide_password": "Ocultar contraseña",
     "session_expired": "Tu sesión ha expirado. Inicia sesión de nuevo.",
@@ -46,6 +47,7 @@
   },
   "sidebar": {
     "close": "Cerrar",
+    "all_inboxes": "Todas las bandejas de entrada",
     "compose": "Redactar",
     "search_placeholder": "Buscar correo...",
     "storage": "Almacenamiento",
@@ -143,6 +145,11 @@
     "descending": "Descendente"
   },
   "email_list": {
+    "unified_failure": {
+      "message": "No se pudieron cargar algunas cuentas: {accounts}",
+      "retry": "Reintentar",
+      "dismiss": "Descartar"
+    },
     "no_emails": "Sin correos",
     "no_emails_description": "Comience redactando un nuevo correo",
     "loading": "Cargando correos...",
@@ -392,6 +399,7 @@
     "reply_all_to": "Responder a Todos",
     "forward_message": "Reenviar",
     "from": "De",
+    "identity_group_own": "Mis identidades",
     "to": "Para",
     "cc": "CC",
     "bcc": "CCO",
@@ -440,6 +448,9 @@
     "upload_cancel": "Cancelar subida",
     "upload_failed": "Error al subir {filename}",
     "send_failed": "Error al enviar el correo",
+    "send_as_failed_title": "No se pudo enviar desde la dirección del grupo",
+    "send_as_failed_message": "El servidor rechazó el envío desde la cuenta de grupo: {error}. Puede reenviar el mensaje desde su propia dirección.",
+    "send_as_fallback_confirm": "Reenviar desde mi dirección",
     "discard_draft_title": "¿Descartar borrador?"
   },
   "common": {
@@ -560,7 +571,8 @@
       "advanced": "Avanzado",
       "calendar": "Calendario",
       "filters": "Filtros",
-      "templates": "Plantillas"
+      "templates": "Plantillas",
+      "unified_inbox": "Bandeja unificada"
     },
     "appearance": {
       "title": "Apariencia",
@@ -962,7 +974,20 @@
     "unsaved_changes": "Tienes cambios sin guardar",
     "discard_changes": "¿Descartar los cambios?",
     "discard": "Descartar",
-    "keep_editing": "Seguir editando"
+    "keep_editing": "Seguir editando",
+    "unified_inbox": {
+      "title": "Bandeja unificada",
+      "description": "Combina las bandejas de entrada de tus cuentas en una sola vista",
+      "show": {
+        "label": "Mostrar Todas las bandejas",
+        "description": "Muestra la carpeta Todas las bandejas cuando se incluyen al menos dos cuentas"
+      },
+      "accounts": {
+        "label": "Cuentas incluidas",
+        "description": "Elige qué cuentas aparecen en Todas las bandejas",
+        "empty": "Las cuentas aparecerán aquí cuando se haya cargado tu buzón"
+      }
+    }
   },
   "errors": {
     "page_error_title": "Algo salió mal",

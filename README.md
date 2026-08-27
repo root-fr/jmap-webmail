@@ -26,6 +26,15 @@ Stalwart is a mail server written in Rust with native JMAP support, not IMAP/SMT
 - Sender info panel (click sender name to view contact, add to contacts, search)
 - API retry with exponential backoff for transient failures
 
+### Multi-account
+
+- "All Inboxes" unified view across your account and any shared or group accounts
+- Account chips on shared-account messages, account context in the viewer
+- Search set to Everywhere covers all accounts
+- Send as a shared account with its own identity, with an explicit fallback to your own address
+- New-mail push polling for every account
+- Show/hide toggle and per-account include list in settings
+
 ### Interface
 
 - Three-pane layout with dark and light themes
@@ -128,7 +137,7 @@ Stalwart is a mail server written in Rust with native JMAP support, not IMAP/SMT
 
 ### Internationalization
 
-- 8 languages: English, French, Japanese, Spanish, Italian, German, Dutch, Portuguese
+- 11 languages: English, French, Japanese, Spanish, Italian, German, Dutch, Portuguese, Polish, Russian, Ukrainian
 - Automatic browser language detection
 - Persistent language preference
 

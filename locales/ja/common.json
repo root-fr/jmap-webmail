@@ -29,6 +29,7 @@
     "remember_me": "ログイン状態を保持",
     "session_expired": "セッションが期限切れになりました。再度サインインしてください。",
     "dismiss": "閉じる",
+    "retry": "再試行",
     "show_password": "パスワードを表示",
     "hide_password": "パスワードを隠す",
     "or": "または",
@@ -46,6 +47,7 @@
   },
   "sidebar": {
     "close": "閉じる",
+    "all_inboxes": "すべての受信トレイ",
     "compose": "作成",
     "compose_hint": "作成 (c)",
     "search_placeholder": "メールを検索...",
@@ -143,6 +145,11 @@
     "descending": "降順"
   },
   "email_list": {
+    "unified_failure": {
+      "message": "一部のアカウントを読み込めませんでした：{accounts}",
+      "retry": "再試行",
+      "dismiss": "閉じる"
+    },
     "no_emails": "メールがありません",
     "no_emails_description": "新しいメールを作成してください",
     "loading": "メールを読み込み中...",
@@ -392,6 +399,7 @@
     "reply_all_to": "全員に返信",
     "forward_message": "転送",
     "from": "送信元",
+    "identity_group_own": "自分の送信者情報",
     "to": "宛先",
     "cc": "CC",
     "bcc": "BCC",
@@ -440,6 +448,9 @@
     "upload_cancel": "アップロードをキャンセル",
     "upload_failed": "{filename} のアップロードに失敗しました",
     "send_failed": "メールの送信に失敗しました",
+    "send_as_failed_title": "グループアドレスから送信できませんでした",
+    "send_as_failed_message": "グループアカウントからの送信がサーバーに拒否されました: {error}。自分のアドレスから再送信できます。",
+    "send_as_fallback_confirm": "自分のアドレスで再送信",
     "discard_draft_title": "下書きを破棄しますか？"
   },
   "common": {
@@ -560,7 +571,8 @@
       "advanced": "詳細設定",
       "calendar": "カレンダー",
       "filters": "フィルター",
-      "templates": "テンプレート"
+      "templates": "テンプレート",
+      "unified_inbox": "統合受信トレイ"
     },
     "appearance": {
       "title": "外観",
@@ -962,7 +974,20 @@
     "unsaved_changes": "保存されていない変更があります",
     "discard_changes": "変更を破棄しますか？",
     "discard": "破棄",
-    "keep_editing": "編集を続ける"
+    "keep_editing": "編集を続ける",
+    "unified_inbox": {
+      "title": "統合受信トレイ",
+      "description": "各アカウントの受信トレイを1つのビューにまとめます",
+      "show": {
+        "label": "すべての受信トレイを表示",
+        "description": "2つ以上のアカウントが含まれる場合に「すべての受信トレイ」フォルダーを表示します"
+      },
+      "accounts": {
+        "label": "対象アカウント",
+        "description": "「すべての受信トレイ」に表示するアカウントを選択します",
+        "empty": "メールボックスが読み込まれるとアカウントがここに表示されます"
+      }
+    }
   },
   "errors": {
     "page_error_title": "問題が発生しました",

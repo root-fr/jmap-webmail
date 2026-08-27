@@ -14,12 +14,14 @@ import { toast } from "@/stores/toast-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useContactStore } from "@/stores/contact-store";
 import { useTemplateStore } from "@/stores/template-store";
+import { useIdentityStore } from "@/stores/identity-store";
 import { SubAddressHelper } from "@/components/identity/sub-address-helper";
 import { generateSubAddress } from "@/lib/sub-addressing";
 import { substitutePlaceholders } from "@/lib/template-utils";
 import { TemplatePicker } from "@/components/templates/template-picker";
 import { TemplateForm } from "@/components/templates/template-form";
 import type { EmailTemplate } from "@/lib/template-types";
+import type { Identity } from "@/lib/jmap/types";
 
 interface EmailComposerProps {
   onSend?: (data: {
@@ -32,6 +34,7 @@ interface EmailComposerProps {
     fromEmail?: string;
     fromName?: string;
     identityId?: string;
+    accountId?: string;
   }) => void | Promise<void>;
   onClose?: () => void;
   onDiscardDraft?: (draftId: string) => void;
@@ -45,6 +48,7 @@ interface EmailComposerProps {
     subject?: string;
     body?: string;
     receivedAt?: string;
+    accountId?: string;
   };
 }
 
@@ -134,6 +138,24 @@ export function EmailComposer({
   });
 
   const { client, identities, primaryIdentity } = useAuthStore();
+  const { identitiesByAccount, primaryAccountId } = useIdentityStore();
+
+  const otherAccountIdentities = Object.entries(identitiesByAccount).filter(
+    ([accountId, list]) => accountId !== primaryAccountId && list.length > 0
+  );
+
+  const findIdentityById = (id: string | null) => {
+    if (!id) return primaryIdentity;
+    return identities.find(identity => identity.id === id)
+      ?? otherAccountIdentities.flatMap(([, list]) => list).find(identity => identity.id === id)
+      ?? primaryIdentity;
+  };
+
+  const renderIdentityOption = (identity: Identity) => (
+    <option key={identity.id} value={identity.id}>
+      {identity.name ? `${identity.name} <${identity.email}>` : identity.email}
+    </option>
+  );
   const getAutocomplete = useContactStore((s) => s.getAutocomplete);
   const addTemplate = useTemplateStore((s) => s.addTemplate);
   const [autocompleteResults, setAutocompleteResults] = useState<Array<{ name: string; email: string }>>([]);
@@ -249,6 +271,15 @@ export function EmailComposer({
   }, [mode]);
 
   useEffect(() => {
+    if (mode === 'compose') return;
+    if (!replyTo?.accountId || replyTo.accountId === primaryAccountId || selectedIdentityId) return;
+    const accountIdentities = identitiesByAccount[replyTo.accountId];
+    if (accountIdentities?.length) {
+      setSelectedIdentityId(accountIdentities[0].id);
+    }
+  }, [mode, replyTo?.accountId, primaryAccountId, identitiesByAccount, selectedIdentityId]);
+
+  useEffect(() => {
     const handleTemplateKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
@@ -315,6 +346,16 @@ export function EmailComposer({
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
+  const collectUploadedAttachments = () =>
+    attachments
+      .filter(att => att.blobId && !att.uploading)
+      .map(att => ({
+        blobId: att.blobId!,
+        name: att.file.name,
+        type: att.file.type,
+        size: att.file.size,
+      }));
+
   // Auto-save draft functionality
   const saveDraft = async (): Promise<string | null> => {
     if (!client) return null;
@@ -327,15 +368,7 @@ export function EmailComposer({
       return null;
     }
 
-    // Prepare attachments for draft
-    const uploadedAttachments = attachments
-      .filter(att => att.blobId && !att.uploading)
-      .map(att => ({
-        blobId: att.blobId!,
-        name: att.file.name,
-        type: att.file.type,
-        size: att.file.size,
-      }));
+    const uploadedAttachments = collectUploadedAttachments();
 
     // Create a hash of current data to compare with last saved
     const currentData = JSON.stringify({ to: toAddresses, cc: ccAddresses, bcc: bccAddresses, subject, body, attachments: uploadedAttachments, identityId: selectedIdentityId, subAddressTag });
@@ -347,10 +380,7 @@ export function EmailComposer({
 
     setSaveStatus('saving');
 
-    // Get the selected identity or primary identity
-    const currentIdentity = selectedIdentityId
-      ? identities.find(id => id.id === selectedIdentityId)
-      : primaryIdentity;
+    const currentIdentity = findIdentityById(selectedIdentityId);
 
     // Generate sub-addressed email if tag is set
     const fromEmail = currentIdentity?.email
@@ -468,9 +498,7 @@ export function EmailComposer({
       }
     }
 
-    const currentIdentity = selectedIdentityId
-      ? identities.find(id => id.id === selectedIdentityId)
-      : primaryIdentity;
+    const currentIdentity = findIdentityById(selectedIdentityId);
 
     const fromEmail = currentIdentity?.email
       ? subAddressTag
@@ -478,19 +506,31 @@ export function EmailComposer({
         : currentIdentity.email
       : undefined;
 
-    try {
-      await onSend?.({
+    // Route through the account that owns the chosen identity in every
+    // mode - a group identityId submitted via the primary account is
+    // always rejected. Personal identities keep the primary route.
+    const sendAsAccountId =
+      currentIdentity && !identities.some((i) => i.id === currentIdentity.id)
+        ? otherAccountIdentities.find(([, list]) =>
+            list.some((i) => i.id === currentIdentity.id)
+          )?.[0]
+        : undefined;
+
+    const submit = (identity: Identity | null | undefined, from: string | undefined, accountId?: string) =>
+      onSend?.({
         to: toAddresses,
         cc: ccAddresses,
         bcc: bccAddresses,
         subject,
         body,
         draftId: finalDraftId || undefined,
-        fromEmail,
-        fromName: currentIdentity?.name || undefined,
-        identityId: currentIdentity?.id,
+        fromEmail: from,
+        fromName: identity?.name || undefined,
+        identityId: identity?.id,
+        accountId,
       });
 
+    const clearComposer = () => {
       setTo("");
       setCc("");
       setBcc("");
@@ -499,8 +539,53 @@ export function EmailComposer({
       setDraftId(null);
       setSubAddressTag("");
       setValidationErrors({});
+    };
+
+    try {
+      await submit(currentIdentity, fromEmail, sendAsAccountId);
+      clearComposer();
     } catch (err) {
       debug.error('Failed to send email:', err);
+
+      if (sendAsAccountId && primaryIdentity) {
+        const useOwnIdentity = await confirm({
+          title: t('send_as_failed_title'),
+          message: t('send_as_failed_message', {
+            error: err instanceof Error ? err.message : String(err),
+          }),
+          confirmText: t('send_as_fallback_confirm'),
+        });
+
+        if (!useOwnIdentity) return;
+
+        try {
+          // The autosaved draft still carries the group identity's From
+          // header and JMAP cannot rewrite headers on an existing message
+          // (RFC 8621: only mailboxIds/keywords are mutable), so replace
+          // the draft under the primary identity before resubmitting.
+          if (finalDraftId && client) {
+            finalDraftId = await client.createDraft(
+              toAddresses,
+              subject || t('no_subject'),
+              body,
+              ccAddresses,
+              bccAddresses,
+              primaryIdentity.id,
+              primaryIdentity.email,
+              finalDraftId,
+              collectUploadedAttachments(),
+              primaryIdentity.name || undefined,
+            );
+            setDraftId(finalDraftId);
+          }
+          await submit(primaryIdentity, primaryIdentity.email, undefined);
+          clearComposer();
+          return;
+        } catch (retryErr) {
+          debug.error('Failed to send email:', retryErr);
+        }
+      }
+
       toast.error(t('send_failed'));
     }
   };
@@ -565,17 +650,27 @@ export function EmailComposer({
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground w-16">{t('from')}:</span>
             <div className="flex-1 flex items-center gap-1">
-              {identities.length > 1 ? (
+              {(identities.length > 1 || otherAccountIdentities.length > 0) ? (
                 <select
                   value={selectedIdentityId || primaryIdentity?.id || ''}
                   onChange={(e) => setSelectedIdentityId(e.target.value)}
+                  aria-label={t('from')}
                   className="flex-1 bg-transparent text-sm text-foreground outline-none cursor-pointer hover:text-muted-foreground transition-colors"
                 >
-                  {identities.map((identity) => (
-                    <option key={identity.id} value={identity.id}>
-                      {identity.name ? `${identity.name} <${identity.email}>` : identity.email}
-                    </option>
-                  ))}
+                  {otherAccountIdentities.length > 0 ? (
+                    <>
+                      <optgroup label={t('identity_group_own')}>
+                        {identities.map(renderIdentityOption)}
+                      </optgroup>
+                      {otherAccountIdentities.map(([accountId, list]) => (
+                        <optgroup key={accountId} label={list[0].email}>
+                          {list.map(renderIdentityOption)}
+                        </optgroup>
+                      ))}
+                    </>
+                  ) : (
+                    identities.map(renderIdentityOption)
+                  )}
                 </select>
               ) : (
                 <span className="text-sm text-foreground flex-1">
@@ -593,11 +688,7 @@ export function EmailComposer({
                 </span>
               )}
               <SubAddressHelper
-                baseEmail={
-                  (selectedIdentityId
-                    ? identities.find(id => id.id === selectedIdentityId)?.email
-                    : primaryIdentity?.email) || ''
-                }
+                baseEmail={findIdentityById(selectedIdentityId)?.email || ''}
                 recipientEmails={to.split(',').map(e => e.trim()).filter(Boolean)}
                 onSelectTag={setSubAddressTag}
               />

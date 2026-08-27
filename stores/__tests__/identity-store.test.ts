@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useIdentityStore } from '../identity-store';
 import type { Identity } from '@/lib/jmap/types';
+import type { JMAPClient } from '@/lib/jmap/client';
 
 const makeIdentity = (overrides: Partial<Identity> = {}): Identity => ({
   id: 'id-1',
@@ -233,6 +234,48 @@ describe('identity-store', () => {
       useIdentityStore.getState().addTagSuggestion('example.com', 'promo');
       useIdentityStore.getState().clearRecentTags();
       expect(useIdentityStore.getState().subAddress.tagSuggestions['example.com']).toEqual(['promo']);
+    });
+  });
+
+  describe('account-keyed identities', () => {
+    beforeEach(() => {
+      useIdentityStore.setState({ identitiesByAccount: {}, primaryAccountId: null });
+    });
+
+    it('loadAccountIdentities buckets non-primary identities and mirrors primary from the existing list', async () => {
+      const primary = makeIdentity({ id: 'id-me', email: 'me@example.com' });
+      const team = makeIdentity({ id: 'id-team', email: 'support@example.com' });
+      useIdentityStore.getState().setIdentities([primary]);
+
+      const getIdentities = vi.fn(async (accountId?: string) =>
+        accountId === 'acc-team' ? [team] : []
+      );
+      const client = {
+        getPrimaryAccountId: () => 'acc-1',
+        getAccountIds: () => ['acc-1', 'acc-team', 'acc-empty'],
+        getIdentities,
+      } as unknown as JMAPClient;
+
+      await useIdentityStore.getState().loadAccountIdentities(client);
+
+      const state = useIdentityStore.getState();
+      expect(state.primaryAccountId).toBe('acc-1');
+      expect(state.identitiesByAccount['acc-1']).toEqual([primary]);
+      expect(state.identitiesByAccount['acc-team']).toEqual([team]);
+      expect(state.identitiesByAccount).not.toHaveProperty('acc-empty');
+      expect(getIdentities).not.toHaveBeenCalledWith('acc-1');
+    });
+
+    it('clearIdentities resets account buckets and primary account id', () => {
+      useIdentityStore.setState({
+        identitiesByAccount: { 'acc-1': [makeIdentity()] },
+        primaryAccountId: 'acc-1',
+      });
+
+      useIdentityStore.getState().clearIdentities();
+
+      expect(useIdentityStore.getState().identitiesByAccount).toEqual({});
+      expect(useIdentityStore.getState().primaryAccountId).toBeNull();
     });
   });
 

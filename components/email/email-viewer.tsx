@@ -63,6 +63,7 @@ import { UnsubscribeBanner } from "./unsubscribe-banner";
 import { CalendarInvitationBanner } from "./calendar-invitation-banner";
 import { findCalendarAttachment } from "@/lib/calendar-invitation";
 import { SenderInfoPanel } from "./sender-info-panel";
+import { AccountContextLine } from "./account-context-line";
 
 interface EmailViewerProps {
   email: Email | null;
@@ -1091,6 +1092,7 @@ export function EmailViewer({
                 </button>
                 <EmailIdentityBadge email={email} identities={identities} />
               </div>
+              <AccountContextLine email={email} className="mt-1" />
 
               {/* Recipient section - separate line */}
               <div className="mt-2 space-y-1">
@@ -1477,6 +1479,7 @@ export function EmailViewer({
                 </button>
                 <EmailIdentityBadge email={email} identities={identities} />
               </div>
+              <AccountContextLine email={email} className="mt-1" />
               <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground flex-wrap">
                 {sender?.email && sender?.name && (
                   <>

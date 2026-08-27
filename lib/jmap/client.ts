@@ -1,7 +1,8 @@
 import type { Email, Mailbox, StateChange, AccountStates, Thread, Identity, EmailAddress, ContactCard, AddressBook, VacationResponse, Calendar, CalendarEvent, CalendarEventFilter } from "./types";
 import type { SieveScript, SieveCapabilities } from "./sieve-types";
 import { retryWithBackoff } from './retry';
-import { buildQueryRequest, type EmailQuery, type EmailPage } from './search-utils';
+import { buildQueryRequest, type EmailQuery, type EmailPage, type EmailScope } from './search-utils';
+import type { UnifiedTarget, AccountPage } from './unified-query';
 
 // JMAP protocol types - these are intentionally flexible due to server variations
 interface JMAPSession {
@@ -141,8 +142,11 @@ const CALENDAR_EVENT_PROPERTIES = [
   "isOrigin",
 ] as const;
 
+// Only ever called for non-primary accounts; also stamps Email.accountId
+// so list rows, viewer, and write-routing know the owning account.
 function namespaceMailboxIds(emails: Email[], accountId: string): void {
   for (const email of emails) {
+    email.accountId = accountId;
     if (!email.mailboxIds) continue;
     const namespaced: Record<string, boolean> = {};
     for (const mbId of Object.keys(email.mailboxIds)) {
@@ -585,6 +589,121 @@ export class JMAPClient {
     return { emails, total, position, hasMore };
   }
 
+  // null = the account's mailboxes could not be listed (getAllMailboxes
+  // swallows per-account failures), so its trash/junk roles are unknown and
+  // an exclusion filter cannot be built for it.
+  private async resolveTrashJunkIdsPerAccount(
+    accountIds: string[]
+  ): Promise<Record<string, { trashId?: string; junkId?: string } | null>> {
+    const mailboxes = await this.getAllMailboxes();
+    const ctx: Record<string, { trashId?: string; junkId?: string } | null> = {};
+    for (const accountId of accountIds) {
+      const own = mailboxes.filter((m) => m.accountId === accountId);
+      if (own.length === 0) {
+        ctx[accountId] = null;
+        continue;
+      }
+      const pick = (role: string): string | undefined => {
+        const mb = own.find((m) => m.role === role);
+        if (!mb) return undefined;
+        return mb.originalId ?? mb.id;
+      };
+      ctx[accountId] = { trashId: pick('trash'), junkId: pick('junk') };
+    }
+    return ctx;
+  }
+
+  async queryEmailsUnified(
+    query: EmailQuery,
+    page: { limit: number },
+    targets: UnifiedTarget[]
+  ): Promise<AccountPage[]> {
+    if (targets.length === 0) return [];
+
+    const wholeAccountIds = targets.filter((t) => !t.mailboxId).map((t) => t.accountId);
+    const excludeTrashJunk =
+      query.scope.kind === 'all' && !query.scope.includeTrashJunk;
+    const trashJunkCtx =
+      excludeTrashJunk && wholeAccountIds.length > 0
+        ? await this.resolveTrashJunkIdsPerAccount(wholeAccountIds)
+        : {};
+
+    const methodCalls: JMAPMethodCall[] = [];
+    targets.forEach((target, i) => {
+      // Unresolvable trash/junk roles: skip the account's calls so its page
+      // comes back failed below, rather than querying with a silently
+      // widened scope that would include trash/junk mail.
+      if (!target.mailboxId && excludeTrashJunk && trashJunkCtx[target.accountId] === null) {
+        return;
+      }
+      const scope: EmailScope = target.mailboxId
+        ? { kind: 'folder', mailboxId: target.mailboxId }
+        : query.scope.kind === 'all'
+          ? query.scope
+          : { kind: 'all', includeTrashJunk: true };
+      const req = buildQueryRequest(
+        { ...query, scope },
+        { limit: page.limit },
+        trashJunkCtx[target.accountId] ?? {}
+      );
+      methodCalls.push(
+        ["Email/query", {
+          accountId: target.accountId,
+          filter: req.filter,
+          sort: req.sort,
+          ...(req.position !== undefined ? { position: req.position } : {}),
+          limit: req.limit,
+          calculateTotal: req.calculateTotal,
+        }, `q${i}`],
+        ["Email/get", {
+          accountId: target.accountId,
+          "#ids": { resultOf: `q${i}`, name: "Email/query", path: "/ids" },
+          properties: [...EMAIL_LIST_PROPERTIES],
+        }, `g${i}`],
+      );
+    });
+
+    const response = await this.request(methodCalls);
+
+    const byCallId = new Map<string, [string, JMAPResponseResult]>();
+    for (const [name, result, callId] of response.methodResponses || []) {
+      byCallId.set(callId, [name, result]);
+    }
+
+    return targets.map((target, i) => {
+      const q = byCallId.get(`q${i}`);
+      const g = byCallId.get(`g${i}`);
+      if (!q || !g || q[0] === 'error' || g[0] === 'error') {
+        return { accountId: target.accountId, emails: [], anchor: null, failed: true };
+      }
+      const ids: string[] = q[1]?.ids || [];
+      const fetched: Email[] = g[1]?.list || [];
+      // RFC 8620 §5.1 lets Email/get return objects in any order, but the
+      // merge buffer contract (unified-query.ts) and anchor resume both
+      // require Email/query order, so realign to the ids array.
+      const byId = new Map(fetched.map((e) => [e.id, e]));
+      const emails = ids.flatMap((id) => {
+        const email = byId.get(id);
+        return email ? [email] : [];
+      });
+      if (target.accountId !== this.accountId) {
+        namespaceMailboxIds(emails, target.accountId);
+      }
+      const total: number | undefined = q[1]?.total;
+      // anchor null = the account has nothing beyond this buffer (merge
+      // contract in unified-query.ts). With calculateTotal exhaustion is
+      // exact; without it a short page means exhausted.
+      const exhausted =
+        total !== undefined ? ids.length >= total : ids.length < page.limit;
+      return {
+        accountId: target.accountId,
+        emails,
+        ...(total !== undefined ? { total } : {}),
+        anchor: !exhausted && ids.length > 0 ? ids[ids.length - 1] : null,
+      };
+    });
+  }
+
   async getEmail(emailId: string, accountId?: string): Promise<Email | null> {
     try {
       const targetAccountId = accountId || this.accountId;
@@ -747,10 +866,10 @@ export class JMAPClient {
     );
   }
 
-  async toggleStar(emailId: string, starred: boolean): Promise<void> {
+  async toggleStar(emailId: string, starred: boolean, accountId?: string): Promise<void> {
     await this.request([
       ["Email/set", {
-        accountId: this.accountId,
+        accountId: accountId || this.accountId,
         update: {
           [emailId]: {
             "keywords/$flagged": starred,
@@ -760,10 +879,10 @@ export class JMAPClient {
     ]);
   }
 
-  async updateEmailKeywords(emailId: string, keywords: Record<string, boolean>): Promise<void> {
+  async updateEmailKeywords(emailId: string, keywords: Record<string, boolean>, accountId?: string): Promise<void> {
     await this.request([
       ["Email/set", {
-        accountId: this.accountId,
+        accountId: accountId || this.accountId,
         update: {
           [emailId]: {
             keywords,
@@ -1080,11 +1199,19 @@ export class JMAPClient {
     return ["urn:ietf:params:jmap:core", "urn:ietf:params:jmap:mail", "urn:ietf:params:jmap:submission"];
   }
 
-  async getIdentities(): Promise<Identity[]> {
+  getAccountIds(): string[] {
+    return Object.keys(this.accounts);
+  }
+
+  getPrimaryAccountId(): string {
+    return this.accountId;
+  }
+
+  async getIdentities(accountId?: string): Promise<Identity[]> {
     try {
       const response = await this.request([
         ["Identity/get", {
-          accountId: this.accountId,
+          accountId: accountId ?? this.accountId,
         }, "0"]
       ], this.submissionUsing());
 
@@ -1352,6 +1479,40 @@ export class JMAPClient {
     throw new Error('Failed to save draft');
   }
 
+  private async getAccountMailboxes(accountId: string): Promise<Mailbox[]> {
+    if (accountId === this.accountId) {
+      return this.getMailboxes();
+    }
+
+    const response = await this.request([
+      ["Mailbox/get", { accountId }, "0"]
+    ]);
+
+    if (response.methodResponses?.[0]?.[0] === "Mailbox/get") {
+      const rawMailboxes = (response.methodResponses[0][1].list || []) as JMAPMailbox[];
+
+      return rawMailboxes.map((mb) => ({
+        id: mb.id,
+        originalId: mb.id,
+        name: mb.name,
+        parentId: mb.parentId || undefined,
+        role: mb.role || undefined,
+        sortOrder: mb.sortOrder ?? 0,
+        totalEmails: mb.totalEmails ?? 0,
+        unreadEmails: mb.unreadEmails ?? 0,
+        totalThreads: mb.totalThreads ?? 0,
+        unreadThreads: mb.unreadThreads ?? 0,
+        myRights: mb.myRights || DEFAULT_MAILBOX_RIGHTS,
+        isSubscribed: mb.isSubscribed ?? true,
+        accountId,
+        accountName: this.accounts[accountId]?.name || accountId,
+        isShared: true,
+      }) as Mailbox);
+    }
+
+    throw new Error('Failed to load mailboxes for account');
+  }
+
   async sendEmail(
     to: string[],
     subject: string,
@@ -1361,10 +1522,13 @@ export class JMAPClient {
     identityId?: string,
     fromEmail?: string,
     draftId?: string,
-    fromName?: string
+    fromName?: string,
+    accountId?: string
   ): Promise<void> {
-    const emailId = draftId || `draft-${Date.now()}`;
-    const mailboxes = await this.getMailboxes();
+    const targetAccountId = accountId || this.accountId;
+    const sendAsOther = targetAccountId !== this.accountId;
+
+    const mailboxes = await this.getAccountMailboxes(targetAccountId);
     const sentMailbox = mailboxes.find(mb => mb.role === 'sent');
     if (!sentMailbox) {
       throw new Error('No sent mailbox found');
@@ -1374,10 +1538,10 @@ export class JMAPClient {
     let finalIdentityId = identityId;
     if (!finalIdentityId) {
       const identityResponse = await this.request([
-        ["Identity/get", { accountId: this.accountId }, "0"]
+        ["Identity/get", { accountId: targetAccountId }, "0"]
       ], this.submissionUsing());
 
-      finalIdentityId = this.accountId;
+      finalIdentityId = targetAccountId;
       if (identityResponse.methodResponses?.[0]?.[0] === "Identity/get") {
         const identities = (identityResponse.methodResponses[0][1].list || []) as { id: string; email: string }[];
         if (identities.length > 0) {
@@ -1400,65 +1564,121 @@ export class JMAPClient {
     // Closes #60.
     const holdingMailboxId = draftsMailbox?.id ?? sentMailbox.id;
 
-    if (draftId) {
+    // An autosaved draft always lives in the primary account's Drafts, so
+    // it cannot be back-referenced by a submission in another account:
+    // send-as copies it into the target account (body, headers and
+    // attachments intact) and submits the copy.
+    const useExistingDraft = Boolean(draftId) && !sendAsOther;
+    const emailId = useExistingDraft ? draftId! : `draft-${Date.now()}`;
+
+    const onSuccessUpdateEmail = {
+      "#1": {
+        [`mailboxIds/${holdingMailboxId}`]: null,
+        [`mailboxIds/${sentMailbox.id}`]: true,
+        "keywords/$draft": null,
+        "keywords/$seen": true,
+      },
+    };
+
+    if (useExistingDraft) {
       // Draft already lives in Drafts — don't touch its mailbox until
       // after submission succeeds.
       methodCalls.push(["EmailSubmission/set", {
-        accountId: this.accountId,
+        accountId: targetAccountId,
         create: { "1": { emailId: draftId, identityId: finalIdentityId } },
-        onSuccessUpdateEmail: {
-          "#1": {
-            [`mailboxIds/${holdingMailboxId}`]: null,
-            [`mailboxIds/${sentMailbox.id}`]: true,
-            "keywords/$draft": null,
-            "keywords/$seen": true,
-          },
-        },
+        onSuccessUpdateEmail,
       }, "0"]);
     } else {
-      methodCalls.push(["Email/set", {
-        accountId: this.accountId,
-        create: {
-          [emailId]: {
-            from: [{ ...(fromName ? { name: fromName } : {}), email: fromEmail || this.username }],
-            to: to.map(email => ({ email })),
-            cc: cc?.map(email => ({ email })),
-            bcc: bcc?.map(email => ({ email })),
-            subject,
-            keywords: { "$draft": true },
-            mailboxIds: { [holdingMailboxId]: true },
-            bodyValues: { "1": { value: body } },
-            textBody: [{ partId: "1", type: "text/plain" }],
+      if (sendAsOther && draftId) {
+        methodCalls.push(["Email/copy", {
+          fromAccountId: this.accountId,
+          accountId: targetAccountId,
+          create: {
+            [emailId]: {
+              id: draftId,
+              mailboxIds: { [holdingMailboxId]: true },
+              keywords: { "$draft": true },
+            },
           },
-        },
-      }, "0"]);
+        }, "0"]);
+      } else {
+        methodCalls.push(["Email/set", {
+          accountId: targetAccountId,
+          create: {
+            [emailId]: {
+              from: [{ ...(fromName ? { name: fromName } : {}), email: fromEmail || this.username }],
+              to: to.map(email => ({ email })),
+              cc: cc?.map(email => ({ email })),
+              bcc: bcc?.map(email => ({ email })),
+              subject,
+              keywords: { "$draft": true },
+              mailboxIds: { [holdingMailboxId]: true },
+              bodyValues: { "1": { value: body } },
+              textBody: [{ partId: "1", type: "text/plain" }],
+            },
+          },
+        }, "0"]);
+      }
       methodCalls.push(["EmailSubmission/set", {
-        accountId: this.accountId,
+        accountId: targetAccountId,
         create: { "1": { emailId: `#${emailId}`, identityId: finalIdentityId } },
-        onSuccessUpdateEmail: {
-          "#1": {
-            [`mailboxIds/${holdingMailboxId}`]: null,
-            [`mailboxIds/${sentMailbox.id}`]: true,
-            "keywords/$draft": null,
-            "keywords/$seen": true,
-          },
-        },
+        onSuccessUpdateEmail,
       }, "1"]);
     }
 
     const response = await this.request(methodCalls, this.submissionUsing());
 
+    let createdEmailId: string | undefined;
+    let sendError: Error | undefined;
     if (response.methodResponses) {
       for (const [methodName, result] of response.methodResponses) {
         if (methodName === 'error') {
-          throw new Error(result.description || `Failed to send email: ${result.type}`);
+          sendError = new Error(result.description || `Failed to send email: ${result.type}`);
+          break;
         }
 
         if (result.notCreated || result.notUpdated) {
           const errors = result.notCreated || result.notUpdated;
           const firstError = Object.values(errors)[0] as { description?: string; type?: string };
-          throw new Error(firstError?.description || firstError?.type || 'Failed to send email');
+          sendError = new Error(firstError?.description || firstError?.type || 'Failed to send email');
+          break;
         }
+
+        // Only one message is ever created per send, so the first
+        // created entry is the fresh create or draft copy.
+        if ((methodName === 'Email/set' || methodName === 'Email/copy') && result.created) {
+          const created = Object.values(result.created)[0] as { id?: string } | undefined;
+          createdEmailId = created?.id ?? createdEmailId;
+        }
+      }
+    }
+
+    if (sendError) {
+      // A message created for this send (fresh create or draft copy)
+      // must not linger in the target account's Drafts when the
+      // submission itself was refused.
+      if (!useExistingDraft && createdEmailId) {
+        try {
+          await this.request([
+            ["Email/set", { accountId: targetAccountId, destroy: [createdEmailId] }, "0"]
+          ]);
+        } catch {
+          // Best-effort cleanup.
+        }
+      }
+      throw sendError;
+    }
+
+    // The stale autosaved primary draft is removed only after the
+    // send-as submission has succeeded; cleanup failures are ignored so
+    // a sent message never surfaces as a send error.
+    if (sendAsOther && draftId) {
+      try {
+        await this.request([
+          ["Email/set", { accountId: this.accountId, destroy: [draftId] }, "0"]
+        ]);
+      } catch {
+        // Best-effort cleanup.
       }
     }
   }
@@ -2395,12 +2615,22 @@ export class JMAPClient {
     return true;
   }
 
-  private buildStatePollingRequest(): { using: string[]; methodCalls: JMAPMethodCall[] } {
+  private buildStatePollingRequests(): { using: string[]; methodCalls: JMAPMethodCall[] }[] {
     const using = ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'];
     const methodCalls: JMAPMethodCall[] = [
       ['Mailbox/get', { accountId: this.accountId, ids: null, properties: ['id'] }, 'a'],
       ['Email/get', { accountId: this.accountId, ids: [], properties: ['id'] }, 'b'],
     ];
+
+    // Group/shared accounts from the session: their new mail must refresh the
+    // unified inbox and sidebar badges through the same 15s poll.
+    for (const accountId of Object.keys(this.accounts)) {
+      if (accountId === this.accountId) continue;
+      methodCalls.push(
+        ['Mailbox/get', { accountId, ids: null, properties: ['id'] }, `m-${accountId}`],
+        ['Email/get', { accountId, ids: [], properties: ['id'] }, `e-${accountId}`],
+      );
+    }
 
     if (this.supportsCalendars()) {
       using.push('urn:ietf:params:jmap:calendars');
@@ -2418,25 +2648,38 @@ export class JMAPClient {
       );
     }
 
-    return { using, methodCalls };
+    // With many group accounts the poll can exceed the server's
+    // maxCallsInRequest, which would reject the whole request and kill push
+    // for every account. Split into compliant chunks instead.
+    const maxCalls = Math.max(1, this.getMaxCallsInRequest());
+    const requests: { using: string[]; methodCalls: JMAPMethodCall[] }[] = [];
+    for (let i = 0; i < methodCalls.length; i += maxCalls) {
+      requests.push({ using, methodCalls: methodCalls.slice(i, i + maxCalls) });
+    }
+    return requests;
   }
 
-  private async fetchCurrentStates(): Promise<void> {
-    try {
-      const { using, methodCalls } = this.buildStatePollingRequest();
+  private async fetchPollingResponses(): Promise<[string, { accountId?: string; state?: string }][]> {
+    const merged: [string, { accountId?: string; state?: string }][] = [];
+    for (const { using, methodCalls } of this.buildStatePollingRequests()) {
       const response = await this.authenticatedFetch(this.apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ using, methodCalls }),
       }, { retry: false });
+      if (!response.ok) continue;
+      const data = await response.json();
+      merged.push(...data.methodResponses);
+    }
+    return merged;
+  }
 
-      if (response.ok) {
-        const data = await response.json();
-        for (const [method, result] of data.methodResponses) {
-          const stateKey = JMAPClient.STATE_TYPE_MAP[method];
-          if (stateKey && result.state) {
-            this.pollingStates[stateKey] = result.state;
-          }
+  private async fetchCurrentStates(): Promise<void> {
+    try {
+      for (const [method, result] of await this.fetchPollingResponses()) {
+        const stateKey = JMAPClient.STATE_TYPE_MAP[method];
+        if (stateKey && result.state) {
+          this.pollingStates[`${result.accountId || this.accountId}/${stateKey}`] = result.state;
         }
       }
     } catch {
@@ -2446,35 +2689,27 @@ export class JMAPClient {
 
   private async checkForStateChanges(): Promise<void> {
     try {
-      const { using, methodCalls } = this.buildStatePollingRequest();
-      const response = await this.authenticatedFetch(this.apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ using, methodCalls }),
-      }, { retry: false });
+      const changedByAccount: Record<string, Record<string, string>> = {};
+      let hasChanges = false;
 
-      if (response.ok) {
-        const data = await response.json();
-        const changes: { [key: string]: string } = {};
-        let hasChanges = false;
-
-        for (const [method, result] of data.methodResponses) {
-          const stateKey = JMAPClient.STATE_TYPE_MAP[method];
-          if (stateKey && result.state) {
-            if (this.pollingStates[stateKey] && this.pollingStates[stateKey] !== result.state) {
-              changes[stateKey] = result.state;
-              hasChanges = true;
-            }
-            this.pollingStates[stateKey] = result.state;
+      for (const [method, result] of await this.fetchPollingResponses()) {
+        const stateKey = JMAPClient.STATE_TYPE_MAP[method];
+        if (stateKey && result.state) {
+          const accountId = result.accountId || this.accountId;
+          const key = `${accountId}/${stateKey}`;
+          if (this.pollingStates[key] && this.pollingStates[key] !== result.state) {
+            (changedByAccount[accountId] ||= {})[stateKey] = result.state;
+            hasChanges = true;
           }
+          this.pollingStates[key] = result.state;
         }
+      }
 
-        if (hasChanges && this.stateChangeCallback) {
-          this.stateChangeCallback({
-            '@type': 'StateChange',
-            changed: { [this.accountId]: changes },
-          });
-        }
+      if (hasChanges && this.stateChangeCallback) {
+        this.stateChangeCallback({
+          '@type': 'StateChange',
+          changed: changedByAccount,
+        });
       }
     } catch {
       // Silently fail - polling will retry

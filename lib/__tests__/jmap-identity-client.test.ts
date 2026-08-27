@@ -307,3 +307,45 @@ describe('JMAPClient identity methods', () => {
     });
   });
 });
+
+describe('getIdentities account targeting', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('targets the requested account', async () => {
+    const client = createClient();
+    const fetchSpy = mockFetch({
+      methodResponses: [['Identity/get', { list: [mockIdentity] }, '0']],
+    });
+
+    await client.getIdentities('account-team');
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string);
+    expect(body.methodCalls[0][1].accountId).toBe('account-team');
+  });
+
+  it('defaults to the primary account when no accountId is given', async () => {
+    const client = createClient();
+    const fetchSpy = mockFetch({
+      methodResponses: [['Identity/get', { list: [] }, '0']],
+    });
+
+    await client.getIdentities();
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]?.body as string);
+    expect(body.methodCalls[0][1].accountId).toBe('account-1');
+  });
+});
+
+describe('session account accessors', () => {
+  it('exposes account ids and the primary account id', () => {
+    const client = createClient();
+    Object.assign(client, {
+      accounts: { 'account-1': { name: 'user' }, 'account-team': { name: 'Team' } },
+    });
+
+    expect(client.getAccountIds()).toEqual(['account-1', 'account-team']);
+    expect(client.getPrimaryAccountId()).toBe('account-1');
+  });
+});

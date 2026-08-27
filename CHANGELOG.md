@@ -1,5 +1,59 @@
 # Changelog
 
+## 1.7.0 (2026-08-28)
+
+One inbox for all your accounts. If your session exposes shared or
+group accounts, the new "All Inboxes" view merges their mail with
+yours, search can cover everything, and replying from a shared account
+sends as that account.
+
+### Unified inbox
+
+- **"All Inboxes" merges every account into one view.** Your own mail
+  and any shared or group accounts appear in a single list, sorted
+  together, with an aggregated unread badge in the sidebar. Messages
+  from other accounts carry an account chip in the list and an account
+  line in the viewer, so nothing gets mixed up visually. (#53, #73)
+- **You choose what gets merged.** A settings section adds a show/hide
+  toggle for the view and a per-account include list.
+- **One slow account never blanks the list.** If an account fails to
+  load, the others still render and an inline notice names the failed
+  account with a retry button.
+- **New mail in shared accounts shows up without a refresh.** Push
+  polling now covers every account, so list and badges stay current
+  for group mailboxes too.
+
+### Search
+
+- **Everywhere now means every account.** The Everywhere search scope
+  used to silently query only your primary account; it now spans all
+  of them, with results attributed per account.
+
+### Sending
+
+- **Reply from a shared account, as the shared account.** Replying to
+  mail addressed to a group account now sends through that account's
+  own identity, keeps attachments intact, and files the copy in that
+  account's Sent folder. If the server refuses, you get an explicit
+  choice to resend from your own address; the sender is never swapped
+  silently.
+
+### Fixes
+
+- **Actions always target the message you acted on.** Message ids are
+  only unique within an account, so in merged views two accounts can
+  hold the same id for unrelated messages. Delete, archive, spam,
+  star, batch operations and drag-and-drop now carry the owning
+  account of the exact row you clicked, and moving to a folder maps
+  the destination to the matching folder of each account.
+- **Toast notifications are visible again.** The Undo button after
+  marking a message as spam and the feedback after batch moves
+  rendered nowhere because the notification layer was never mounted.
+- **The retry button after a failed SSO discovery** on the login page
+  showed a broken label.
+- Security updates: Next.js 16.3.3 and dompurify 3.4.14, plus patched
+  transitive dependencies.
+
 ## 1.6.0 (2026-07-05)
 
 Search now covers your whole account by default, big mailboxes paginate

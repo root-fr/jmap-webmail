@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
 import { Paperclip, Star, Circle, CheckSquare, Square } from "lucide-react";
 import { useEmailStore } from "@/stores/email-store";
+import { emailRowKey } from "@/lib/thread-utils";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useEmailDrag } from "@/hooks/use-email-drag";
@@ -49,7 +50,7 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
   const listDensity = useSettingsStore((state) => state.listDensity);
   const isExtraCompact = listDensity === 'extra-compact';
   const { identities } = useAuthStore();
-  const isChecked = selectedEmailIds.has(email.id);
+  const isChecked = selectedEmailIds.has(emailRowKey(email));
   const isUnread = !email.keywords?.$seen;
   const isStarred = email.keywords?.$flagged;
   const isImportant = email.keywords?.["$important"];
@@ -64,7 +65,7 @@ export function EmailListItem({ email, selected, onClick, onContextMenu }: Email
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleEmailSelection(email.id);
+    toggleEmailSelection(emailRowKey(email));
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {

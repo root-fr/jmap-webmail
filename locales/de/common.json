@@ -27,6 +27,7 @@
     "totp_placeholder": "000000",
     "totp_toggle": "Ich habe einen 2FA-Code",
     "remember_me": "Angemeldet bleiben",
+    "retry": "Erneut versuchen",
     "show_password": "Passwort anzeigen",
     "hide_password": "Passwort verbergen",
     "session_expired": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.",
@@ -46,6 +47,7 @@
   },
   "sidebar": {
     "close": "Schließen",
+    "all_inboxes": "Alle Posteingänge",
     "compose": "Verfassen",
     "search_placeholder": "E-Mails durchsuchen...",
     "storage": "Speicher",
@@ -143,6 +145,11 @@
     "descending": "Absteigend"
   },
   "email_list": {
+    "unified_failure": {
+      "message": "Einige Konten konnten nicht geladen werden: {accounts}",
+      "retry": "Erneut versuchen",
+      "dismiss": "Schließen"
+    },
     "no_emails": "Keine E-Mails",
     "no_emails_description": "Beginnen Sie, indem Sie eine neue E-Mail verfassen",
     "loading": "E-Mails werden geladen...",
@@ -392,6 +399,7 @@
     "reply_all_to": "Allen antworten",
     "forward_message": "Weiterleiten",
     "from": "Von",
+    "identity_group_own": "Meine Identitäten",
     "to": "An",
     "cc": "CC",
     "bcc": "BCC",
@@ -440,6 +448,9 @@
     "upload_cancel": "Hochladen abbrechen",
     "upload_failed": "Hochladen von {filename} fehlgeschlagen",
     "send_failed": "E-Mail konnte nicht gesendet werden",
+    "send_as_failed_title": "Senden über die Gruppenadresse fehlgeschlagen",
+    "send_as_failed_message": "Der Server hat das Senden über das Gruppenkonto abgelehnt: {error}. Sie können die Nachricht stattdessen von Ihrer eigenen Adresse senden.",
+    "send_as_fallback_confirm": "Von meiner Adresse senden",
     "discard_draft_title": "Entwurf verwerfen?"
   },
   "common": {
@@ -560,7 +571,8 @@
       "advanced": "Erweitert",
       "calendar": "Kalender",
       "filters": "Filter",
-      "templates": "Vorlagen"
+      "templates": "Vorlagen",
+      "unified_inbox": "Einheitlicher Posteingang"
     },
     "appearance": {
       "title": "Darstellung",
@@ -962,7 +974,20 @@
     "unsaved_changes": "Sie haben ungespeicherte Änderungen",
     "discard_changes": "Änderungen verwerfen?",
     "discard": "Verwerfen",
-    "keep_editing": "Weiter bearbeiten"
+    "keep_editing": "Weiter bearbeiten",
+    "unified_inbox": {
+      "title": "Einheitlicher Posteingang",
+      "description": "Fasst die Posteingänge Ihrer Konten in einer Ansicht zusammen",
+      "show": {
+        "label": "Alle Posteingänge anzeigen",
+        "description": "Zeigt den Ordner Alle Posteingänge, wenn mindestens zwei Konten einbezogen sind"
+      },
+      "accounts": {
+        "label": "Einbezogene Konten",
+        "description": "Wählen Sie, welche Konten in Alle Posteingänge erscheinen",
+        "empty": "Konten erscheinen hier, sobald Ihr Postfach geladen wurde"
+      }
+    }
   },
   "errors": {
     "page_error_title": "Etwas ist schiefgelaufen",

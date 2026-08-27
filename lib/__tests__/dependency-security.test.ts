@@ -27,11 +27,11 @@ function installedVersion(pkg: string): string {
 }
 
 describe('security dependency floors', () => {
-  it('dompurify is patched against the 8 XSS/pollution GHSA advisories (>=3.4.11)', () => {
-    expect(cmpSemver(installedVersion('dompurify'), '3.4.11')).toBeGreaterThanOrEqual(0);
+  it('dompurify is patched against the custom-element and IN_PLACE hook XSS advisories (>=3.4.14)', () => {
+    expect(cmpSemver(installedVersion('dompurify'), '3.4.14')).toBeGreaterThanOrEqual(0);
   });
 
-  it('next includes the June security backports (>=16.2.10)', () => {
-    expect(cmpSemver(installedVersion('next'), '16.2.10')).toBeGreaterThanOrEqual(0);
+  it('next includes the August security backports: middleware bypass, SSRF, cache confusion (>=16.3.3)', () => {
+    expect(cmpSemver(installedVersion('next'), '16.3.3')).toBeGreaterThanOrEqual(0);
   });
 });

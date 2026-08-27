@@ -27,6 +27,7 @@
     "totp_placeholder": "000000",
     "totp_toggle": "Ik heb een 2FA-code",
     "remember_me": "Onthoud mij",
+    "retry": "Opnieuw proberen",
     "show_password": "Wachtwoord tonen",
     "hide_password": "Wachtwoord verbergen",
     "session_expired": "Uw sessie is verlopen. Meld u opnieuw aan.",
@@ -46,6 +47,7 @@
   },
   "sidebar": {
     "close": "Sluiten",
+    "all_inboxes": "Alle inboxen",
     "compose": "Nieuw bericht",
     "search_placeholder": "Zoeken in e-mail...",
     "storage": "Opslag",
@@ -143,6 +145,11 @@
     "descending": "Aflopend"
   },
   "email_list": {
+    "unified_failure": {
+      "message": "Sommige accounts konden niet worden geladen: {accounts}",
+      "retry": "Opnieuw proberen",
+      "dismiss": "Sluiten"
+    },
     "no_emails": "Geen e-mails",
     "no_emails_description": "Begin met het opstellen van een nieuw bericht",
     "loading": "E-mails laden...",
@@ -392,6 +399,7 @@
     "reply_all_to": "Allen beantwoorden",
     "forward_message": "Doorsturen",
     "from": "Van",
+    "identity_group_own": "Mijn identiteiten",
     "to": "Aan",
     "cc": "CC",
     "bcc": "BCC",
@@ -440,6 +448,9 @@
     "upload_cancel": "Upload annuleren",
     "upload_failed": "Uploaden van {filename} mislukt",
     "send_failed": "E-mail verzenden mislukt",
+    "send_as_failed_title": "Verzenden vanaf het groepsadres is mislukt",
+    "send_as_failed_message": "De server heeft het verzenden vanaf het groepsaccount geweigerd: {error}. Je kunt het bericht opnieuw verzenden vanaf je eigen adres.",
+    "send_as_fallback_confirm": "Opnieuw verzenden vanaf mijn adres",
     "discard_draft_title": "Concept verwijderen?"
   },
   "common": {
@@ -560,7 +571,8 @@
       "advanced": "Geavanceerd",
       "calendar": "Agenda",
       "filters": "Filters",
-      "templates": "Sjablonen"
+      "templates": "Sjablonen",
+      "unified_inbox": "Gecombineerd postvak"
     },
     "appearance": {
       "title": "Uiterlijk",
@@ -962,7 +974,20 @@
     "unsaved_changes": "U heeft niet-opgeslagen wijzigingen",
     "discard_changes": "Wijzigingen verwerpen?",
     "discard": "Verwerpen",
-    "keep_editing": "Doorgaan met bewerken"
+    "keep_editing": "Doorgaan met bewerken",
+    "unified_inbox": {
+      "title": "Gecombineerd postvak",
+      "description": "Voegt de postvakken van je accounts samen in één weergave",
+      "show": {
+        "label": "Alle postvakken tonen",
+        "description": "Toont de map Alle postvakken wanneer minstens twee accounts zijn opgenomen"
+      },
+      "accounts": {
+        "label": "Opgenomen accounts",
+        "description": "Kies welke accounts in Alle postvakken verschijnen",
+        "empty": "Accounts verschijnen hier zodra je postvak is geladen"
+      }
+    }
   },
   "errors": {
     "page_error_title": "Er is iets misgegaan",

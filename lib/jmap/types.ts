@@ -6,6 +6,8 @@ export interface EmailHeader {
 export interface Email {
   id: string;
   threadId: string;
+  /** Owning JMAP account for non-primary results; absent = primary account. */
+  accountId?: string;
   mailboxIds: Record<string, boolean>;
   keywords: Record<string, boolean>;
   size: number;

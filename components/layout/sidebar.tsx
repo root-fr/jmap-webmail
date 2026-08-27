@@ -32,6 +32,7 @@ import {
   FolderPlus,
   Edit3,
   FolderInput,
+  Mails,
 } from "lucide-react";
 import { cn, buildMailboxTree, flattenMailboxTree, MailboxNode, formatFileSize } from "@/lib/utils";
 import { Mailbox } from "@/lib/jmap/types";
@@ -39,7 +40,7 @@ import { useDragDropContext } from "@/contexts/drag-drop-context";
 import { useMailboxDrop } from "@/hooks/use-mailbox-drop";
 import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
-import { activeFilterCount } from "@/lib/jmap/search-utils";
+import { activeFilterCount, UNIFIED_INBOX_ID } from "@/lib/jmap/search-utils";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useVacationStore } from "@/stores/vacation-store";
 import { useResizeHandle } from "@/hooks/use-resize-handle";
@@ -64,6 +65,10 @@ interface SidebarProps {
 
 const getIconForMailbox = (role?: string, name?: string, hasChildren?: boolean, isExpanded?: boolean, isShared?: boolean, id?: string) => {
   const lowerName = name?.toLowerCase() || "";
+
+  if (id === UNIFIED_INBOX_ID) {
+    return Mails;
+  }
 
   if (id === 'shared-folders-root') {
     return isExpanded ? FolderOpen : Users;
@@ -363,7 +368,7 @@ function MailboxTreeItem({
                 <span
                   className="flex-1 truncate"
                   onDoubleClick={(e) => {
-                    if (!node.role && !node.isShared && !isVirtualNode) {
+                    if (!node.role && !node.isShared && !isVirtualNode && node.id !== UNIFIED_INBOX_ID) {
                       e.stopPropagation();
                       onStartRename(node.id);
                     }
@@ -738,7 +743,7 @@ export function Sidebar({
   const { dragType, endDrag: globalEndDrag } = useDragDropContext();
   const { client } = useAuthStore();
   const { emptyFolder, createMailbox, renameMailbox, moveMailbox, deleteMailbox } = useEmailStore();
-  const { sidebarWidth, updateSetting } = useSettingsStore();
+  const { sidebarWidth, updateSetting, showUnifiedInbox, unifiedInboxExcludedAccounts } = useSettingsStore();
 
   const handleSidebarResize = useCallback((width: number) => {
     document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
@@ -801,7 +806,7 @@ export function Sidebar({
   };
 
   const handleMailboxContextMenu = useCallback((e: React.MouseEvent, mailbox: Mailbox) => {
-    if (mailbox.isShared || mailbox.id.startsWith('shared-')) return;
+    if (mailbox.id === UNIFIED_INBOX_ID || mailbox.isShared || mailbox.id.startsWith('shared-')) return;
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY, mailbox });
   }, []);
@@ -892,7 +897,12 @@ export function Sidebar({
     }
   }, [emptyFolderTarget, client, emptyFolder, t]);
 
-  const mailboxTree = buildMailboxTree(mailboxes);
+  const mailboxTree = buildMailboxTree(
+    mailboxes,
+    showUnifiedInbox
+      ? { name: t("all_inboxes"), excludedAccountIds: unifiedInboxExcludedAccounts }
+      : undefined
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, getAccountDisplayName } from "@/lib/utils";
 import { Email, ThreadGroup } from "@/lib/jmap/types";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
@@ -17,6 +17,7 @@ interface ThreadListItemProps {
   thread: ThreadGroup;
   isExpanded: boolean;
   selectedEmailId?: string;
+  selectedEmailAccountId?: string;
   isLoading?: boolean;
   expandedEmails?: Email[];
   onToggleExpand: () => void;
@@ -37,6 +38,17 @@ const colorTags = {
   pink: "bg-pink-50 dark:bg-pink-950/30",
 } as const;
 
+function RowBadge({ name, testId }: { name: string; testId: string }) {
+  return (
+    <span
+      data-testid={testId}
+      className="px-1.5 py-0.5 text-xs bg-muted text-foreground rounded font-medium truncate max-w-[8rem]"
+    >
+      {name}
+    </span>
+  );
+}
+
 interface SingleEmailItemProps {
   email: Email;
   selected: boolean;
@@ -47,10 +59,11 @@ interface SingleEmailItemProps {
   isChecked: boolean;
   onCheckboxClick: (e: React.MouseEvent) => void;
   folderBadgeName: string | null;
+  accountChipName: string | null;
 }
 
 const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
-  function SingleEmailItem({ email, selected, onClick, onContextMenu, showPreview, colorTag, isChecked, onCheckboxClick, folderBadgeName }, ref) {
+  function SingleEmailItem({ email, selected, onClick, onContextMenu, showPreview, colorTag, isChecked, onCheckboxClick, folderBadgeName, accountChipName }, ref) {
     const isUnread = !email.keywords?.$seen;
     const isStarred = email.keywords?.$flagged;
     const sender = email.from?.[0];
@@ -127,14 +140,8 @@ const SingleEmailItem = React.forwardRef<HTMLDivElement, SingleEmailItemProps>(
                   {isStarred && (
                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   )}
-                  {folderBadgeName && (
-                    <span
-                      data-testid="folder-badge"
-                      className="px-1.5 py-0.5 text-xs bg-muted text-foreground rounded font-medium truncate max-w-[8rem]"
-                    >
-                      {folderBadgeName}
-                    </span>
-                  )}
+                  {accountChipName && <RowBadge name={accountChipName} testId="account-chip" />}
+                  {folderBadgeName && <RowBadge name={folderBadgeName} testId="folder-badge" />}
                   {email.hasAttachment && (
                     <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
                   )}
@@ -181,6 +188,7 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
     thread,
     isExpanded,
     selectedEmailId,
+    selectedEmailAccountId,
     isLoading = false,
     expandedEmails,
     onToggleExpand,
@@ -201,19 +209,24 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
       currentQuery.scope.kind === "all"
         ? mailboxes.find((mb) => latestEmail.mailboxIds?.[mb.id])?.name ?? null
         : null;
+    // Non-primary rows carry an account chip; unmarked rows = own mail.
+    const accountChipName = getAccountDisplayName(mailboxes, latestEmail.accountId);
 
     const threadColor = getThreadColorTag(thread.emails);
     const colorTag = threadColor ? colorTags[threadColor as keyof typeof colorTags] : null;
 
-    const isSelected = selectedEmailId === latestEmail.id ||
-      thread.emails.some(e => e.id === selectedEmailId);
+    // Ids are account-local: the open email only highlights rows of its own
+    // account, or a colliding id from another account lights up too.
+    const selectedAccountMatches = selectedEmailAccountId === latestEmail.accountId;
+    const isSelected = selectedAccountMatches && (selectedEmailId === latestEmail.id ||
+      thread.emails.some(e => e.id === selectedEmailId));
 
     if (emailCount === 1) {
       return (
         <SingleEmailItem
           ref={ref}
           email={latestEmail}
-          selected={selectedEmailId === latestEmail.id}
+          selected={selectedAccountMatches && selectedEmailId === latestEmail.id}
           onClick={() => onEmailSelect(latestEmail)}
           onContextMenu={onContextMenu}
           showPreview={showPreview}
@@ -221,6 +234,7 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
           isChecked={isChecked}
           onCheckboxClick={onCheckboxClick}
           folderBadgeName={folderBadgeName}
+          accountChipName={accountChipName}
         />
       );
     }
@@ -357,14 +371,8 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
                     {hasStarred && (
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                     )}
-                    {folderBadgeName && (
-                      <span
-                        data-testid="folder-badge"
-                        className="px-1.5 py-0.5 text-xs bg-muted text-foreground rounded font-medium truncate max-w-[8rem]"
-                      >
-                        {folderBadgeName}
-                      </span>
-                    )}
+                    {accountChipName && <RowBadge name={accountChipName} testId="account-chip" />}
+                    {folderBadgeName && <RowBadge name={folderBadgeName} testId="folder-badge" />}
                     {hasAttachment && (
                       <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
                     )}
@@ -415,7 +423,7 @@ export const ThreadListItem = React.forwardRef<HTMLDivElement, ThreadListItemPro
                 <ThreadEmailItem
                   key={email.id}
                   email={email}
-                  selected={email.id === selectedEmailId}
+                  selected={selectedAccountMatches && email.id === selectedEmailId}
                   isLast={index === emailsToShow.length - 1}
                   onClick={() => onEmailSelect(email)}
                   onContextMenu={onContextMenu}

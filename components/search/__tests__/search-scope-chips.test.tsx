@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { SearchScopeChips } from '../search-scope-chips';
+import { UNIFIED_INBOX_ID } from '@/lib/jmap/search-utils';
 
 describe('SearchScopeChips', () => {
   const folderId = 'mb-inbox';
@@ -79,5 +80,31 @@ describe('SearchScopeChips', () => {
     );
     expect(screen.queryByRole('button', { name: 'include_trash_junk' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'scope_this_folder' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('emits unified scope from This folder while All Inboxes is selected', () => {
+    const onScopeChange = vi.fn();
+    render(
+      <SearchScopeChips
+        scope={{ kind: 'all', includeTrashJunk: false }}
+        folderMailboxId={UNIFIED_INBOX_ID}
+        onScopeChange={onScopeChange}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'scope_this_folder' }));
+    expect(onScopeChange).toHaveBeenCalledWith({ kind: 'unified' });
+  });
+
+  it('keeps both chips rendered and This folder pressed in unified scope', () => {
+    render(
+      <SearchScopeChips
+        scope={{ kind: 'unified' }}
+        folderMailboxId={UNIFIED_INBOX_ID}
+        onScopeChange={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: 'scope_everywhere' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'scope_this_folder' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('button', { name: 'include_trash_junk' })).not.toBeInTheDocument();
   });
 });

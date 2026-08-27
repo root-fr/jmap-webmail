@@ -20,6 +20,7 @@ import { useContactStore } from "@/stores/contact-store";
 import { useDeviceDetection } from "@/hooks/use-media-query";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { debug } from "@/lib/debug";
+import { findEmailRow, isSameRow, owningAccountId } from "@/lib/thread-utils";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { cn } from "@/lib/utils";
 import {
@@ -147,12 +148,12 @@ export default function Home() {
     },
     onMarkAsUnread: async () => {
       if (selectedEmail && client) {
-        await markAsRead(client, selectedEmail.id, false);
+        await markAsRead(client, selectedEmail.id, false, selectedEmail.accountId);
       }
     },
     onMarkAsRead: async () => {
       if (selectedEmail && client) {
-        await markAsRead(client, selectedEmail.id, true);
+        await markAsRead(client, selectedEmail.id, true, selectedEmail.accountId);
       }
     },
     onToggleSpam: () => {
@@ -332,13 +333,13 @@ export default function Home() {
     } else if (markAsReadDelay === 0) {
       // Mark as read instantly
       debug.log('[Mark as Read] Instant mode - marking as read now');
-      markAsRead(client, selectedEmail.id, true);
+      markAsRead(client, selectedEmail.id, true, selectedEmail.accountId);
     } else {
       // Mark as read after delay
       debug.log('[Mark as Read] Delayed mode - will mark as read in', markAsReadDelay, 'ms');
       markAsReadTimeoutRef.current = setTimeout(() => {
         debug.log('[Mark as Read] Timeout fired - marking as read now');
-        markAsRead(client, selectedEmail.id, true);
+        markAsRead(client, selectedEmail.id, true, selectedEmail.accountId);
         markAsReadTimeoutRef.current = null;
       }, markAsReadDelay);
     }
@@ -392,17 +393,20 @@ export default function Home() {
     fromEmail?: string;
     fromName?: string;
     identityId?: string;
+    accountId?: string;
   }) => {
     if (!client) return;
 
-    try {
-      await sendEmail(client, data.to, data.subject, data.body, data.cc, data.bcc, data.identityId, data.fromEmail, data.draftId, data.fromName);
-      setShowComposer(false);
+    // Send errors propagate to the composer, which owns the failure UI
+    // (toast, send-as fallback dialog).
+    await sendEmail(client, data.to, data.subject, data.body, data.cc, data.bcc, data.identityId, data.fromEmail, data.draftId, data.fromName, data.accountId);
+    setShowComposer(false);
 
+    try {
       // Silent refresh — no loading indicator flash
       await refreshCurrentMailbox(client);
     } catch {
-      return;
+      // Best-effort: the send already succeeded.
     }
   };
 
@@ -442,7 +446,7 @@ export default function Home() {
     if (!client || !email) return;
 
     try {
-      await deleteEmail(client, email.id);
+      await deleteEmail(client, email.id, email.accountId);
       if (email.id === selectedEmail?.id) dismissViewer();
     } catch {
       return;
@@ -461,9 +465,9 @@ export default function Home() {
       // Gmail / Apple Mail behavior — otherwise the rest of the conversation
       // is left orphaned in the inbox.
       if (email.threadId) {
-        await moveThreadToMailbox(client, email.threadId, archiveMailbox.id);
+        await moveThreadToMailbox(client, email.threadId, archiveMailbox.id, email.accountId);
       } else {
-        await moveToMailbox(client, email.id, archiveMailbox.id);
+        await moveToMailbox(client, email.id, archiveMailbox.id, email.accountId);
       }
       if (email.id === selectedEmail?.id) dismissViewer();
     } catch {
@@ -475,7 +479,7 @@ export default function Home() {
     if (!client || !selectedEmail) return;
 
     try {
-      await toggleStar(client, selectedEmail.id);
+      await toggleStar(client, selectedEmail.id, selectedEmail.accountId);
     } catch {
       return;
     }
@@ -485,9 +489,10 @@ export default function Home() {
     if (!client || !email) return;
 
     const emailId = email.id;
+    const emailAccountId = email.accountId;
 
     try {
-      await markAsSpam(client, emailId);
+      await markAsSpam(client, emailId, emailAccountId);
 
       const toastInstance = (await import('sonner')).toast;
       toastInstance.success(t('email_viewer.spam.toast_success'), {
@@ -495,7 +500,7 @@ export default function Home() {
           label: t('email_viewer.spam.toast_undo'),
           onClick: async () => {
             try {
-              await undoSpam(client, emailId);
+              await undoSpam(client, emailId, emailAccountId);
               toastInstance.success(t('notifications.email_moved'));
             } catch {
               toastInstance.error(t('email_viewer.spam.error'));
@@ -514,7 +519,7 @@ export default function Home() {
     if (!client || !email) return;
 
     try {
-      await undoSpam(client, email.id);
+      await undoSpam(client, email.id, email.accountId);
 
       const toastInstance = (await import('sonner')).toast;
       toastInstance.success(t('email_viewer.spam.toast_not_spam_success'));
@@ -527,12 +532,12 @@ export default function Home() {
     }
   };
 
-  const handleSetColorTag = async (emailId: string, color: string | null) => {
+  const handleSetColorTag = async (emailId: string, color: string | null, accountId?: string) => {
     if (!client) return;
 
     try {
       // Remove any existing color tags
-      const email = emails.find(e => e.id === emailId);
+      const email = findEmailRow(emails, emailId, accountId);
       if (!email) return;
 
       const keywords = { ...email.keywords };
@@ -550,10 +555,11 @@ export default function Home() {
       }
 
       // Update email keywords via JMAP
-      await client.updateEmailKeywords(emailId, keywords);
+      await client.updateEmailKeywords(emailId, keywords, owningAccountId(email, mailboxes, selectedMailbox));
 
       // Update local state
-      selectEmail(email.id === selectedEmail?.id ? { ...email, keywords } : selectedEmail);
+      selectEmail(selectedEmail && isSameRow(email, selectedEmail)
+        ? { ...email, keywords } : selectedEmail);
 
       // Silent refresh to show color in list
       await refreshCurrentMailbox(client);
@@ -669,7 +675,7 @@ export default function Home() {
   const currentMailboxName = mailboxes.find(m => m.id === selectedMailbox)?.name || "Inbox";
 
   // Handle email selection with mobile view switching
-  const handleEmailSelect = async (email: { id: string }) => {
+  const handleEmailSelect = async (email: { id: string; accountId?: string }) => {
     if (!client || !email) return;
 
     // Set loading state immediately (keep current email visible)
@@ -682,10 +688,9 @@ export default function Home() {
 
     // Fetch the full content
     try {
-      // Find selected mailbox to determine accountId (for shared folders)
-      const mailbox = mailboxes.find(mb => mb.id === selectedMailbox);
-      // Only pass accountId for shared mailboxes
-      const accountId = mailbox?.isShared ? mailbox.accountId : undefined;
+      // Cross-account rows (merged lists) carry the owning account; fall back
+      // to shared-mailbox resolution for plain shared-folder browsing.
+      const accountId = owningAccountId(email as Email, mailboxes, selectedMailbox);
 
       const fullEmail = await client.getEmail(email.id, accountId);
       if (fullEmail) {
@@ -719,8 +724,11 @@ export default function Home() {
     setActiveView("viewer");
 
     try {
-      // Fetch complete thread emails
-      const emails = await client.getThreadEmails(thread.threadId);
+      // Fetch complete thread emails from the thread's owning account
+      const emails = await client.getThreadEmails(
+        thread.threadId,
+        thread.emails[0]?.accountId,
+      );
       setConversationEmails(emails);
     } catch {
       // Fall back to thread.emails
@@ -844,6 +852,7 @@ export default function Home() {
               <EmailList
                 emails={emails}
                 selectedEmailId={selectedEmail?.id}
+                selectedEmailAccountId={selectedEmail?.accountId}
                 isLoading={isLoading}
                 onEmailSelect={handleEmailSelect}
                 onOpenConversation={handleOpenConversation}
@@ -862,22 +871,22 @@ export default function Home() {
                 }}
                 onMarkAsRead={async (email, read) => {
                   if (client) {
-                    await markAsRead(client, email.id, read);
+                    await markAsRead(client, email.id, read, email.accountId);
                   }
                 }}
                 onToggleStar={async (email) => {
                   if (client) {
-                    await toggleStar(client, email.id);
+                    await toggleStar(client, email.id, email.accountId);
                   }
                 }}
                 onDelete={handleDelete}
                 onArchive={handleArchive}
-                onSetColorTag={(emailId, color) => {
-                  handleSetColorTag(emailId, color);
+                onSetColorTag={(emailId, color, accountId) => {
+                  handleSetColorTag(emailId, color, accountId);
                 }}
-                onMoveToMailbox={async (emailId, mailboxId) => {
+                onMoveToMailbox={async (emailId, mailboxId, accountId) => {
                   if (client) {
-                    await moveToMailbox(client, emailId, mailboxId);
+                    await moveToMailbox(client, emailId, mailboxId, accountId);
                   }
                 }}
                 onMarkAsSpam={handleMarkAsSpam}
@@ -913,7 +922,7 @@ export default function Home() {
                 onDownloadAttachment={handleDownloadAttachment}
                 onMarkAsRead={async (emailId, read) => {
                   if (client) {
-                    await markAsRead(client, emailId, read);
+                    await markAsRead(client, emailId, read, conversationThread?.latestEmail.accountId);
                   }
                 }}
               />
@@ -937,12 +946,12 @@ export default function Home() {
                     onDelete={() => handleDelete()}
                     onArchive={() => handleArchive()}
                     onToggleStar={handleToggleStar}
-                    onSetColorTag={handleSetColorTag}
+                    onSetColorTag={(emailId, color) => handleSetColorTag(emailId, color, selectedEmail?.accountId)}
                     onMarkAsSpam={() => handleMarkAsSpam()}
                     onUndoSpam={() => handleUndoSpam()}
                     onMarkAsRead={async (emailId, read) => {
                       if (client) {
-                        await markAsRead(client, emailId, read);
+                        await markAsRead(client, emailId, read, selectedEmail?.accountId);
                       }
                     }}
                     onDownloadAttachment={handleDownloadAttachment}
@@ -1015,7 +1024,8 @@ export default function Home() {
                     cc: selectedEmail.cc,
                     subject: selectedEmail.subject,
                     body: selectedEmail.bodyValues?.[selectedEmail.textBody?.[0]?.partId || '']?.value || selectedEmail.preview || '',
-                    receivedAt: selectedEmail.receivedAt
+                    receivedAt: selectedEmail.receivedAt,
+                    accountId: selectedEmail.accountId
                   } : undefined}
                   initialDraftText={composerDraftText}
                   onSend={handleEmailSend}

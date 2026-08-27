@@ -1,6 +1,64 @@
 import type { Email, ThreadGroup } from "./jmap/types";
 
 /**
+ * Identity key for a row in a possibly-merged list. JMAP ids are unique only
+ * within an account (RFC 8620), so selection sets, caches, and dedup in
+ * multi-account views must key by account + id or colliding ids from two
+ * accounts collapse into one entry. The brand makes a bare email id fail to
+ * compile where a scoped key is required.
+ */
+export type RowKey = string & { readonly __rowKey: unique symbol };
+
+export function accountScopedKey(accountId: string | undefined, id: string): RowKey {
+  return `${accountId ?? ""}\u0000${id}` as RowKey;
+}
+
+/** Identity key of a concrete row. */
+export function emailRowKey(email: Email): RowKey {
+  return accountScopedKey(email.accountId, email.id);
+}
+
+/** Row identity in a possibly-merged list: same JMAP id AND same account stamp. */
+export function sameRow(e: Email, emailId: string, accountId: string | undefined): boolean {
+  return e.id === emailId && e.accountId === accountId;
+}
+
+export function isSameRow(a: Email, b: Email): boolean {
+  return sameRow(a, b.id, b.accountId);
+}
+
+/**
+ * Owning account of a row: the account stamp wins (set at fetch time for
+ * every non-primary row), else a shared selected mailbox names the account,
+ * else primary (undefined).
+ */
+export function owningAccountId(
+  email: Email | undefined,
+  mailboxes: { id: string; isShared?: boolean; accountId?: string }[],
+  selectedMailboxId: string,
+): string | undefined {
+  if (email?.accountId) return email.accountId;
+  const mailbox = mailboxes.find(mb => mb.id === selectedMailboxId);
+  return mailbox?.isShared ? mailbox.accountId : undefined;
+}
+
+/**
+ * Finds the row the caller acted on by exact account-stamp match. Every
+ * non-primary row is stamped at fetch time (namespaceMailboxIds), primary
+ * rows never are, so undefined selects the primary row and a defined stamp
+ * selects its account's row. There is deliberately no bare-id fallback: a
+ * caller that lost the stamp gets a no-op, never another account's row.
+ */
+export function findEmailRow(emails: Email[], emailId: string, accountId: string | undefined): Email | undefined {
+  return emails.find(e => e.id === emailId && e.accountId === accountId);
+}
+
+/** Same contract as findEmailRow, keyed by threadId. */
+export function findThreadRow(emails: Email[], threadId: string, accountId: string | undefined): Email | undefined {
+  return emails.find(e => e.threadId === threadId && e.accountId === accountId);
+}
+
+/**
  * Groups emails by their threadId and creates ThreadGroup objects for UI display.
  * Single-email threads are still returned as ThreadGroups with emailCount=1.
  */
@@ -9,21 +67,24 @@ export function groupEmailsByThread(emails: Email[]): ThreadGroup[] {
     return [];
   }
 
-  // Group emails by threadId
+  // Group by accountId + threadId: JMAP thread ids are account-local, so in a
+  // merged multi-account list the same threadId string can name unrelated
+  // conversations in different accounts.
   const threadMap = new Map<string, Email[]>();
 
   for (const email of emails) {
-    const threadId = email.threadId;
-    if (!threadMap.has(threadId)) {
-      threadMap.set(threadId, []);
+    const key = accountScopedKey(email.accountId, email.threadId);
+    if (!threadMap.has(key)) {
+      threadMap.set(key, []);
     }
-    threadMap.get(threadId)!.push(email);
+    threadMap.get(key)!.push(email);
   }
 
   // Convert to ThreadGroup array
   const threadGroups: ThreadGroup[] = [];
 
-  for (const [threadId, threadEmails] of threadMap) {
+  for (const threadEmails of threadMap.values()) {
+    const threadId = threadEmails[0].threadId;
     // Sort emails by receivedAt descending (newest first)
     const sortedEmails = [...threadEmails].sort(
       (a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()

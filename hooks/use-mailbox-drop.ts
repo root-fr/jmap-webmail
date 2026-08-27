@@ -6,6 +6,8 @@ import { useEmailStore } from "@/stores/email-store";
 import { useAuthStore } from "@/stores/auth-store";
 import { useDragDropContext } from "@/contexts/drag-drop-context";
 import { toast } from "@/stores/toast-store";
+import { accountScopedKey } from "@/lib/thread-utils";
+import type { DraggedEmailRef } from "@/contexts/drag-drop-context";
 
 interface UseMailboxDropOptions {
   mailbox: Mailbox;
@@ -130,18 +132,28 @@ export function useMailboxDrop({ mailbox, onDropComplete, onSuccess, onError }: 
         return;
       }
 
-      const emailIds: string[] = JSON.parse(emailIdsJson);
+      const draggedRows: DraggedEmailRef[] = JSON.parse(emailIdsJson);
 
-      // Get the destination mailbox ID (use originalId for shared folders)
-      const destinationId = mailbox.originalId || mailbox.id;
-
-      // Move emails one by one (store handles counter updates)
-      for (const emailId of emailIds) {
-        await moveToMailbox(client, emailId, destinationId);
+      // Move emails one by one, each through its owning account; the store
+      // resolves originalId and per-account destination remapping. A row whose
+      // account has no equivalent folder is skipped and reported, matching
+      // batchMoveToMailbox semantics instead of aborting mid-drop.
+      let failedCount = 0;
+      for (const row of draggedRows) {
+        try {
+          await moveToMailbox(client, row.id, mailbox.id, row.accountId);
+        } catch {
+          failedCount++;
+        }
+      }
+      if (failedCount > 0) {
+        throw new Error(failedCount === draggedRows.length
+          ? 'No message could be moved to this folder'
+          : `${failedCount} message(s) stayed put: no equivalent folder in their account`);
       }
 
       // Clear selection if any selected emails were moved
-      if (emailIds.some(id => selectedEmailIds.has(id))) {
+      if (draggedRows.some(row => selectedEmailIds.has(accountScopedKey(row.accountId, row.id)))) {
         clearSelection();
       }
 
@@ -150,13 +162,13 @@ export function useMailboxDrop({ mailbox, onDropComplete, onSuccess, onError }: 
 
       // Call success callback if provided, otherwise use fallback
       if (onSuccess) {
-        onSuccess(emailIds.length, mailbox.name);
+        onSuccess(draggedRows.length, mailbox.name);
       } else {
         // Fallback for backward compatibility
-        if (emailIds.length === 1) {
+        if (draggedRows.length === 1) {
           toast.success("Email moved", `Moved to ${mailbox.name}`);
         } else {
-          toast.success("Emails moved", `${emailIds.length} emails moved to ${mailbox.name}`);
+          toast.success("Emails moved", `${draggedRows.length} emails moved to ${mailbox.name}`);
         }
       }
 

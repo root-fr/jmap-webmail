@@ -27,6 +27,7 @@
     "totp_placeholder": "000000",
     "totp_toggle": "Ho un codice 2FA",
     "remember_me": "Ricordami",
+    "retry": "Riprova",
     "show_password": "Mostra password",
     "hide_password": "Nascondi password",
     "session_expired": "La sessione è scaduta. Accedi di nuovo.",
@@ -46,6 +47,7 @@
   },
   "sidebar": {
     "close": "Chiudi",
+    "all_inboxes": "Tutte le caselle in arrivo",
     "compose": "Scrivi",
     "search_placeholder": "Cerca nella posta...",
     "storage": "Spazio di archiviazione",
@@ -143,6 +145,11 @@
     "descending": "Decrescente"
   },
   "email_list": {
+    "unified_failure": {
+      "message": "Impossibile caricare alcuni account: {accounts}",
+      "retry": "Riprova",
+      "dismiss": "Ignora"
+    },
     "no_emails": "Nessun messaggio",
     "no_emails_description": "Inizia scrivendo un nuovo messaggio",
     "loading": "Caricamento messaggi...",
@@ -392,6 +399,7 @@
     "reply_all_to": "Rispondi a tutti",
     "forward_message": "Inoltra",
     "from": "Da",
+    "identity_group_own": "Le mie identità",
     "to": "A",
     "cc": "CC",
     "bcc": "CCN",
@@ -440,6 +448,9 @@
     "upload_cancel": "Annulla caricamento",
     "upload_failed": "Caricamento di {filename} non riuscito",
     "send_failed": "Invio dell'e-mail non riuscito",
+    "send_as_failed_title": "Impossibile inviare dall'indirizzo del gruppo",
+    "send_as_failed_message": "Il server ha rifiutato l'invio dall'account di gruppo: {error}. Puoi inviare di nuovo il messaggio dal tuo indirizzo.",
+    "send_as_fallback_confirm": "Reinvia dal mio indirizzo",
     "discard_draft_title": "Eliminare la bozza?"
   },
   "common": {
@@ -560,7 +571,8 @@
       "advanced": "Avanzate",
       "calendar": "Calendario",
       "filters": "Filtri",
-      "templates": "Modelli"
+      "templates": "Modelli",
+      "unified_inbox": "Posta unificata"
     },
     "appearance": {
       "title": "Aspetto",
@@ -962,7 +974,20 @@
     "unsaved_changes": "Hai modifiche non salvate",
     "discard_changes": "Annullare le modifiche?",
     "discard": "Annulla",
-    "keep_editing": "Continua a modificare"
+    "keep_editing": "Continua a modificare",
+    "unified_inbox": {
+      "title": "Posta unificata",
+      "description": "Unisce le caselle di posta in arrivo dei tuoi account in un'unica vista",
+      "show": {
+        "label": "Mostra Tutte le caselle",
+        "description": "Mostra la cartella Tutte le caselle quando sono inclusi almeno due account"
+      },
+      "accounts": {
+        "label": "Account inclusi",
+        "description": "Scegli quali account compaiono in Tutte le caselle",
+        "empty": "Gli account appariranno qui una volta caricata la tua casella di posta"
+      }
+    }
   },
   "errors": {
     "page_error_title": "Qualcosa è andato storto",

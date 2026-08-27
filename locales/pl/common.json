@@ -17,6 +17,7 @@
       "totp_invalid": "Nieprawidłowy kod uwierzytelniający. Sprawdź aplikację autoryzacyjną i spróbuj ponownie.",
       "oauth_discovery_failed": "SSO jest włączone, ale nie można połączyć się z dostawcą tożsamości. Sprawdź konfigurację OAuth."
     },
+    "retry": "Spróbuj ponownie",
     "show_password": "Pokaż hasło",
     "hide_password": "Ukryj hasło",
     "totp_toggle": "Mam kod 2FA",
@@ -46,6 +47,7 @@
   },
   "sidebar": {
     "close": "Zamknij",
+    "all_inboxes": "Wszystkie skrzynki odbiorcze",
     "compose": "Utwórz",
     "compose_hint": "Utwórz (c)",
     "search_placeholder": "Szukaj w poczcie...",
@@ -143,6 +145,11 @@
     "descending": "Malejąco"
   },
   "email_list": {
+    "unified_failure": {
+      "message": "Nie udało się załadować niektórych kont: {accounts}",
+      "retry": "Ponów",
+      "dismiss": "Zamknij"
+    },
     "no_emails": "Brak wiadomości",
     "no_emails_description": "Zacznij od napisania nowej wiadomości",
     "loading": "Ładowanie wiadomości...",
@@ -392,6 +399,7 @@
     "reply_all_to": "Odpowiedz wszystkim",
     "forward_message": "Prześlij dalej",
     "from": "Od",
+    "identity_group_own": "Moje tożsamości",
     "to": "Do",
     "cc": "DW",
     "bcc": "UDW",
@@ -440,7 +448,10 @@
     "upload_progress": "Przesyłanie {uploaded} / {total}",
     "upload_cancel": "Anuluj przesyłanie",
     "upload_failed": "Nie udało się przesłać pliku {filename}",
-    "send_failed": "Nie udało się wysłać wiadomości"
+    "send_failed": "Nie udało się wysłać wiadomości",
+    "send_as_failed_title": "Nie udało się wysłać z adresu grupy",
+    "send_as_failed_message": "Serwer odrzucił wysyłanie z konta grupy: {error}. Możesz wysłać wiadomość ponownie ze swojego adresu.",
+    "send_as_fallback_confirm": "Wyślij ponownie z mojego adresu"
   },
   "confirm_dialog": {
     "confirm": "Potwierdź",
@@ -568,7 +579,8 @@
       "advanced": "Zaawansowane",
       "calendar": "Kalendarz",
       "filters": "Filtry",
-      "templates": "Szablony"
+      "templates": "Szablony",
+      "unified_inbox": "Wspólna skrzynka"
     },
     "appearance": {
       "title": "Wygląd",
@@ -965,6 +977,19 @@
       "validation": {
         "empty": "Nazwa szablonu jest wymagana",
         "too_long": "Nazwa szablonu musi mieć maks. 200 znaków"
+      }
+    },
+    "unified_inbox": {
+      "title": "Wspólna skrzynka",
+      "description": "Łączy skrzynki odbiorcze Twoich kont w jeden widok",
+      "show": {
+        "label": "Pokazuj Wszystkie skrzynki",
+        "description": "Wyświetla folder Wszystkie skrzynki, gdy uwzględnione są co najmniej dwa konta"
+      },
+      "accounts": {
+        "label": "Uwzględnione konta",
+        "description": "Wybierz, które konta pojawiają się we Wszystkich skrzynkach",
+        "empty": "Konta pojawią się tutaj po załadowaniu skrzynki pocztowej"
       }
     }
   },

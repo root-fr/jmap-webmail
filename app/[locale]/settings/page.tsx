@@ -7,6 +7,7 @@ import { ArrowLeft, Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AppearanceSettings } from '@/components/settings/appearance-settings';
 import { EmailSettings } from '@/components/settings/email-settings';
+import { UnifiedInboxSettings } from '@/components/settings/unified-inbox-settings';
 import { AccountSettings } from '@/components/settings/account-settings';
 import { IdentitySettings } from '@/components/settings/identity-settings';
 import { VacationSettings } from '@/components/settings/vacation-settings';
@@ -17,7 +18,7 @@ import { AdvancedSettings } from '@/components/settings/advanced-settings';
 import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
 
-type Tab = 'appearance' | 'email' | 'account' | 'identities' | 'vacation' | 'calendar' | 'filters' | 'templates' | 'advanced';
+type Tab = 'appearance' | 'email' | 'unified_inbox' | 'account' | 'identities' | 'vacation' | 'calendar' | 'filters' | 'templates' | 'advanced';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function SettingsPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'appearance', label: t('tabs.appearance') },
     { id: 'email', label: t('tabs.email') },
+    { id: 'unified_inbox', label: t('tabs.unified_inbox') },
     { id: 'account', label: t('tabs.account') },
     { id: 'identities', label: t('tabs.identities') },
     ...(supportsVacation ? [{ id: 'vacation' as Tab, label: t('tabs.vacation') }] : []),
@@ -94,6 +96,7 @@ export default function SettingsPage() {
           <div className="bg-card border border-border rounded-lg p-6">
             {activeTab === 'appearance' && <AppearanceSettings />}
             {activeTab === 'email' && <EmailSettings />}
+            {activeTab === 'unified_inbox' && <UnifiedInboxSettings />}
             {activeTab === 'account' && <AccountSettings />}
             {activeTab === 'identities' && <IdentitySettings />}
             {activeTab === 'vacation' && <VacationSettings />}

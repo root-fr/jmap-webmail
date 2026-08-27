@@ -1,9 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildQueryRequest,
+  resolveScopeTargets,
+  UNIFIED_INBOX_ID,
   type EmailQuery,
   type EmailPage,
 } from '../jmap/search-utils';
+import type { Mailbox } from '../jmap/types';
 
 const baseSort = { by: 'receivedAt' as const, ascending: false };
 const firstPage: EmailPage = { limit: 50 };
@@ -117,5 +120,96 @@ describe('buildQueryRequest', () => {
       const r = buildQueryRequest(q, { limit: 25, anchor: 'e99', anchorOffset: 0 }, noRoles);
       expect(r.anchorOffset).toBe(0);
     });
+  });
+});
+
+describe('UNIFIED_INBOX_ID', () => {
+  it('is the unified:inbox sentinel', () => {
+    expect(UNIFIED_INBOX_ID).toBe('unified:inbox');
+  });
+});
+
+function mkMailbox(o: Partial<Mailbox>): Mailbox {
+  return { id: '', name: '', sortOrder: 1 as const, ...o } as Mailbox;
+}
+
+const multiAccountMailboxes: Mailbox[] = [
+  mkMailbox({ id: 'inbox-a', role: 'inbox', accountId: 'acc-a' }),
+  mkMailbox({ id: 'archive-a', role: 'archive', accountId: 'acc-a' }),
+  mkMailbox({ id: 'acc-b:inbox-b', originalId: 'inbox-b', role: 'inbox', isShared: true, accountId: 'acc-b' }),
+  mkMailbox({ id: 'acc-c:inbox-c', originalId: 'inbox-c', role: 'inbox', isShared: true, accountId: 'acc-c' }),
+];
+
+describe('resolveScopeTargets', () => {
+  it('returns null for folder scope (keeps the single-account path)', () => {
+    const targets = resolveScopeTargets(
+      { kind: 'folder', mailboxId: 'inbox-a' },
+      multiAccountMailboxes,
+      []
+    );
+    expect(targets).toBeNull();
+  });
+
+  it("unified: targets each included account's inbox with un-namespaced mailbox ids", () => {
+    const targets = resolveScopeTargets({ kind: 'unified' }, multiAccountMailboxes, []);
+    expect(targets).toEqual([
+      { accountId: 'acc-a', mailboxId: 'inbox-a' },
+      { accountId: 'acc-b', mailboxId: 'inbox-b' },
+      { accountId: 'acc-c', mailboxId: 'inbox-c' },
+    ]);
+  });
+
+  it('unified: omits excluded accounts', () => {
+    const targets = resolveScopeTargets({ kind: 'unified' }, multiAccountMailboxes, ['acc-b']);
+    expect(targets).toEqual([
+      { accountId: 'acc-a', mailboxId: 'inbox-a' },
+      { accountId: 'acc-c', mailboxId: 'inbox-c' },
+    ]);
+  });
+
+  it('unified: a stale exclude entry for a removed account changes nothing', () => {
+    const targets = resolveScopeTargets({ kind: 'unified' }, multiAccountMailboxes, ['acc-gone']);
+    expect(targets).toEqual([
+      { accountId: 'acc-a', mailboxId: 'inbox-a' },
+      { accountId: 'acc-b', mailboxId: 'inbox-b' },
+      { accountId: 'acc-c', mailboxId: 'inbox-c' },
+    ]);
+  });
+
+  it('unified: skips inbox mailboxes that carry no accountId', () => {
+    const withLegacy = [mkMailbox({ id: 'inbox-x', role: 'inbox' }), ...multiAccountMailboxes];
+    const targets = resolveScopeTargets({ kind: 'unified' }, withLegacy, []);
+    expect(targets).toEqual([
+      { accountId: 'acc-a', mailboxId: 'inbox-a' },
+      { accountId: 'acc-b', mailboxId: 'inbox-b' },
+      { accountId: 'acc-c', mailboxId: 'inbox-c' },
+    ]);
+  });
+
+  it('all (Everywhere): one whole-account target per session account, ignoring the exclude list', () => {
+    const targets = resolveScopeTargets(
+      { kind: 'all', includeTrashJunk: false },
+      multiAccountMailboxes,
+      ['acc-b']
+    );
+    expect(targets).toEqual([
+      { accountId: 'acc-a' },
+      { accountId: 'acc-b' },
+      { accountId: 'acc-c' },
+    ]);
+  });
+});
+
+describe('buildQueryRequest with unified scope', () => {
+  it('yields an account-agnostic filter: no inMailbox, no trash/junk NOT clause', () => {
+    const q: EmailQuery = { text: 'hi', scope: { kind: 'unified' }, sort: baseSort };
+    const r = buildQueryRequest(q, firstPage, { trashId: 't', junkId: 'j' });
+    expect(r.filter).toEqual({ text: 'hi' });
+  });
+
+  it('yields an empty filter with no text or filters', () => {
+    const q: EmailQuery = { scope: { kind: 'unified' }, sort: baseSort };
+    const r = buildQueryRequest(q, firstPage, { trashId: 't', junkId: 'j' });
+    expect(r.filter).toEqual({});
   });
 });

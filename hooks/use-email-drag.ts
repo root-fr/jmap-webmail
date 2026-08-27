@@ -4,6 +4,8 @@ import { useCallback, DragEvent } from "react";
 import { Email } from "@/lib/jmap/types";
 import { useEmailStore } from "@/stores/email-store";
 import { useDragDropContext } from "@/contexts/drag-drop-context";
+import type { DraggedEmailRef } from "@/contexts/drag-drop-context";
+import { emailRowKey, isSameRow } from "@/lib/thread-utils";
 
 interface UseEmailDragOptions {
   email: Email;
@@ -50,16 +52,17 @@ export function useEmailDrag({ email, sourceMailboxId }: UseEmailDragOptions): U
     // Determine which emails to drag:
     // - If current email is selected, drag all selected
     // - Otherwise, drag only this email
-    const isSelected = selectedEmailIds.has(email.id);
+    const isSelected = selectedEmailIds.has(emailRowKey(email));
     const emailsToDrag = isSelected
-      ? emails.filter(em => selectedEmailIds.has(em.id))
+      ? emails.filter(em => selectedEmailIds.has(emailRowKey(em)))
       : [email];
 
-    // Set data transfer
+    // Set data transfer: id + owning account, so merged-view drops route
+    // each row through its own account.
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData(
       "application/x-email-ids",
-      JSON.stringify(emailsToDrag.map(em => em.id))
+      JSON.stringify(emailsToDrag.map((em): DraggedEmailRef => ({ id: em.id, accountId: em.accountId })))
     );
     e.dataTransfer.setData(
       "text/plain",
@@ -83,7 +86,8 @@ export function useEmailDrag({ email, sourceMailboxId }: UseEmailDragOptions): U
   }, [endDrag]);
 
   // Check if this specific email is being dragged
-  const isThisEmailDragging = isDragging && draggedEmails.some(em => em.id === email.id);
+  const isThisEmailDragging = isDragging
+    && draggedEmails.some(em => isSameRow(em, email));
 
   return {
     dragHandlers: {
