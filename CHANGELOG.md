@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- **OIDC logout works with Keycloak again.** The end-session redirect
+  now carries `id_token_hint` and `client_id`, which the spec requires
+  alongside `post_logout_redirect_uri`. (#102)
+- **The favicon unread badge shows up on Firefox and Chrome/Linux.**
+  The badge now updates the existing icon link instead of appending a
+  second one that those browsers ignore, and the Safari 15 fallback
+  draws its border correctly. Thanks @jabiinfante. (#66)
+- **Removed the sub-addressing "Learn More" dead end** in
+  Settings > Identities; it only reopened the identity manager. (#76)
+
 ## 1.7.0 (2026-08-28)
 
 One inbox for all your accounts. If your session exposes shared or
