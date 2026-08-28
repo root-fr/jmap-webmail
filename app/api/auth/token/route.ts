@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { discoverOAuth } from '@/lib/oauth/discovery';
-import { REFRESH_TOKEN_COOKIE } from '@/lib/oauth/tokens';
+import { ID_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from '@/lib/oauth/tokens';
 
 const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET || '';
 
@@ -92,9 +92,14 @@ export async function POST(request: NextRequest) {
       expires_in: tokens.expires_in || 3600,
     });
 
-    if (tokens.refresh_token) {
+    if (tokens.refresh_token || tokens.id_token) {
       const cookieStore = await cookies();
-      cookieStore.set(REFRESH_TOKEN_COOKIE, tokens.refresh_token, COOKIE_OPTIONS);
+      if (tokens.refresh_token) {
+        cookieStore.set(REFRESH_TOKEN_COOKIE, tokens.refresh_token, COOKIE_OPTIONS);
+      }
+      if (tokens.id_token) {
+        cookieStore.set(ID_TOKEN_COOKIE, tokens.id_token, COOKIE_OPTIONS);
+      }
     }
 
     return response;
@@ -144,6 +149,10 @@ export async function PUT() {
       cookieStore.set(REFRESH_TOKEN_COOKIE, tokens.refresh_token, COOKIE_OPTIONS);
     }
 
+    if (tokens.id_token) {
+      cookieStore.set(ID_TOKEN_COOKIE, tokens.id_token, COOKIE_OPTIONS);
+    }
+
     return NextResponse.json({
       access_token: tokens.access_token,
       expires_in: tokens.expires_in || 3600,
@@ -189,12 +198,23 @@ export async function DELETE() {
       cookieStore.delete(REFRESH_TOKEN_COOKIE);
     }
 
+    const idToken = cookieStore.get(ID_TOKEN_COOKIE)?.value;
+    if (idToken) {
+      cookieStore.delete(ID_TOKEN_COOKIE);
+    }
+
     let end_session_url: string | undefined;
     if (metadata?.end_session_endpoint) {
       try {
         const parsed = new URL(metadata.end_session_endpoint);
         if (parsed.protocol === 'https:') {
-          end_session_url = metadata.end_session_endpoint;
+          // RP-initiated logout: the OP requires id_token_hint or client_id
+          // whenever post_logout_redirect_uri is sent (Keycloak enforces this).
+          parsed.searchParams.set('client_id', getRequiredConfig().clientId);
+          if (idToken) {
+            parsed.searchParams.set('id_token_hint', idToken);
+          }
+          end_session_url = parsed.toString();
         } else {
           logger.warn('Ignoring non-HTTPS end_session_endpoint', { url: metadata.end_session_endpoint });
         }
