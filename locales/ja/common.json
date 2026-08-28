@@ -746,8 +746,7 @@
       "manage": "送信者情報を管理",
       "sub_addressing": {
         "label": "サブアドレス",
-        "description": "user+tag@domain.comのようなタグを使用して受信メールを整理",
-        "learn_more": "詳細"
+        "description": "user+tag@domain.comのようなタグを使用して受信メールを整理"
       }
     },
     "vacation": {

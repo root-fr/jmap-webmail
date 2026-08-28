@@ -746,8 +746,7 @@
       "manage": "Gestisci identità",
       "sub_addressing": {
         "label": "Sotto-indirizzamento",
-        "description": "Usa tag come utente+tag@dominio.com per organizzare la posta in arrivo",
-        "learn_more": "Scopri di più"
+        "description": "Usa tag come utente+tag@dominio.com per organizzare la posta in arrivo"
       }
     },
     "vacation": {

@@ -746,8 +746,7 @@
       "manage": "Gérer les identités",
       "sub_addressing": {
         "label": "Sous-adressage",
-        "description": "Utilisez des tags comme utilisateur+tag@domaine.com pour organiser votre courrier",
-        "learn_more": "En savoir plus"
+        "description": "Utilisez des tags comme utilisateur+tag@domaine.com pour organiser votre courrier"
       }
     },
     "vacation": {

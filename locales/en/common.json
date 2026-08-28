@@ -754,8 +754,7 @@
       "manage": "Manage Identities",
       "sub_addressing": {
         "label": "Sub-Addressing",
-        "description": "Use tags like user+tag@domain.com to organize incoming mail",
-        "learn_more": "Learn More"
+        "description": "Use tags like user+tag@domain.com to organize incoming mail"
       }
     },
     "vacation": {

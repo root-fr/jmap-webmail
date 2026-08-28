@@ -754,8 +754,7 @@
       "manage": "Zarządzaj tożsamościami",
       "sub_addressing": {
         "label": "Podadresowanie",
-        "description": "Używaj tagów jak uzytkownik+tag@domena.pl do organizowania poczty przychodzącej",
-        "learn_more": "Dowiedz się więcej"
+        "description": "Używaj tagów jak uzytkownik+tag@domena.pl do organizowania poczty przychodzącej"
       }
     },
     "vacation": {

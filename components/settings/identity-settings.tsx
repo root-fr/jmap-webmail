@@ -38,11 +38,7 @@ export function IdentitySettings() {
         <SettingItem
           label={t('sub_addressing.label')}
           description={t('sub_addressing.description')}
-        >
-          <Button variant="outline" size="sm" onClick={() => setShowModal(true)}>
-            {t('sub_addressing.learn_more')}
-          </Button>
-        </SettingItem>
+        />
       </SettingsSection>
 
       {/* Identity Manager Modal */}

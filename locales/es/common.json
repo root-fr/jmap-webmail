@@ -746,8 +746,7 @@
       "manage": "Administrar Identidades",
       "sub_addressing": {
         "label": "Sub-Direccionamiento",
-        "description": "Use etiquetas como usuario+etiqueta@dominio.com para organizar el correo entrante",
-        "learn_more": "Más Información"
+        "description": "Use etiquetas como usuario+etiqueta@dominio.com para organizar el correo entrante"
       }
     },
     "vacation": {

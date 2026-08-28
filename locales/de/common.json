@@ -746,8 +746,7 @@
       "manage": "Identitäten verwalten",
       "sub_addressing": {
         "label": "Sub-Adressierung",
-        "description": "Verwenden Sie Tags wie benutzer+tag@domain.de, um eingehende E-Mails zu organisieren",
-        "learn_more": "Mehr erfahren"
+        "description": "Verwenden Sie Tags wie benutzer+tag@domain.de, um eingehende E-Mails zu organisieren"
       }
     },
     "vacation": {

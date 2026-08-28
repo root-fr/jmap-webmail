@@ -746,8 +746,7 @@
       "manage": "Gerenciar Identidades",
       "sub_addressing": {
         "label": "Sub-Endereçamento",
-        "description": "Use tags como usuario+tag@dominio.com para organizar e-mails recebidos",
-        "learn_more": "Saiba Mais"
+        "description": "Use tags como usuario+tag@dominio.com para organizar e-mails recebidos"
       }
     },
     "vacation": {

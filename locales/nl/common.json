@@ -746,8 +746,7 @@
       "manage": "Identiteiten beheren",
       "sub_addressing": {
         "label": "Sub-adressering",
-        "description": "Gebruik tags zoals gebruiker+tag@domein.nl om inkomende mail te organiseren",
-        "learn_more": "Meer informatie"
+        "description": "Gebruik tags zoals gebruiker+tag@domein.nl om inkomende mail te organiseren"
       }
     },
     "vacation": {

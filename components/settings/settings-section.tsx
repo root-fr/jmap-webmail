@@ -23,7 +23,7 @@ export function SettingsSection({ title, description, children }: SettingsSectio
 interface SettingItemProps {
   label: string;
   description?: string;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 export function SettingItem({ label, description, children }: SettingItemProps) {
@@ -35,7 +35,7 @@ export function SettingItem({ label, description, children }: SettingItemProps) 
           <p className="text-xs text-muted-foreground mt-1">{description}</p>
         )}
       </div>
-      <div className="flex-shrink-0">{children}</div>
+      {children && <div className="flex-shrink-0">{children}</div>}
     </div>
   );
 }
