@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.7.1 (2026-08-28)
 
 - **OIDC logout works with Keycloak again.** The end-session redirect
   now carries `id_token_hint` and `client_id`, which the spec requires
